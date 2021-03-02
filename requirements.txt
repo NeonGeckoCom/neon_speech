@@ -1,0 +1,6 @@
+requests
+pyaudio
+mycroft-messagebus-client>=0.8.4
+SpeechRecognition==3.8.1
+ovos_utils
+pydub
