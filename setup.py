@@ -17,5 +17,10 @@ setup(
                       "pydub"],
     author='jarbasAi',
     author_email='jarbasai@mailfence.com',
-    description='speech client for Neon'
+    description='speech client for Neon',
+    entry_points={
+        'console_scripts': [
+            'neon_speech_client=neon_speech.__main__:main'
+        ]
+    }
 )
