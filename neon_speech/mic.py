@@ -59,9 +59,6 @@ from ovos_utils.sound import play_ogg, play_wav, play_mp3
 from ovos_utils.log import LOG
 from ovos_utils.lang.phonemes import get_phonemes
 
-from mycroft.audio import is_speaking
-from NGI.utilities.configHelper import NGIConfig
-
 
 class MutableStream:
     def __init__(self, wrapped_stream, format, muted=False):
@@ -227,11 +224,9 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
     SEC_BETWEEN_WW_CHECKS = 0.2
 
     def __init__(self, hot_word_engines, config=None):
-        if not config:
-            config = NGIConfig("ngi_user_info").content
-        self.config_core = config
+        self.config_core = config or {}
         listener_config = self.config_core.get("listener") or {}
-        listener_config["wake_word_enabled"] = config.get("interface", {}).get("wake_words_enabled")
+
         self.overflow_exc = listener_config.get('overflow_exception', False)
         self.use_wake_word = listener_config.get('wake_word_enabled', True)
         speech_recognition.Recognizer.__init__(self)
@@ -687,14 +682,10 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
             if self._stop_signaled:
                 return
 
-            LOG.debug("Recording...")
-            bus.emit("recognizer_loop:record_begin")
+        LOG.debug("Recording...")
+        bus.emit("recognizer_loop:record_begin")
 
-            frame_data = self._record_phrase(source, sec_per_buffer, stream)
-
-            # bus.emit("recognizer_loop:record_end")
-
-        # After the phrase is complete, save the audio frame_data and return it
+        frame_data = self._record_phrase(source, sec_per_buffer, stream)
         audio_data = self._create_audio_data(frame_data, source)
 
         bus.emit("recognizer_loop:record_end")
