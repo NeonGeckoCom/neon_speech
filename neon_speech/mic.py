@@ -60,6 +60,7 @@ from ovos_utils.log import LOG
 from ovos_utils.lang.phonemes import get_phonemes
 
 from mycroft.audio import is_speaking
+from NGI.utilities.configHelper import NGIConfig
 
 
 class MutableStream:
@@ -226,9 +227,11 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
     SEC_BETWEEN_WW_CHECKS = 0.2
 
     def __init__(self, hot_word_engines, config=None):
-        self.config_core = config or {}
+        if not config:
+            config = NGIConfig("ngi_user_info").content
+        self.config_core = config
         listener_config = self.config_core.get("listener") or {}
-
+        listener_config["wake_word_enabled"] = config.get("interface", {}).get("wake_words_enabled")
         self.overflow_exc = listener_config.get('overflow_exception', False)
         self.use_wake_word = listener_config.get('wake_word_enabled', True)
         speech_recognition.Recognizer.__init__(self)
