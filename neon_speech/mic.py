@@ -59,6 +59,8 @@ from ovos_utils.sound import play_ogg, play_wav, play_mp3
 from ovos_utils.log import LOG
 from ovos_utils.lang.phonemes import get_phonemes
 
+from mycroft.audio import is_speaking
+
 
 class MutableStream:
     def __init__(self, wrapped_stream, format, muted=False):
@@ -682,10 +684,14 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
             if self._stop_signaled:
                 return
 
-        LOG.debug("Recording...")
-        bus.emit("recognizer_loop:record_begin")
+            LOG.debug("Recording...")
+            bus.emit("recognizer_loop:record_begin")
 
-        frame_data = self._record_phrase(source, sec_per_buffer, stream)
+            frame_data = self._record_phrase(source, sec_per_buffer, stream)
+
+            # bus.emit("recognizer_loop:record_end")
+
+        # After the phrase is complete, save the audio frame_data and return it
         audio_data = self._create_audio_data(frame_data, source)
 
         bus.emit("recognizer_loop:record_end")
