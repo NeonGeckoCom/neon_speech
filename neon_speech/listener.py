@@ -242,7 +242,7 @@ class AudioConsumer(Thread):
                 transcriptions = [transcriptions]
             if transcriptions and transcriptions[0]:
                 ident = str(time.time()) + str(hash(transcriptions[0]))
-            transcribed_time = time.time()
+                transcribed_time = time.time()
                 # STT succeeded, send the transcribed speech on for processing
                 payload = {
                     'utterances': transcriptions,
