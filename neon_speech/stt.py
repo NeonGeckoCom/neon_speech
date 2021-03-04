@@ -1,3 +1,26 @@
+# NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
+#
+# Copyright 2008-2021 Neongecko.com Inc. | All Rights Reserved
+#
+# Notice of License - Duplicating this Notice of License near the start of any file containing
+# a derivative of this software is a condition of license for this software.
+# Friendly Licensing:
+# No charge, open source royalty free use of the Neon AI software source and object is offered for
+# educational users, noncommercial enthusiasts, Public Benefit Corporations (and LLCs) and
+# Social Purpose Corporations (and LLCs). Developers can contact developers@neon.ai
+# For commercial licensing, distribution of derivative works or redistribution please contact licenses@neon.ai
+# Distributed on an "AS IS” basis without warranties or conditions of any kind, either express or implied.
+# Trademarks of Neongecko: Neon AI(TM), Neon Assist (TM), Neon Communicator(TM), Klat(TM)
+# Authors: Guy Daniels, Daniel McKnight, Regina Bloomstine, Elon Gasper, Richard Leeds
+#
+# Specialized conversational reconveyance options from Conversation Processing Intelligence Corp.
+# US Patents 2008-2021: US7424516, US20140161250, US20140177813, US8638908, US8068604, US8553852, US10530923, US10530924
+# China Patent: CN102017585  -  Europe Patent: EU2156652  -  Patents Pending
+#
+# This software is an enhanced derivation of the Mycroft Project which is licensed under the
+# Apache software Foundation software license 2.0 https://www.apache.org/licenses/LICENSE-2.0
+# Changes Copyright 2008-2021 Neongecko.com Inc. | All Rights Reserved
+#
 # Copyright 2017 Mycroft AI Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +35,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from inspect import signature
 from queue import Queue
+from threading import Event
 from ovos_utils.log import LOG
 from ovos_utils.plugins.stt import GoogleJsonSTT, StreamingSTT, StreamThread
 from neon_speech.plugins import load_plugin
@@ -120,7 +145,7 @@ class STTFactory:
     }
 
     @staticmethod
-    def create(config=None):
+    def create(config=None, results_event: Event = None):
         try:
             config = config or {}
             module = config.get("module", "chromium_stt_plug")
@@ -129,7 +154,11 @@ class STTFactory:
             else:
                 clazz = load_stt_plugin(module)
                 LOG.info('Loaded the STT plugin {}'.format(module))
-            return clazz()
+
+            if results_event and len(signature(clazz).parameters) > 0:
+                return clazz(results_event)
+            else:
+                return clazz()
         except Exception as e:
             # The STT backend failed to start. Report it and fall back to
             # default.
