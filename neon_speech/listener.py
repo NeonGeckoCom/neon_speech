@@ -268,6 +268,11 @@ class AudioConsumer(Thread):
                 self.emitter.emit("recognizer_loop:utterance", payload)
 
     def transcribe(self, audio: sr.AudioData, context: dict):
+        """
+        Accepts input audio and returns a list of transcript candidates (in original input language)
+        :param audio: (AudioData) input audio object
+        :return: list of transcription candidates
+        """
         def send_unknown_intent():
             """ Send message that nothing was transcribed. """
             if self.config.get("wake_word_enabled", False):  # Don't capture ambient noise
@@ -290,7 +295,6 @@ class AudioConsumer(Thread):
                 LOG.debug(len(audio.frame_data))
             else:
                 LOG.warning(audio)
-
             # Invoke the STT engine on the audio clip
             transcripts = self.stt.execute(audio)  # This is the STT return here (incl streams)
             LOG.debug(transcripts)
