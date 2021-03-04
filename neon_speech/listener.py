@@ -258,7 +258,7 @@ class AudioConsumer(Thread):
         """
         def send_unknown_intent():
             """ Send message that nothing was transcribed. """
-            if self.config["wake_word_enabled"]:  # Don't capture ambient noise
+            if self.config.get("wake_word_enabled", False):  # Don't capture ambient noise
                 self.emitter.emit('recognizer_loop:speech.recognition.unknown')
 
         try:
