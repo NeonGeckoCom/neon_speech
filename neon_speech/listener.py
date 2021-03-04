@@ -250,13 +250,15 @@ class AudioConsumer(Thread):
         if self._audio_length(audio) < self.MIN_AUDIO_SIZE:
             LOG.warning("Audio too short to be processed")
         else:
-            transcription = self.transcribe(audio, context)
-            transcribed_time = time.time()
-            if transcription:
-                ident = str(time.time()) + str(hash(transcription))
+            transcriptions = self.transcribe(audio, context)
+            if isinstance(transcriptions, str):
+                transcriptions = [transcriptions]
+            if transcriptions and transcriptions[0]:
+                ident = str(time.time()) + str(hash(transcriptions[0]))
+                transcribed_time = time.time()
                 # STT succeeded, send the transcribed speech on for processing
                 payload = {
-                    'utterances': [transcription],
+                    'utterances': transcriptions,
                     'lang': self.stt.lang,
                     'ident': ident,
                     "data": context,
