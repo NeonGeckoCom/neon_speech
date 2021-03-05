@@ -124,7 +124,7 @@ class STTFactory:
     def create(config=None):
         try:
             if not config:
-                config = NGIConfig("ngi_user_info").content["stt"]
+                config = NGIConfig("ngi_user_info").content.get("stt", {})
             # config = config or {}
             module = config.get("module", "chromium_stt_plug")
             if module in STTFactory.CLASSES:
