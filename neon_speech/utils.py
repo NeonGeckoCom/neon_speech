@@ -3,10 +3,13 @@ from ovos_utils.log import LOG
 from ovos_utils.configuration import read_mycroft_config
 import re
 import pyaudio
+from neon_utils.configuration_utils import NGIConfig
 
 
 def get_config():
-    default = read_mycroft_config()
+    mycroft = read_mycroft_config()
+    neon = NGIConfig("ngi_user_info").content
+    default = neon or mycroft
     return default or {
         "listener": {
             "sample_rate": 16000,

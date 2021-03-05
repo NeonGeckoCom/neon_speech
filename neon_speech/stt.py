@@ -15,6 +15,7 @@
 from queue import Queue
 from ovos_utils.log import LOG
 from ovos_utils.plugins.stt import GoogleJsonSTT, StreamingSTT, StreamThread
+from neon_utils.configuration_utils import NGIConfig
 from neon_speech.plugins import load_plugin
 
 
@@ -122,7 +123,9 @@ class STTFactory:
     @staticmethod
     def create(config=None):
         try:
-            config = config or {}
+            if not config:
+                config = NGIConfig("ngi_user_info").content["stt"]
+            # config = config or {}
             module = config.get("module", "chromium_stt_plug")
             if module in STTFactory.CLASSES:
                 clazz = STTFactory.CLASSES[module]
