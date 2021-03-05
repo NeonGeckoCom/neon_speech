@@ -242,15 +242,12 @@ class AudioConsumer(Thread):
                 transcriptions = [transcriptions]
             if transcriptions and transcriptions[0]:
                 ident = str(time.time()) + str(hash(transcriptions[0]))
-            transcribed_time = time.time()
                 # STT succeeded, send the transcribed speech on for processing
                 payload = {
                     'utterances': transcriptions,
                     'lang': self.stt.lang,
                     'ident': ident,
-                    "data": context,
-                    "timing": {"start": heard_time,
-                               "transcribed": transcribed_time}
+                    "data": context
                 }
                 self.emitter.emit("recognizer_loop:utterance", payload)
 
