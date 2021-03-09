@@ -188,10 +188,12 @@ class AudioConsumer(Thread):
     # TODO: Localization
     def process(self, audio, context=None):
         context = context or {}
+        heard_time = time.time()
         if self._audio_length(audio) < self.MIN_AUDIO_SIZE:
             LOG.warning("Audio too short to be processed")
         else:
             transcription = self.transcribe(audio, context)
+            transcribed_time = time.time()
             if transcription:
                 ident = str(time.time()) + str(hash(transcription))
                 # STT succeeded, send the transcribed speech on for processing
@@ -199,7 +201,9 @@ class AudioConsumer(Thread):
                     'utterances': [transcription],
                     'lang': self.stt.lang,
                     'ident': ident,
-                    "data": context
+                    "data": context,
+                    "timing": {"start": heard_time,
+                               "transcribed": transcribed_time}
                 }
                 self.emitter.emit("recognizer_loop:utterance", payload)
 
