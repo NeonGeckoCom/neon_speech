@@ -225,7 +225,10 @@ class AudioConsumer(Thread):
                 # TODO: Populate from config DM
                 stt_language = None
                 alt_langs = None
-            LOG.debug(len(audio.frame_data))
+            if isinstance(audio, sr.AudioData):
+                LOG.debug(len(audio.frame_data))
+            else:
+                LOG.warning(audio)
 
             # Invoke the STT engine on the audio clip
             text = self.stt.execute(audio, stt_language)
