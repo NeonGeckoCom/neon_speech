@@ -138,6 +138,7 @@ class AudioConsumer(Thread):
         self.stt = stt
         self.wakeup_recognizer = wakeup_recognizer
 
+        # TODO: Revisit after user database #24 DM
         if device == "server":
             self.chat_user_database = KlatUserDatabase()
         else:
@@ -220,7 +221,7 @@ class AudioConsumer(Thread):
                 # TODO: Populate from config DM
                 stt_language = None
                 alt_langs = None
-            LOG.debug(audio)
+            LOG.debug(len(audio.frame_data))
 
             # Invoke the STT engine on the audio clip
             text = self.stt.execute(audio, stt_language)
