@@ -267,7 +267,8 @@ class AudioConsumer(Thread):
             transcripts = self.stt.execute(audio)  # This is the STT return here (incl streams)
             LOG.debug(transcripts)
             if isinstance(transcripts, str):
-                transcripts = [transcripts]
+                transcripts = [transcripts.strip()]
+            transcripts = [t.strip() for t in transcripts if t.strip()]
             if transcripts is None or len(transcripts) == 1 and not transcripts[0]:
                 send_unknown_intent()
                 LOG.info('no words were transcribed')
