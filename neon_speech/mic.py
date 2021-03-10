@@ -662,7 +662,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
         self.adjust_for_ambient_noise(source, 1.0)
 
         # If skipping wake words, just pass audio to our streaming STT
-
+        # TODO: Check config updates?
         if stream and not self.use_wake_word:
             stream.stream_start()
             stream.has_result.clear()

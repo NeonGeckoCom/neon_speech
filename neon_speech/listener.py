@@ -47,7 +47,7 @@ from requests.exceptions import ConnectionError
 
 from neon_speech.hotword_factory import HotWordFactory
 from neon_speech.mic import MutableMicrophone, ResponsiveRecognizer
-from neon_speech.utils import find_input_device
+from neon_speech.utils import find_input_device, get_config
 from neon_speech.stt import STTFactory
 from ovos_utils.log import LOG
 
@@ -179,6 +179,7 @@ class AudioConsumer(Thread):
         self.config = emitter.config
         self.stt = stt
         self.wakeup_recognizer = wakeup_recognizer
+        self.use_wake_words = self.config.get("wake_word_enabled", True)
 
     def run(self):
         while self.state.running:
@@ -263,7 +264,7 @@ class AudioConsumer(Thread):
         """
         def send_unknown_intent():
             """ Send message that nothing was transcribed. """
-            if self.config.get("wake_word_enabled", False):  # Don't capture ambient noise
+            if self.use_wake_words:  # Don't capture ambient noise
                 self.emitter.emit('recognizer_loop:speech.recognition.unknown')
 
         try:
@@ -321,8 +322,8 @@ class RecognizerLoop(EventEmitter):
         self.consumer = None
 
         self.mute_calls = 0
-        self.config_core = config or {}
-        self._config_hash = recognizer_conf_hash(config)
+        self.config_core = config or get_config()
+        # self._config_hash = recognizer_conf_hash(config)
         self.lang = config.get('lang', "en-us")
         self.config = config.get('listener', {})
         rate = self.config.get('sample_rate', 16000)
@@ -473,7 +474,11 @@ class RecognizerLoop(EventEmitter):
                 self.hotword_engines[hw]["engine"].stop()
             except Exception as e:
                 LOG.exception(e)
-        # load config
-        self._load_config()
+        # # load config
+        # self._load_config()
         # restart
         self.start_async()
+
+    def change_wake_word_state(self, enabled: bool):
+        self.responsive_recognizer.use_wake_word = enabled
+        self.consumer.use_wake_words = enabled
