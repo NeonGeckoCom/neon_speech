@@ -51,6 +51,13 @@ from neon_speech.utils import find_input_device, get_config
 from neon_speech.stt import STTFactory
 from ovos_utils.log import LOG
 
+try:
+    from NGI.server.chat_user_database import KlatUserDatabase
+    from mycroft import device
+except Exception as e:
+    LOG.error(e)
+    device = "desktop"
+
 MAX_MIC_RESTARTS = 20
 
 AUDIO_DATA = 0
@@ -181,6 +188,12 @@ class AudioConsumer(Thread):
         self.wakeup_recognizer = wakeup_recognizer
         self.use_wake_words = self.config.get("wake_word_enabled", True)
 
+        # TODO: Revisit after user database #24 DM
+        if device == "server":
+            self.chat_user_database = KlatUserDatabase()
+        else:
+            self.chat_user_database = None
+
     def run(self):
         while self.state.running:
             self.read()
@@ -238,7 +251,8 @@ class AudioConsumer(Thread):
         if self._audio_length(audio) < self.MIN_AUDIO_SIZE:
             LOG.warning("Audio too short to be processed")
         else:
-            transcriptions = self.transcribe(audio)
+            transcriptions = self.transcribe(audio, context)
+            transcribed_time = time.time()
             if isinstance(transcriptions, str):
                 transcriptions = [transcriptions]
             if transcriptions and transcriptions[0]:
@@ -256,7 +270,7 @@ class AudioConsumer(Thread):
                 }
                 self.emitter.emit("recognizer_loop:utterance", payload)
 
-    def transcribe(self, audio):
+    def transcribe(self, audio: sr.AudioData, context: dict):
         """
         Accepts input audio and returns a list of transcript candidates (in original input language)
         :param audio: (AudioData) input audio object
@@ -268,6 +282,23 @@ class AudioConsumer(Thread):
                 self.emitter.emit('recognizer_loop:speech.recognition.unknown')
 
         try:
+            user = context.get("user")
+            if self.chat_user_database:
+                # self.server_listener.get_nick_profiles(flac_filename)
+                self.chat_user_database.update_profile_for_nick(user)
+                chat_user = self.chat_user_database.get_profile(user)
+                stt_language = chat_user["speech"].get('stt_language', 'en')
+                alt_langs = chat_user["speech"].get("alt_languages", ['en', 'es'])
+                LOG.debug(stt_language)
+            else:
+                # TODO: Populate from config DM
+                stt_language = None
+                alt_langs = None
+            if isinstance(audio, sr.AudioData):
+                LOG.debug(len(audio.frame_data))
+            else:
+                LOG.warning(audio)
+
             # Invoke the STT engine on the audio clip
             transcripts = self.stt.execute(audio)  # This is the STT return here (incl streams)
             LOG.debug(transcripts)
