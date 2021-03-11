@@ -347,8 +347,23 @@ class RecognizerLoop(EventEmitter):
         self.responsive_recognizer.bind(parsers_service)
 
     def create_hotword_engines(self):
+        def adapt_neon_config() -> dict:
+            """
+            Temporary fix to adapt old style Neon configuration for single Hotwords
+            :return: dict of single wake word config
+            """
+            LOG.warning("This configuration is depreciated, please update to 'hotwords' configuration")
+            return {self.config["wake_word"]: {"module": self.config['module'],
+                                               "phonemes": self.config['phonemes'],
+                                               "threshold": self.config['threshold'],
+                                               "lang": self.config['language'],
+                                               "sample_rate": self.config['rate'],
+                                               "listen": True,
+                                               "sound": "snd/start_listening.wav",
+                                               "local_model_file": self.config["precise"]["local_model_file"]}}
+
         LOG.info("creating hotword engines")
-        hot_words = self.config_core.get("hotwords", {})
+        hot_words = self.config_core.get("hotwords", adapt_neon_config())
         for word in hot_words:
             data = hot_words[word]
             if word == self.wakeup_recognizer.key_phrase \
@@ -359,7 +374,7 @@ class RecognizerLoop(EventEmitter):
             listen = data.get("listen", False)
             engine = HotWordFactory.create_hotword(
                 word, lang=self.lang, loop=self,
-                config=self.config_core.get("hotwords"))
+                config=hot_words)
 
             self.hotword_engines[word] = {"engine": engine,
                                           "sound": sound,
@@ -377,7 +392,7 @@ class RecognizerLoop(EventEmitter):
         """Start consumer and producer threads."""
         self.state.running = True
         results_event = Event()
-        stt = STTFactory.create(results_event = results_event)
+        stt = STTFactory.create(results_event=results_event)
         queue = Queue()
         stream_handler = None
         if stt.can_stream:
