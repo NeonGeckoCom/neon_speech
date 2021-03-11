@@ -252,10 +252,7 @@ class AudioConsumer(Thread):
             LOG.warning("Audio too short to be processed")
         else:
             transcriptions = self.transcribe(audio, context)
-            transcribed_time = time.time()
-            if isinstance(transcriptions, str):
-                transcriptions = [transcriptions]
-            if transcriptions and transcriptions[0]:
+            if transcriptions and len(transcriptions) > 0:
                 ident = str(time.time()) + str(hash(transcriptions[0]))
                 transcribed_time = time.time()
 
@@ -274,6 +271,7 @@ class AudioConsumer(Thread):
         """
         Accepts input audio and returns a list of transcript candidates (in original input language)
         :param audio: (AudioData) input audio object
+        :param context: audio parser context returned
         :return: list of transcription candidates
         """
         def send_unknown_intent():
