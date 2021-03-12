@@ -35,6 +35,7 @@ class HotWordEngine:
         # rough estimate 1 phoneme per 2 chars
         self.num_phonemes = len(key_phrase) / 2 + 1
         self.config = config or {}
+        self.listener_config = config  # Referenced by pocketsphinx plugin
         self.module = self.config.get("module")
         self.lang = str(self.config.get("lang", lang)).lower()
 
