@@ -314,14 +314,18 @@ class RecognizerLoop(EventEmitter):
             :return: dict of single wake word config
             """
             LOG.warning("This configuration is depreciated, please update to 'hotwords' configuration")
-            return {self.config["wake_word"]: {"module": self.config['module'],
-                                               "phonemes": self.config['phonemes'],
-                                               "threshold": self.config['threshold'],
-                                               "lang": self.config['language'],
-                                               "sample_rate": self.config['rate'],
-                                               "listen": True,
-                                               "sound": "snd/start_listening.wav",
-                                               "local_model_file": self.config["precise"]["local_model_file"]}}
+            if "wake_word" in self.config:
+                return {self.config["wake_word"]: {"module": self.config.get('module'),
+                                                   "phonemes": self.config.get('phonemes'),
+                                                   "threshold": self.config.get('threshold'),
+                                                   "lang": self.config.get('language'),
+                                                   "sample_rate": self.config.get('rate'),
+                                                   "listen": True,
+                                                   "sound": "snd/start_listening.wav",
+                                                   "local_model_file": self.config.get("precise",
+                                                                                       {}).get("local_model_file")}}
+            else:
+                return {}
 
         LOG.info("creating hotword engines")
         hot_words = self.config_core.get("hotwords", adapt_neon_config())
