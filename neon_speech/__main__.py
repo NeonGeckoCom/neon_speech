@@ -185,13 +185,13 @@ def handle_speak(event):
     bus.emit(Message('speak', event, context))
 
 
-def handle_complete_intent_failure(event):
+def handle_complete_intent_failure(message: Message):
     """Extreme backup for answering completely unhandled intent requests."""
     LOG.info("Failed to find intent.")
-    context = {'client_name': 'mycroft_listener',
-               'source': 'audio',
-               'destination': ["skills"]}
-    bus.emit(Message('complete.intent.failure', event, context))
+    # context = {'client_name': 'mycroft_listener',
+    #            'source': 'audio',
+    #            'destination': ["skills"]}
+    bus.emit(message.forward("complete.intent.failure", message.data))
 
 
 def handle_sleep(event):
