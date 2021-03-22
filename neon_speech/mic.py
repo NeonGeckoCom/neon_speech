@@ -1,3 +1,26 @@
+# NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
+#
+# Copyright 2008-2021 Neongecko.com Inc. | All Rights Reserved
+#
+# Notice of License - Duplicating this Notice of License near the start of any file containing
+# a derivative of this software is a condition of license for this software.
+# Friendly Licensing:
+# No charge, open source royalty free use of the Neon AI software source and object is offered for
+# educational users, noncommercial enthusiasts, Public Benefit Corporations (and LLCs) and
+# Social Purpose Corporations (and LLCs). Developers can contact developers@neon.ai
+# For commercial licensing, distribution of derivative works or redistribution please contact licenses@neon.ai
+# Distributed on an "AS IS” basis without warranties or conditions of any kind, either express or implied.
+# Trademarks of Neongecko: Neon AI(TM), Neon Assist (TM), Neon Communicator(TM), Klat(TM)
+# Authors: Guy Daniels, Daniel McKnight, Regina Bloomstine, Elon Gasper, Richard Leeds
+#
+# Specialized conversational reconveyance options from Conversation Processing Intelligence Corp.
+# US Patents 2008-2021: US7424516, US20140161250, US20140177813, US8638908, US8068604, US8553852, US10530923, US10530924
+# China Patent: CN102017585  -  Europe Patent: EU2156652  -  Patents Pending
+#
+# This software is an enhanced derivation of the Mycroft Project which is licensed under the
+# Apache software Foundation software license 2.0 https://www.apache.org/licenses/LICENSE-2.0
+# Changes Copyright 2008-2021 Neongecko.com Inc. | All Rights Reserved
+#
 # Copyright 2017 Mycroft AI Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +58,8 @@ from ovos_utils.signal import check_for_signal, get_ipc_directory
 from ovos_utils.sound import play_ogg, play_wav, play_mp3
 from ovos_utils.log import LOG
 from ovos_utils.lang.phonemes import get_phonemes
+
+from mycroft.audio import is_speaking
 
 
 class MutableStream:
@@ -205,7 +230,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
         listener_config = self.config_core.get("listener") or {}
 
         self.overflow_exc = listener_config.get('overflow_exception', False)
-
+        self.use_wake_word = listener_config.get('wake_word_enabled', True)
         speech_recognition.Recognizer.__init__(self)
         self.audio = pyaudio.PyAudio()
         self.multiplier = listener_config.get('multiplier', 1.0)
@@ -401,7 +426,10 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                 LOG.debug("Button Pressed, wakeword not needed")
                 return True
 
-        return False
+        if self.use_wake_word:
+            return False
+        else:
+            return True
 
     def stop(self):
         """
@@ -633,16 +661,37 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
         #       speech is detected, but there is no code to actually do that.
         self.adjust_for_ambient_noise(source, 1.0)
 
-        LOG.debug("Waiting for wake word...")
-        self._wait_until_wake_word(source, sec_per_buffer, bus)
-        self._listen_triggered = False
-        if self._stop_signaled:
-            return
+        # If skipping wake words, just pass audio to our streaming STT
+        # TODO: Check config updates?
+        if stream and not self.use_wake_word:
+            stream.stream_start()
+            stream.has_result.clear()
+            frame_data = get_silence(source.SAMPLE_WIDTH)
+            LOG.debug("Stream starting!")
+            while not stream.has_result.is_set():
+                # Pass audio until STT tells us to stop (this is called again immediately)
+                chunk = self.record_sound_chunk(source)
+                if not is_speaking():
+                    # Filter out Neon speech
+                    stream.stream_chunk(chunk)
+                    frame_data += chunk
+            LOG.debug("stream ended!")
+        # If using wake words, wait until the wake_word is detected and then record the following phrase
+        else:
+            LOG.debug("Waiting for wake word...")
+            self._wait_until_wake_word(source, sec_per_buffer, bus)
+            self._listen_triggered = False
+            if self._stop_signaled:
+                return
 
-        LOG.debug("Recording...")
-        bus.emit("recognizer_loop:record_begin")
+            LOG.debug("Recording...")
+            bus.emit("recognizer_loop:record_begin")
 
-        frame_data = self._record_phrase(source, sec_per_buffer, stream)
+            frame_data = self._record_phrase(source, sec_per_buffer, stream)
+
+            # bus.emit("recognizer_loop:record_end")
+
+        # After the phrase is complete, save the audio frame_data and return it
         audio_data = self._create_audio_data(frame_data, source)
 
         bus.emit("recognizer_loop:record_end")

@@ -35,6 +35,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+from mycroft_bus_client import MessageBusClient
+from typing import Optional
+
 import time
 
 from threading import Lock
@@ -51,10 +54,10 @@ from neon_speech.utils import get_config
 from neon_speech.listener import RecognizerLoop
 from neon_speech.utils import reset_sigint_handler
 
-bus = None  # Mycroft messagebus connection
+bus: Optional[MessageBusClient] = None  # Mycroft messagebus connection
 lock = Lock()
-loop = None
-config = None
+loop: Optional[RecognizerLoop] = None
+config: Optional[dict] = None
 service = None
 SKILLS_PENDING = list()
 
@@ -121,7 +124,7 @@ def _emit_utterance_to_skills(message_to_emit: Message):
     bus.emit(message_to_emit)
 
     # Allow time for skills to receive this event (generally about 1s, outliers @ 5-6s)
-    time.sleep(10) # TODO: Read from config?
+    time.sleep(10)  # TODO: Read from config?
     check_skill_confirmed(message_to_emit.context['ident'], message_to_emit.data)
 
 
@@ -154,6 +157,11 @@ def handle_skills_confirmation(message):
     else:
         SKILLS_PENDING.remove(ident)
         LOG.debug(f"SKILLS_PENDING={SKILLS_PENDING}")
+
+
+def handle_wake_words_state(message):
+    enabled = message.data.get("enabled", True)
+    loop.change_wake_word_state(enabled)
 
 
 def handle_hotword(event):
@@ -372,7 +380,9 @@ def main():
 
     bus.on('recognizer_loop:klat_utterance', handle_input_from_klat)
     bus.on("recognizer_loop:utterance.response", handle_skills_confirmation)
-    
+
+    bus.on("neon.wake_words_state", handle_wake_words_state)
+
     service = AudioParsersService(bus, config=config)
     service.start()
     loop.bind(service)
