@@ -52,8 +52,8 @@ from neon_speech.stt import STTFactory
 from ovos_utils.log import LOG
 
 try:
-    from NGI.server.chat_user_database import KlatUserDatabase
-    from mycroft import device
+    from neon_core_server.chat_user_database import KlatUserDatabase
+    from mycroft.device import device
 except Exception as e:
     LOG.error(e)
     device = "desktop"
