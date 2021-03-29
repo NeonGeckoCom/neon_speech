@@ -101,6 +101,7 @@ def handle_utterance(event):
     LOG.info("Utterance: " + str(event['utterances']))
     context = {'client_name': 'mycroft_listener',
                'source': 'audio',
+               'raw_audio': event.pop('raw_audio'),
                'destination': ["skills"],
                "timing": event.pop("timing", {})}
     if "data" in event:
@@ -122,7 +123,7 @@ def _emit_utterance_to_skills(message_to_emit: Message):
     # Emit single intent request
     _add_pending_intent(message_to_emit.context['ident'])
     bus.emit(message_to_emit)
-
+    # TODO: Await Reply here
     # Allow time for skills to receive this event (generally about 1s, outliers @ 5-6s)
     time.sleep(10)  # TODO: Read from config?
     check_skill_confirmed(message_to_emit.context['ident'], message_to_emit.data)
