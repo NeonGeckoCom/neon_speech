@@ -124,11 +124,12 @@ class AudioProducer(Thread):
             self.recognizer.adjust_for_ambient_noise(source)
             while self.state.running:
                 try:
-                    audio = self.recognizer.listen(source, self.emitter,
-                                                   self.stream_handler)
+                    audio, filename = self.recognizer.listen(source, self.emitter,
+                                                             self.stream_handler)
                     if audio is not None:
                         audio, context = \
                             self.recognizer.audio_consumers.get_context(audio)
+                        context["audio_filename"] = filename
                         self.queue.put((AUDIO_DATA, audio, context))
                     else:
                         LOG.warning("Audio contains no data.")
@@ -262,6 +263,7 @@ class AudioConsumer(Thread):
                     'lang': self.stt.lang,
                     'ident': ident,
                     "data": context,
+                    "raw_audio": context.get("audio_filename"),
                     "timing": {"start": heard_time,
                                "transcribed": transcribed_time}
                 }
