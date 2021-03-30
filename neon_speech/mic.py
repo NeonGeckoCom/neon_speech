@@ -702,8 +702,9 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
             with open(filename, 'wb') as filea:
                 filea.write(audio_data.get_wav_data())
             LOG.debug("Thinking...")
-
-        return audio_data
+        else:
+            filename = None
+        return audio_data, filename
 
     def _adjust_threshold(self, energy, seconds_per_buffer):
         if self.dynamic_energy_threshold and energy > 0:
