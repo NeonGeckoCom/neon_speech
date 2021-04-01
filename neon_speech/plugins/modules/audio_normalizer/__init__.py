@@ -30,8 +30,8 @@ class AudioNormalizer(AudioParser):
                                                audio_data.dBFS + self.thresh
                                                // 3)
         trimmed = audio_data[start_trim:-end_trim]
-        if len(trimmed) >= 0.15 * len(audio_data):
-            audio_data = trimmed
+        # if len(trimmed) >= 0.15 * len(audio_data):
+        audio_data = trimmed
         if audio_data.dBFS != self.final_db:
             change_needed = self.final_db - audio_data.dBFS
             audio_data = audio_data.apply_gain(change_needed)
@@ -39,9 +39,10 @@ class AudioNormalizer(AudioParser):
         filename = join(tempfile.gettempdir(), str(time.time()) + ".wav")
         audio_data.export(filename, format="wav")
         with open(filename, "rb") as byte_data:
-            return AudioData(byte_data.read(),
-                             audio_data.frame_rate,
-                             audio_data.sample_width)
+            new_audio_data = AudioData(byte_data.read(),
+                                       audio_data.frame_rate,
+                                       audio_data.sample_width)
+            return new_audio_data, filename
 
     @staticmethod
     def detect_leading_silence(sound, silence_threshold=-36.0, chunk_size=10):
@@ -59,8 +60,8 @@ class AudioNormalizer(AudioParser):
         return trim_ms
 
     def on_speech_end(self, audio_data):
-        audio_data = self.trim_silence(audio_data)
-        return audio_data, {}
+        audio_data, filename = self.trim_silence(audio_data)
+        return audio_data, {"audio_filename": filename}
 
 
 def create_module(config=None):

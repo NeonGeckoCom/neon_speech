@@ -129,7 +129,8 @@ class AudioProducer(Thread):
                     if audio is not None:
                         audio, context = \
                             self.recognizer.audio_consumers.get_context(audio)
-                        context["audio_filename"] = filename
+                        if not context["audio_filename"]:
+                            context["audio_filename"] = filename
                         self.queue.put((AUDIO_DATA, audio, context))
                     else:
                         LOG.warning("Audio contains no data.")
