@@ -9,8 +9,8 @@ from neon_utils.configuration_utils import get_neon_speech_config
 def get_config():
     mycroft = read_mycroft_config()
     neon = get_neon_speech_config()
-    default = neon or mycroft
-    return default or {
+    config = neon or mycroft
+    return config or {
         "listener": {
             "sample_rate": 16000,
             "record_wake_words": False,
