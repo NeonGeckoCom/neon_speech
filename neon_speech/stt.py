@@ -148,7 +148,6 @@ class STTFactory:
     @staticmethod
     def create(config=None, results_event: Event = None):
         try:
-            # TODO: Update config ref DM
             if not config:
                 config = get_neon_speech_config().get("stt", {})
             # config = config or {}
