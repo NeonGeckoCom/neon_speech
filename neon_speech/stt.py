@@ -40,7 +40,7 @@ from queue import Queue
 from threading import Event
 from ovos_utils.log import LOG
 from ovos_utils.plugins.stt import GoogleJsonSTT, StreamingSTT, StreamThread
-from neon_utils.configuration_utils import NGIConfig
+from neon_utils.configuration_utils import get_neon_speech_config
 from neon_speech.plugins import load_plugin
 
 
@@ -142,14 +142,14 @@ def load_stt_plugin(module_name):
 class STTFactory:
     CLASSES = {
         "google_cloud": GoogleCloudSTT,
-        "google_cloud_streaming": GoogleCloudStreamingSTT
+        # "google_cloud_streaming": GoogleCloudStreamingSTT
     }
 
     @staticmethod
     def create(config=None, results_event: Event = None):
         try:
             if not config:
-                config = NGIConfig("ngi_user_info").content.get("stt", {})
+                config = get_neon_speech_config().get("stt", {})
             # config = config or {}
             module = config.get("module", "chromium_stt_plug")
             if module in STTFactory.CLASSES:
