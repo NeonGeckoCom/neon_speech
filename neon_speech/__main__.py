@@ -59,7 +59,6 @@ lock = Lock()
 loop: Optional[RecognizerLoop] = None
 config: Optional[dict] = None
 service = None
-SKILLS_PENDING = list()
 
 
 def handle_record_begin():
@@ -121,43 +120,11 @@ def _emit_utterance_to_skills(message_to_emit: Message):
     """
 
     # Emit single intent request
-    _add_pending_intent(message_to_emit.context['ident'])
+    ident = message_to_emit.context['ident']
     bus.emit(message_to_emit)
-    # TODO: Await Reply here
-    # Allow time for skills to receive this event (generally about 1s, outliers @ 5-6s)
-    time.sleep(10)  # TODO: Read from config?
-    check_skill_confirmed(message_to_emit.context['ident'], message_to_emit.data)
-
-
-def _add_pending_intent(ident):
-    global SKILLS_PENDING
-    if ident in SKILLS_PENDING:
-        LOG.warning(f"Duplicate ident requested add to pending: {ident}")
-    else:
-        SKILLS_PENDING.append(ident)
-
-
-def check_skill_confirmed(ident, event):
-    global SKILLS_PENDING
-    if not ident:
-        LOG.warning(f"Tried to check no ident event={event}")
-    elif ident in SKILLS_PENDING:
-        LOG.error(f"Skills didn't handle: {ident}")
-        LOG.error(f"SKILLS_PENDING={SKILLS_PENDING}")
-        # TODO: Restart Skills Service DM
-    else:
-        LOG.debug(f"Skills handled {ident}")
-
-
-def handle_skills_confirmation(message):
-    global SKILLS_PENDING
-    ident = message.context.get("ident")
-    LOG.debug(f"Skills handled {ident}")
-    if ident not in SKILLS_PENDING:
-        LOG.warning(f"{ident} not pending! {message.data}")
-    else:
-        SKILLS_PENDING.remove(ident)
-        LOG.debug(f"SKILLS_PENDING={SKILLS_PENDING}")
+    resp = bus.wait_for_response(message_to_emit, timeout=10)
+    if not resp:
+        LOG.error(f"Skills didn't handle {ident}!")
 
 
 def handle_wake_words_state(message):
@@ -380,7 +347,6 @@ def main():
     bus.on('mycroft.stop', handle_stop)
 
     bus.on('recognizer_loop:klat_utterance', handle_input_from_klat)
-    bus.on("recognizer_loop:utterance.response", handle_skills_confirmation)
 
     bus.on("neon.wake_words_state", handle_wake_words_state)
 
