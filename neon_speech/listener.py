@@ -251,7 +251,7 @@ class AudioConsumer(Thread):
         context = context or {}
         heard_time = time.time()
         if self._audio_length(audio) < self.MIN_AUDIO_SIZE:
-            LOG.warning("Audio too short to be processed")
+            LOG.info("Audio too short to be processed")
         else:
             transcriptions = self.transcribe(audio, context)
             if transcriptions and len(transcriptions) > 0:

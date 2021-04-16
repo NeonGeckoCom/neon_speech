@@ -36,98 +36,11 @@
 # limitations under the License.
 #
 from inspect import signature
-from queue import Queue
 from threading import Event
 from ovos_utils.log import LOG
 from ovos_utils.plugins.stt import GoogleJsonSTT, StreamingSTT, StreamThread
 from neon_utils.configuration_utils import get_neon_speech_config
 from neon_speech.plugins import load_plugin
-
-
-# TODO make plugins for these and remove from here
-class GoogleStreamThread(StreamThread):
-    def __init__(self, queue, lang, client, streaming_config):
-        super().__init__(queue, lang)
-        self.client = client
-        self.streaming_config = streaming_config
-
-    def handle_audio_stream(self, audio, language):
-        req = (types.StreamingRecognizeRequest(audio_content=x) for x in audio)
-        responses = self.client.streaming_recognize(self.streaming_config, req)
-        for res in responses:
-            if res.results and res.results[0].is_final:
-                self.text = res.results[0].alternatives[0].transcript
-        return self.text
-
-
-class GoogleCloudStreamingSTT(StreamingSTT):
-    """
-        Streaming STT interface for Google Cloud Speech-To-Text
-        To use pip install google-cloud-speech and add the
-        Google API key to local mycroft.conf file. The STT config
-        will look like this:
-
-        "stt": {
-            "module": "google_cloud_streaming",
-            "google_cloud_streaming": {
-                "credential": {
-                    "json": {
-                        # Paste Google API JSON here
-        ...
-
-    """
-
-    def __init__(self):
-        global SpeechClient, types, enums, Credentials
-        from google.cloud.speech import SpeechClient, types, enums
-        from google.oauth2.service_account import Credentials
-
-        super(GoogleCloudStreamingSTT, self).__init__()
-        # override language with module specific language selection
-        self.language = self.config.get('lang') or self.lang
-
-        if not self.credential.get("json") or self.keys.get("google_cloud"):
-            self.credential["json"] = self.keys["google_cloud"]
-
-        credentials = Credentials.from_service_account_info(
-            self.credential.get('json')
-        )
-
-        self.client = SpeechClient(credentials=credentials)
-        recognition_config = types.RecognitionConfig(
-            encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
-            sample_rate_hertz=16000,
-            language_code=self.language,
-            model='command_and_search',
-            max_alternatives=1,
-        )
-        self.streaming_config = types.StreamingRecognitionConfig(
-            config=recognition_config,
-            interim_results=True,
-            single_utterance=True,
-        )
-
-    def create_streaming_thread(self):
-        self.queue = Queue()
-        return GoogleStreamThread(
-            self.queue,
-            self.language,
-            self.client,
-            self.streaming_config
-        )
-
-
-class GoogleCloudSTT(GoogleJsonSTT):
-    def __init__(self):
-        super(GoogleCloudSTT, self).__init__()
-        # override language with module specific language selection
-        self.lang = self.config.get('lang') or self.lang
-
-    def execute(self, audio, language=None):
-        self.lang = language or self.lang
-        return self.recognizer.recognize_google_cloud(audio,
-                                                      self.json_credentials,
-                                                      self.lang)
 
 
 def load_stt_plugin(module_name):
@@ -141,30 +54,35 @@ def load_stt_plugin(module_name):
 
 class STTFactory:
     CLASSES = {
-        "google_cloud": GoogleCloudSTT,
+        # "google_cloud": GoogleCloudSTT,
         # "google_cloud_streaming": GoogleCloudStreamingSTT
     }
 
     @staticmethod
     def create(config=None, results_event: Event = None):
+        if not config:
+            config = get_neon_speech_config().get("stt", {})
+        # config = config or {}
+        module = config.get("module", "chromium_stt_plug")
+
         try:
-            if not config:
-                config = get_neon_speech_config().get("stt", {})
-            # config = config or {}
-            module = config.get("module", "chromium_stt_plug")
             if module in STTFactory.CLASSES:
                 clazz = STTFactory.CLASSES[module]
             else:
                 clazz = load_stt_plugin(module)
                 LOG.info('Loaded the STT plugin {}'.format(module))
 
-            if results_event and len(signature(clazz).parameters) > 0:
-                return clazz(results_event)
-            else:
-                return clazz()
+            kwargs = {}
+            params = signature(clazz).parameters
+            if "results_event" in params:
+                kwargs["results_event"] = results_event
+            if "config" in params:
+                kwargs["config"] = config
+            return clazz(**kwargs)
         except Exception as e:
             # The STT backend failed to start. Report it and fall back to
             # default.
+            LOG.error(e)
             LOG.exception('The selected STT backend could not be loaded, '
                           'falling back to default...')
             if module != 'chromium_stt_plug':

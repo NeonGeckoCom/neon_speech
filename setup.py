@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='neon_speech',
-    version='0.1.2',
+    version='0.1.3',
     packages=['neon_speech', 'neon_speech.plugins',
               'neon_speech.plugins.modules',
               'neon_speech.plugins.modules.background',
