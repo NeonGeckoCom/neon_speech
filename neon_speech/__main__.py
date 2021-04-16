@@ -118,10 +118,8 @@ def _emit_utterance_to_skills(message_to_emit: Message):
     Emits a message containing a user utterance to skills for intent processing and checks that it is received by the
     skills module.
     """
-
     # Emit single intent request
     ident = message_to_emit.context['ident']
-    # bus.emit(message_to_emit)
     resp = bus.wait_for_response(message_to_emit, timeout=10)
     if not resp:
         LOG.error(f"Skills didn't handle {ident}!")
