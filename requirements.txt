@@ -3,5 +3,6 @@ pyaudio
 mycroft-messagebus-client>=0.8.4
 SpeechRecognition==3.8.1
 ovos_utils==0.0.8a3
-git+https://github.com/neongeckocom/neon-skill-utils
+ovos_plugin_manager
+neon_utils @ git+https://github.com/neongeckocom/neon-skill-utils
 pydub~=0.23
