@@ -352,7 +352,7 @@ def main():
     service.start()
     loop.bind(service)
 
-    loop.run()
+    create_daemon(loop.run)
 
     wait_for_exit_signal()
 
