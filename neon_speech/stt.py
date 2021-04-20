@@ -39,18 +39,19 @@ from inspect import signature
 from threading import Event
 from ovos_utils.log import LOG
 from ovos_utils.plugins.stt import GoogleJsonSTT, StreamingSTT, StreamThread
-from ovos_plugin_manager.stt import load_stt_plugin
+# from ovos_plugin_manager.stt import load_stt_plugin
+from ovos_utils.plugins import load_plugin
 from neon_utils.configuration_utils import get_neon_speech_config
 # from neon_speech.plugins import load_plugin
 
 
-# def load_stt_plugin(module_name):
-#     """Wrapper function for loading stt plugin.
-#
-#     Arguments:
-#         (str) Mycroft stt module name from config
-#     """
-#     return load_plugin('mycroft.plugin.stt', module_name)
+def load_stt_plugin(module_name):
+    """Wrapper function for loading stt plugin.
+
+    Arguments:
+        (str) Mycroft stt module name from config
+    """
+    return load_plugin('mycroft.plugin.stt', module_name)
 
 
 class STTFactory:
