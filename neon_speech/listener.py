@@ -402,7 +402,7 @@ class RecognizerLoop(EventEmitter):
                 return {}
 
         LOG.info("creating hotword engines")
-        hot_words = self.config_core.get("hotwords", adapt_neon_config())
+        hot_words = self.config_core.get("hotwords") or adapt_neon_config()
         for word in hot_words:
             data = hot_words[word]
             if word == self.wakeup_recognizer.key_phrase \

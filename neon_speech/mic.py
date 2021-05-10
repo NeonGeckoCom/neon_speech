@@ -228,7 +228,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
     def __init__(self, hot_word_engines, config=None):
         self.config_core = config or {}
         listener_config = self.config_core.get("listener") or {}
-
+        self.confirm_listening = self.config_core.get("confirm_listening", True)
         self.overflow_exc = listener_config.get('overflow_exception', False)
         self.use_wake_word = listener_config.get('wake_word_enabled', True)
         speech_recognition.Recognizer.__init__(self)
@@ -555,7 +555,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                     LOG.debug("Hot Word: " + hotword)
                     # If enabled, play a wave file with a short sound to audibly
                     # indicate hotword was detected.
-                    if sound:
+                    if self.confirm_listening and sound:  # TODO: And preference value DM
                         try:
                             audio_file = resolve_resource_file(
                                 sound, config=self.config_core)
