@@ -36,6 +36,7 @@
 # limitations under the License.
 #
 import time
+from neon_utils.configuration_utils import get_neon_device_type
 from threading import Thread, Event
 import speech_recognition as sr
 import pyaudio
@@ -53,10 +54,8 @@ from ovos_utils.log import LOG
 
 try:
     from neon_core_server.chat_user_database import KlatUserDatabase
-    from mycroft.device import device
 except Exception as e:
     LOG.error(e)
-    device = "desktop"
 
 MAX_MIC_RESTARTS = 20
 
@@ -191,7 +190,7 @@ class AudioConsumer(Thread):
         self.use_wake_words = self.config.get("wake_word_enabled", True)
 
         # TODO: Revisit after user database #24 DM
-        if device == "server":
+        if get_neon_device_type() == "server":
             self.chat_user_database = KlatUserDatabase()
         else:
             self.chat_user_database = None
@@ -250,7 +249,7 @@ class AudioConsumer(Thread):
         """
         context = context or {}
         heard_time = time.time()
-        if self._audio_length(audio) < self.MIN_AUDIO_SIZE:
+        if self._audio_length(audio) < self.MIN_AUDIO_SIZE and self.use_wake_words:
             LOG.info("Audio too short to be processed")
         else:
             transcriptions = self.transcribe(audio, context)
