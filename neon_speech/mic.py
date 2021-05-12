@@ -689,12 +689,12 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
 
             frame_data = self._record_phrase(source, sec_per_buffer, stream)
 
-            # bus.emit("recognizer_loop:record_end")
+            bus.emit("recognizer_loop:record_end")
 
         # After the phrase is complete, save the audio frame_data and return it
         audio_data = self._create_audio_data(frame_data, source)
 
-        bus.emit("recognizer_loop:record_end")
+        # bus.emit("recognizer_loop:record_end")
         if self.save_utterances:
             LOG.info("Recording utterance")
             stamp = str(datetime.datetime.now())
