@@ -100,7 +100,7 @@ class TestSpeechModule(unittest.TestCase):
         self.assertIsInstance(stt_resp.data.get("transcripts"), list)
         self.assertIn("stop", stt_resp.data.get("transcripts"))
 
-    def test_audio_input(self):
+    def test_audio_input_valid(self):
         handle_utterance = mock.Mock()
         self.bus.once("recognizer_loop:utterance", handle_utterance)
         context = {"client": "tester",
@@ -108,7 +108,7 @@ class TestSpeechModule(unittest.TestCase):
                    "user": "TestRunner"}
         stt_resp = self.bus.wait_for_response(Message("neon.audio_input", {"audio_file": os.path.join(AUDIO_FILE_PATH,
                                                                                                       "stop.wav")},
-                                                      context), context["ident"])
+                                                      context), context["ident"], 10.0)
         self.assertIsInstance(stt_resp, Message)
         for key in context:
             self.assertIn(key, stt_resp.context)
