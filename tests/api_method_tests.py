@@ -16,7 +16,7 @@
 # Specialized conversational reconveyance options from Conversation Processing Intelligence Corp.
 # US Patents 2008-2021: US7424516, US20140161250, US20140177813, US8638908, US8068604, US8553852, US10530923, US10530924
 # China Patent: CN102017585  -  Europe Patent: EU2156652  -  Patents Pending
-from time import sleep, time
+from time import sleep
 
 import os
 import sys
@@ -37,8 +37,8 @@ TEST_CONFIG = get_neon_speech_config()
 TEST_CONFIG["stt"]["module"] = "deepspeech_stream_local"
 
 
-# TODO: Test non-streaming
-class TestSpeechModule(unittest.TestCase):
+# TODO: Test non-streaming STT module DM
+class TestAPIMethods(unittest.TestCase):
     bus_thread = None
     speech_thread = None
 
@@ -56,7 +56,7 @@ class TestSpeechModule(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self) -> None:
-        super(TestSpeechModule, self).tearDownClass()
+        super(TestAPIMethods, self).tearDownClass()
         self.bus_thread.terminate()
         self.speech_thread.terminate()
 
