@@ -152,7 +152,9 @@ class STTFactory:
 
     @staticmethod
     def create(config=None, results_event: Event = None):
-        if not config:
+        if config and not config.get("module"):  # No module, try getting stt config from passed config
+            config = config.get("stt")
+        if not config:  # No config, go get it
             config = get_neon_speech_config().get("stt", {})
         # config = config or {}
         module = config.get("module", "chromium_stt_plug")

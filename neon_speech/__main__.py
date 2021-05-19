@@ -35,6 +35,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import os.path
+
 from mycroft_bus_client import MessageBusClient
 from typing import Optional
 
@@ -42,6 +44,7 @@ import time
 
 from threading import Lock
 
+from neon_speech.stt import STTFactory, StreamingSTT
 from ovos_utils import create_daemon, wait_for_exit_signal
 from ovos_utils.messagebus import Message, get_mycroft_bus
 from ovos_utils.log import LOG
@@ -58,6 +61,7 @@ bus: Optional[MessageBusClient] = None  # Mycroft messagebus connection
 lock = Lock()
 loop: Optional[RecognizerLoop] = None
 config: Optional[dict] = None
+API_STT: Optional[StreamingSTT] = None
 service = None
 
 
@@ -113,16 +117,19 @@ def handle_utterance(event):
     _emit_utterance_to_skills(Message('recognizer_loop:utterance', event, context))
 
 
-def _emit_utterance_to_skills(message_to_emit: Message):
+def _emit_utterance_to_skills(message_to_emit: Message) -> bool:
     """
     Emits a message containing a user utterance to skills for intent processing and checks that it is received by the
     skills module.
+    :return: True if skills module received input, else False
     """
     # Emit single intent request
     ident = message_to_emit.context['ident']
     resp = bus.wait_for_response(message_to_emit, timeout=10)
     if not resp:
         LOG.error(f"Skills didn't handle {ident}!")
+        return False
+    return True
 
 
 def handle_wake_words_state(message):
@@ -168,22 +175,22 @@ def handle_complete_intent_failure(message: Message):
     bus.emit(message.forward("complete.intent.failure", message.data))
 
 
-def handle_sleep(event):
+def handle_sleep(_):
     """Put the recognizer loop to sleep."""
     loop.sleep()
 
 
-def handle_wake_up(event):
+def handle_wake_up(_):
     """Wake up the the recognize loop."""
     loop.awaken()
 
 
-def handle_mic_mute(event):
+def handle_mic_mute(_):
     """Mute the listener system."""
     loop.mute()
 
 
-def handle_mic_unmute(event):
+def handle_mic_unmute(_):
     """Unmute the listener system."""
     loop.unmute()
 
@@ -206,13 +213,13 @@ def handle_mic_get_status(event):
     bus.emit(message)
 
 
-def handle_audio_start(event):
+def handle_audio_start(_):
     """Mute recognizer loop."""
     if config.get("listener").get("mute_during_output"):
         loop.mute()
 
 
-def handle_audio_end(event):
+def handle_audio_end(_):
     """Request unmute, if more sources have requested the mic to be muted
     it will remain muted.
     """
@@ -220,11 +227,12 @@ def handle_audio_end(event):
         loop.unmute()  # restore
 
 
-def handle_stop(event):
+def handle_stop(_):
     """Handler for mycroft.stop, i.e. button press."""
     loop.force_unmute()
 
 
+# TODO: Depreciate this method
 def handle_input_from_klat(message):
     """
     Handles an input from the klat server
@@ -261,7 +269,7 @@ def handle_input_from_klat(message):
             audio_context["user"] = nick
 
             if message.data.get("need_transcription"):
-                transcriptions = loop.consumer.transcribe(audio, audio_context)  # flac_data for Google Beta STT
+                transcriptions = loop.consumer.transcribe(audio)  # TODO: Lang here DM  # flac_data for Google Beta STT
                 LOG.debug(f"return stt to server: {transcriptions}")
                 bus.emit(Message("css.emit", {"event": "stt from mycroft",
                                               "data": [transcriptions[0], request_id]}))
@@ -312,14 +320,100 @@ def handle_input_from_klat(message):
     _emit_utterance_to_skills(Message('recognizer_loop:utterance', data, context))
 
 
-def main():
+def handle_get_stt(message: Message):
+    """
+    Handles a request for stt. Emits a response to the sender with stt data or error data
+    :param message: Message associated with request
+    """
+    wav_file_path = message.data.get("audio_file")
+    ident = message.context.get("ident") or "neon.get_stt.response"
+    if not wav_file_path:
+        bus.emit(message.reply(ident, data={"error": f"audio_file not specified!"}))
+
+    if not os.path.isfile(wav_file_path):
+        bus.emit(message.reply(ident, data={"error": f"{wav_file_path} Not found!"}))
+
+    try:
+        _, parser_data, transcriptions = _get_stt_from_file(wav_file_path)
+        bus.emit(message.reply(ident, data={"parser_data": parser_data, "transcripts": transcriptions}))
+    except Exception as e:
+        LOG.error(e)
+        bus.emit(message.reply(ident, data={"error": repr(e)}))
+
+
+def handle_audio_input(message):
+    """
+    Handles remote audio input to Neon.
+    :param message:
+    :return:
+    """
+    def build_context(msg: Message):
+        ctx = {'client_name': 'mycroft_listener',
+               'source': msg.context.get("source" or "speech_api"),
+               'destination': ["skills"],
+               "audio_parser_data": msg.context.get("audio_parser_data"),
+               "client": msg.context.get("client"),  # origin (local, klat, nano, mobile, api)
+               "neon_should_respond": msg.context.get("neon_should_respond"),
+               "username": msg.context.get("username"),
+               "timing": {"start": msg.data.get("time"),
+                          "transcribed": time.time()},
+               "ident": msg.context.get("ident", time.time())
+               }
+        if msg.context.get("klat_data"):
+            ctx["klat_data"] = msg.context("klat_data")
+            ctx["nick_profiles"] = msg.context.get("nick_profiles")
+        return ctx
+
+    ident = message.context.get("ident") or "neon.audio_input.response"
+    wav_file_path = message.data.get("audio_file")
+    try:
+        _, parser_data, transcriptions = _get_stt_from_file(wav_file_path)
+        message.context["audio_parser_data"] = parser_data
+        context = build_context(message)
+        data = {
+            "utterances": transcriptions,
+            "lang": message.data.get("lang", "en-us")
+        }
+        handled = _emit_utterance_to_skills(Message('recognizer_loop:utterance', data, context))
+        bus.emit(message.reply(ident, data={"parser_data": parser_data,
+                                            "transcripts": transcriptions,
+                                            "skills_recv": handled}))
+    except Exception as e:
+        LOG.error(e)
+        bus.emit(message.reply(ident, data={"error": repr(e)}))
+
+
+def _get_stt_from_file(wav_file: str) -> (AudioData, dict, list):
+    global API_STT
+    from neon_utils.file_utils import get_audio_file_stream
+    segment = AudioSegment.from_file(wav_file)
+    audio_data = AudioData(segment.raw_data, segment.frame_rate, segment.sample_width)
+    if API_STT:
+        audio_stream = get_audio_file_stream(wav_file)
+        API_STT.stream_start()
+        while True:
+            try:
+                data = audio_stream.read(1024)
+                API_STT.stream_data(data)
+            except EOFError:
+                break
+        transcriptions = API_STT.stream_stop()
+    else:
+        transcriptions = loop.consumer.transcribe(audio_data)  # TODO: Add lang here DM
+
+    audio, audio_context = loop.responsive_recognizer.audio_consumers.get_context(audio_data)
+    return audio, audio_context, transcriptions
+
+
+def main(speech_config=None):
     global bus
     global loop
     global config
     global service
+    global API_STT
     reset_sigint_handler()
     bus = get_mycroft_bus()  # Mycroft messagebus, see mycroft.messagebus
-    config = get_config()
+    config = speech_config or get_config()
 
     # Register handlers on internal RecognizerLoop emitter
     loop = RecognizerLoop(config)
@@ -344,8 +438,12 @@ def main():
     bus.on('recognizer_loop:audio_output_end', handle_audio_end)
     bus.on('mycroft.stop', handle_stop)
 
-    bus.on('recognizer_loop:klat_utterance', handle_input_from_klat)
+    # Register API Handlers
+    bus.on("neon.get_stt", handle_get_stt)
+    bus.on("neon.audio_input", handle_audio_input)
+    bus.on('recognizer_loop:klat_utterance', handle_input_from_klat)  # TODO: Depreciate and move to server module DM
 
+    # State Change Notifications
     bus.on("neon.wake_words_state", handle_wake_words_state)
 
     service = AudioParsersService(bus, config=config)
@@ -353,6 +451,12 @@ def main():
     loop.bind(service)
 
     create_daemon(loop.run)
+
+    # If stt is streaming, we need a separate instance for API use
+    while not loop.consumer or not loop.consumer.stt:
+        time.sleep(1)
+    if loop.consumer.stt.can_stream:
+        API_STT = STTFactory.create(config=speech_config, results_event=None)
 
     wait_for_exit_signal()
 
