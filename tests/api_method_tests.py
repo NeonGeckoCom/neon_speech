@@ -50,6 +50,7 @@ class TestSpeechModule(unittest.TestCase):
         self.speech_thread.start()
         self.bus = MessageBusClient()
         self.bus.run_in_thread()
+        self.bus.connected_event.wait(30)
         sleep(5)
 
     @classmethod
