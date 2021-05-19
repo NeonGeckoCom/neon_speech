@@ -43,22 +43,22 @@ class TestAPIMethods(unittest.TestCase):
     speech_thread = None
 
     @classmethod
-    def setUpClass(self) -> None:
-        self.bus_thread = Process(target=messagebus_service, daemon=False)
-        self.speech_thread = Process(target=neon_speech_main, args=(TEST_CONFIG,), daemon=False)
-        self.bus_thread.start()
-        self.speech_thread.start()
-        self.bus = MessageBusClient()
-        self.bus.run_in_thread()
-        while not self.bus.started_running:
+    def setUpClass(cls) -> None:
+        cls.bus_thread = Process(target=messagebus_service, daemon=False)
+        cls.speech_thread = Process(target=neon_speech_main, args=(TEST_CONFIG,), daemon=False)
+        cls.bus_thread.start()
+        cls.speech_thread.start()
+        cls.bus = MessageBusClient()
+        cls.bus.run_in_thread()
+        while not cls.bus.started_running:
             sleep(1)
-        sleep(15)
+        sleep(5)
 
     @classmethod
-    def tearDownClass(self) -> None:
-        super(TestAPIMethods, self).tearDownClass()
-        self.bus_thread.terminate()
-        self.speech_thread.terminate()
+    def tearDownClass(cls) -> None:
+        super(TestAPIMethods, cls).tearDownClass()
+        cls.bus_thread.terminate()
+        cls.speech_thread.terminate()
 
     def test_get_stt_no_file(self):
         context = {"client": "tester",
@@ -115,6 +115,8 @@ class TestAPIMethods(unittest.TestCase):
             self.assertEqual(context[key], stt_resp.context[key])
         self.assertIsInstance(stt_resp.data.get("skills_recv"), bool)
         handle_utterance.assert_called_once()
+
+    # TODO: Test locking DM
 
 
 if __name__ == '__main__':

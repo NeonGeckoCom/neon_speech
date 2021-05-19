@@ -261,20 +261,21 @@ def handle_input_from_klat(message):
     LOG.debug(audio_file)
     if audio_file:
         try:
-            segment = AudioSegment.from_file(audio_file)
-            audio_data = AudioData(segment.raw_data, segment.frame_rate, segment.sample_width)
-            LOG.debug("Got audio_data")
-            audio, audio_context = loop.responsive_recognizer.audio_consumers.get_context(audio_data)
-            LOG.debug(f"Got context: {audio_context}")
-            audio_context["user"] = nick
+            audio_data, audio_context, transcriptions = _get_stt_from_file(audio_file, stt_language)
+            # segment = AudioSegment.from_file(audio_file)
+            # audio_data = AudioData(segment.raw_data, segment.frame_rate, segment.sample_width)
+            # LOG.debug("Got audio_data")
+            # audio, audio_context = loop.responsive_recognizer.audio_consumers.get_context(audio_data)
+            # LOG.debug(f"Got context: {audio_context}")
+            # audio_context["user"] = nick
 
             if message.data.get("need_transcription"):
-                transcriptions = loop.consumer.transcribe(audio)  # TODO: Lang here DM  # flac_data for Google Beta STT
+                # transcriptions = loop.consumer.transcribe(audio)  # flac_data for Google Beta STT
                 LOG.debug(f"return stt to server: {transcriptions}")
                 bus.emit(Message("css.emit", {"event": "stt from mycroft",
                                               "data": [transcriptions[0], request_id]}))
-            else:
-                transcriptions = [message.data.get("shout_text")]
+            # else:
+            #     # transcriptions = [message.data.get("shout_text")]
         except Exception as x:
             LOG.error(x)
             transcriptions = [message.data.get("shout_text")]
@@ -326,6 +327,7 @@ def handle_get_stt(message: Message):
     :param message: Message associated with request
     """
     wav_file_path = message.data.get("audio_file")
+    lang = message.data.get("lang")
     ident = message.context.get("ident") or "neon.get_stt.response"
     if not wav_file_path:
         bus.emit(message.reply(ident, data={"error": f"audio_file not specified!"}))
@@ -334,7 +336,7 @@ def handle_get_stt(message: Message):
         bus.emit(message.reply(ident, data={"error": f"{wav_file_path} Not found!"}))
 
     try:
-        _, parser_data, transcriptions = _get_stt_from_file(wav_file_path)
+        _, parser_data, transcriptions = _get_stt_from_file(wav_file_path, lang)
         bus.emit(message.reply(ident, data={"parser_data": parser_data, "transcripts": transcriptions}))
     except Exception as e:
         LOG.error(e)
@@ -366,8 +368,9 @@ def handle_audio_input(message):
 
     ident = message.context.get("ident") or "neon.audio_input.response"
     wav_file_path = message.data.get("audio_file")
+    lang = message.data.get("lang")
     try:
-        _, parser_data, transcriptions = _get_stt_from_file(wav_file_path)
+        _, parser_data, transcriptions = _get_stt_from_file(wav_file_path, lang)
         message.context["audio_parser_data"] = parser_data
         context = build_context(message)
         data = {
@@ -383,23 +386,31 @@ def handle_audio_input(message):
         bus.emit(message.reply(ident, data={"error": repr(e)}))
 
 
-def _get_stt_from_file(wav_file: str) -> (AudioData, dict, list):
+def _get_stt_from_file(wav_file: str, lang: str = "en-us") -> (AudioData, dict, list):
+    """
+    Performs STT and audio processing on the specified wav_file
+    :param wav_file: wav audio file to process
+    :param lang: language of passed audio
+    :return: (AudioData of object, extracted context, transcriptions)
+    """
     global API_STT
+    global lock
     from neon_utils.file_utils import get_audio_file_stream
     segment = AudioSegment.from_file(wav_file)
     audio_data = AudioData(segment.raw_data, segment.frame_rate, segment.sample_width)
     if API_STT:
         audio_stream = get_audio_file_stream(wav_file)
-        API_STT.stream_start()
-        while True:
-            try:
-                data = audio_stream.read(1024)
-                API_STT.stream_data(data)
-            except EOFError:
-                break
-        transcriptions = API_STT.stream_stop()
+        with lock:
+            API_STT.stream_start(lang)
+            while True:
+                try:
+                    data = audio_stream.read(1024)
+                    API_STT.stream_data(data)
+                except EOFError:
+                    break
+            transcriptions = API_STT.stream_stop()
     else:
-        transcriptions = loop.consumer.transcribe(audio_data)  # TODO: Add lang here DM
+        transcriptions = loop.consumer.transcribe(audio_data, lang)  # TODO: Add lang here DM
 
     audio, audio_context = loop.responsive_recognizer.audio_consumers.get_context(audio_data)
     return audio, audio_context, transcriptions
