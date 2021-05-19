@@ -52,7 +52,7 @@ class TestSpeechModule(unittest.TestCase):
         self.bus.run_in_thread()
         while not self.bus.started_running:
             sleep(1)
-        sleep(5)
+        sleep(15)
 
     @classmethod
     def tearDownClass(self) -> None:
