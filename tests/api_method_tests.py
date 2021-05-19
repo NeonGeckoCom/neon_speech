@@ -52,7 +52,7 @@ class TestSpeechModule(unittest.TestCase):
         self.bus.run_in_thread()
         while not self.bus.started_running:
             sleep(1)
-        sleep(30)
+        sleep(5)
 
     @classmethod
     def tearDownClass(self) -> None:
@@ -104,7 +104,7 @@ class TestSpeechModule(unittest.TestCase):
         handle_utterance = mock.Mock()
         self.bus.once("recognizer_loop:utterance", handle_utterance)
         context = {"client": "tester",
-                   "ident": time(),
+                   "ident": "11111",
                    "user": "TestRunner"}
         stt_resp = self.bus.wait_for_response(Message("neon.audio_input", {"audio_file": os.path.join(AUDIO_FILE_PATH,
                                                                                                       "stop.wav")},
