@@ -108,12 +108,12 @@ class TestSpeechModule(unittest.TestCase):
                    "user": "TestRunner"}
         stt_resp = self.bus.wait_for_response(Message("neon.audio_input", {"audio_file": os.path.join(AUDIO_FILE_PATH,
                                                                                                       "stop.wav")},
-                                                      context), context["ident"], 15.0)
+                                                      context), context["ident"], 30.0)
         self.assertIsInstance(stt_resp, Message)
         for key in context:
             self.assertIn(key, stt_resp.context)
             self.assertEqual(context[key], stt_resp.context[key])
-        self.assertTrue(stt_resp.data.get("skills_recv"))
+        self.assertIsInstance(stt_resp.data.get("skills_recv"), bool)
         handle_utterance.assert_called_once()
 
 
