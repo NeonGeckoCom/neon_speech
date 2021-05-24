@@ -16,6 +16,7 @@
 # Specialized conversational reconveyance options from Conversation Processing Intelligence Corp.
 # US Patents 2008-2021: US7424516, US20140161250, US20140177813, US8638908, US8068604, US8553852, US10530923, US10530924
 # China Patent: CN102017585  -  Europe Patent: EU2156652  -  Patents Pending
+from typing import Optional
 
 import json
 from abc import abstractmethod, ABCMeta, ABC
@@ -106,9 +107,14 @@ class StreamingSTT(STT):
         self.queue = None
         self.results_event = results_event
 
-    def stream_start(self, language=None):
+    def stream_start(self, language: Optional[str] = None):
+        """
+        Start a new streaming STT request
+        :param language: Optional BCP-47 language code of request (i.e. "en-US")
+        """
         self.stream_stop()
         self.queue = Queue()
+        self.lang = language or self.lang
         self.stream = self.create_streaming_thread()
         self.stream.start()
 
@@ -152,7 +158,9 @@ class STTFactory:
 
     @staticmethod
     def create(config=None, results_event: Event = None):
-        if not config:
+        if config and not config.get("module"):  # No module, try getting stt config from passed config
+            config = config.get("stt")
+        if not config:  # No config, go get it
             config = get_neon_speech_config().get("stt", {})
         # config = config or {}
         module = config.get("module", "chromium_stt_plug")

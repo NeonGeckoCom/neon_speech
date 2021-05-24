@@ -36,6 +36,8 @@
 # limitations under the License.
 #
 import time
+from typing import Optional
+
 from neon_utils.configuration_utils import get_neon_device_type
 from threading import Thread, Event
 import speech_recognition as sr
@@ -252,7 +254,7 @@ class AudioConsumer(Thread):
         if self._audio_length(audio) < self.MIN_AUDIO_SIZE and self.use_wake_words:
             LOG.info("Audio too short to be processed")
         else:
-            transcriptions = self.transcribe(audio, context)
+            transcriptions = self.transcribe(audio)
             if transcriptions and len(transcriptions) > 0:
                 ident = str(time.time()) + str(hash(transcriptions[0]))
                 transcribed_time = time.time()
@@ -269,11 +271,11 @@ class AudioConsumer(Thread):
                 }
                 self.emitter.emit("recognizer_loop:utterance", payload)
 
-    def transcribe(self, audio: sr.AudioData, context: dict):
+    def transcribe(self, audio: sr.AudioData, lang: str = None):
         """
         Accepts input audio and returns a list of transcript candidates (in original input language)
         :param audio: (AudioData) input audio object
-        :param context: audio parser context returned
+        :param lang: Language of input audio
         :return: list of transcription candidates
         """
         def send_unknown_intent():
@@ -282,25 +284,15 @@ class AudioConsumer(Thread):
                 self.emitter.emit('recognizer_loop:speech.recognition.unknown')
 
         try:
-            user = context.get("user")
-            if self.chat_user_database:
-                # self.server_listener.get_nick_profiles(flac_filename)
-                self.chat_user_database.update_profile_for_nick(user)
-                chat_user = self.chat_user_database.get_profile(user)
-                stt_language = chat_user["speech"].get('stt_language', 'en')
-                alt_langs = chat_user["speech"].get("alt_languages", ['en', 'es'])
-                LOG.debug(stt_language)
-            else:
-                # TODO: Populate from config DM
-                stt_language = None
-                alt_langs = None
+            lang = lang or self.stt.lang
+
             if isinstance(audio, sr.AudioData):
                 LOG.debug(len(audio.frame_data))
             else:
                 LOG.warning(audio)
 
             # Invoke the STT engine on the audio clip
-            transcripts = self.stt.execute(audio)  # This is the STT return here (incl streams)
+            transcripts = self.stt.execute(audio, lang)  # This is the STT return here (incl streams)
             LOG.debug(transcripts)
             if isinstance(transcripts, str):
                 transcripts = [transcripts.strip()]
@@ -309,17 +301,16 @@ class AudioConsumer(Thread):
                 send_unknown_intent()
                 LOG.info('no words were transcribed')
             return transcripts
-        except sr.RequestError as e:
-            LOG.error("Could not request Speech Recognition {0}".format(e))
-        except ConnectionError as e:
-            LOG.error("Connection Error: {0}".format(e))
-
+        except sr.RequestError as x:
+            LOG.error(f"Could not request Speech Recognition {x}")
+        except ConnectionError as x:
+            LOG.error(f"Connection Error: {x}")
             self.emitter.emit("recognizer_loop:no_internet")
-        except RequestException as e:
-            LOG.error(e.__class__.__name__ + ': ' + str(e))
-        except Exception as e:
+        except RequestException as x:
+            LOG.error(x)
+        except Exception as x:
             send_unknown_intent()
-            LOG.error(e)
+            LOG.error(x)
             LOG.error("Speech Recognition could not understand audio")
             return None
 
@@ -349,14 +340,14 @@ class RecognizerLoop(EventEmitter):
 
     def __init__(self, config=None):
         super(RecognizerLoop, self).__init__()
-        self.producer = None
-        self.consumer = None
+        self.producer: Optional[AudioProducer] = None
+        self.consumer: Optional[AudioConsumer] = None
 
         self.mute_calls = 0
         self.config_core = config or get_config()
         # self._config_hash = recognizer_conf_hash(config)
-        self.lang = config.get('lang', "en-us")
-        self.config = config.get('listener', {})
+        self.lang = self.config_core.get('lang', "en-us")
+        self.config = self.config_core.get('listener', {})
         rate = self.config.get('sample_rate', 16000)
 
         device_index = self.config.get('device_index')
@@ -430,7 +421,7 @@ class RecognizerLoop(EventEmitter):
         """Start consumer and producer threads."""
         self.state.running = True
         results_event = Event()
-        stt = STTFactory.create(results_event = results_event)
+        stt = STTFactory.create(config=self.config_core, results_event=results_event)
         queue = Queue()
         stream_handler = None
         if stt.can_stream:
