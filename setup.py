@@ -38,7 +38,7 @@ setup(
     license='NeonAI License v1.0',
     install_requires=get_requirements("requirements.txt"),
     extras_require={
-        "test": get_requirements("test_requirements")
+        "test": get_requirements("test_requirements.txt")
     },
     author='Neongecko',
     author_email='developers@neon.ai',
