@@ -1,4 +1,23 @@
 from setuptools import setup
+from os import getenv, path
+
+
+def get_requirements(requirements_filename: str):
+    requirements_file = path.join(path.abspath(path.dirname(__file__)), "requirements", requirements_filename)
+    with open(requirements_file, 'r', encoding='utf-8') as r:
+        requirements = r.readlines()
+    requirements = [r.strip() for r in requirements if r.strip() and not r.strip().startswith("#")]
+
+    for i in range(0, len(requirements)):
+        r = requirements[i]
+        if "@" in r:
+            parts = [p.lower() if p.strip().startswith("git+http") else p for p in r.split('@')]
+            r = "@".join(parts)
+        if getenv("GITHUB_TOKEN"):
+            if "github.com" in r:
+                requirements[i] = r.replace("github.com", f"{getenv('GITHUB_TOKEN')}@github.com")
+    return requirements
+
 
 with open("README.md", "r") as f:
     long_description = f.read()
@@ -11,9 +30,6 @@ with open("./version.py", "r", encoding="utf-8") as v:
             else:
                 version = line.split("'")[1]
 
-with open("./requirements.txt", "r", encoding="utf-8") as r:
-    requirements = r.readlines()
-
 setup(
     name='neon_speech',
     version=version,
@@ -23,7 +39,10 @@ setup(
               'neon_speech.plugins.modules.audio_normalizer'],
     url='https://github.com/NeonGeckoCom/neon_speech',
     license='NeonAI License v1.0',
-    install_requires=requirements,
+    install_requires=get_requirements("requirements.txt"),
+    extras_require={
+        "test": get_requirements("test_requirements.txt")
+    },
     author='Neongecko',
     author_email='developers@neon.ai',
     description=long_description,
