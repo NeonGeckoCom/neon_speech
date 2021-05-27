@@ -52,7 +52,7 @@ class TestAPIMethods(unittest.TestCase):
         cls.bus.run_in_thread()
         while not cls.bus.started_running:
             sleep(1)
-        sleep(15)
+        sleep(45)  # TODO: Actually do something to check for speech started? DM
 
     @classmethod
     def tearDownClass(cls) -> None:
