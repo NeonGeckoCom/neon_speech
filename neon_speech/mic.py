@@ -562,7 +562,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                             audio_file = resolve_resource_file(
                                 sound, config=self.config_core)
                             if not audio_file:  # TODO: This is really just patching resolve_resource_file
-                                audio_file = join(dirname(dirname(__file__)), "neon_core", sound)
+                                audio_file = join(dirname(dirname(__file__)), "neon_core", "res", sound)
                             LOG.info(audio_file)
                             source.mute()
                             if audio_file.endswith(".wav"):
