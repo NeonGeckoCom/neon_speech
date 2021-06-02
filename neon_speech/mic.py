@@ -555,10 +555,13 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                     LOG.debug("Hot Word: " + hotword)
                     # If enabled, play a wave file with a short sound to audibly
                     # indicate hotword was detected.
-                    if self.confirm_listening and sound:  # TODO: And preference value DM
+                    if self.confirm_listening and sound:
                         try:
+                            LOG.info(sound)
+                            LOG.info(self.config_core)
                             audio_file = resolve_resource_file(
                                 sound, config=self.config_core)
+                            LOG.info(audio_file)
                             source.mute()
                             if audio_file.endswith(".wav"):
                                 play_wav(audio_file).wait()
@@ -568,7 +571,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                                 play_ogg(audio_file).wait()
                             source.unmute()
                         except Exception as e:
-                            LOG.warning(e)
+                            LOG.error(e)
 
                     # Hot Word succeeded
                     payload = {
