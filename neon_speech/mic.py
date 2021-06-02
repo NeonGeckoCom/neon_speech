@@ -189,6 +189,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
             stream.stream_start()
 
         phrase_complete = False
+
         while num_chunks < max_chunks and not phrase_complete:
             if ww_frames:
                 chunk = ww_frames.popleft()
@@ -402,6 +403,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                     # indicate hotword was detected.
                     if self.confirm_listening and sound:  # TODO: And preference value DM
                         try:
+                            # TODO: Figure this out DM
                             audio_file = resolve_resource_file(
                                 sound, config=self.config_core)
                             source.mute()
