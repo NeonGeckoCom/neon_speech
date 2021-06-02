@@ -1,58 +1,36 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
+# All trademark and other rights reserved by their respective owners
+# Copyright 2008-2021 Neongecko.com Inc.
 #
-# Copyright 2008-2021 Neongecko.com Inc. | All Rights Reserved
-#
-# Notice of License - Duplicating this Notice of License near the start of any file containing
-# a derivative of this software is a condition of license for this software.
-# Friendly Licensing:
-# No charge, open source royalty free use of the Neon AI software source and object is offered for
-# educational users, noncommercial enthusiasts, Public Benefit Corporations (and LLCs) and
-# Social Purpose Corporations (and LLCs). Developers can contact developers@neon.ai
-# For commercial licensing, distribution of derivative works or redistribution please contact licenses@neon.ai
-# Distributed on an "AS IS” basis without warranties or conditions of any kind, either express or implied.
-# Trademarks of Neongecko: Neon AI(TM), Neon Assist (TM), Neon Communicator(TM), Klat(TM)
-# Authors: Guy Daniels, Daniel McKnight, Regina Bloomstine, Elon Gasper, Richard Leeds
-#
-# Specialized conversational reconveyance options from Conversation Processing Intelligence Corp.
-# US Patents 2008-2021: US7424516, US20140161250, US20140177813, US8638908, US8068604, US8553852, US10530923, US10530924
-# China Patent: CN102017585  -  Europe Patent: EU2156652  -  Patents Pending
-#
-# This software is an enhanced derivation of the Mycroft Project which is licensed under the
-# Apache software Foundation software license 2.0 https://www.apache.org/licenses/LICENSE-2.0
-# Changes Copyright 2008-2021 Neongecko.com Inc. | All Rights Reserved
-#
-# Copyright 2017 Mycroft AI Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-import audioop
-from time import sleep, time as get_time
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
+# following conditions are met:
+# 1. Redistributions of source code must retain the above copyright notice, this list of conditions
+#    and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions
+#    and the following disclaimer in the documentation and/or other materials provided with the distribution.
+# 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote
+#    products derived from this software without specific prior written permission.
 
-from collections import deque
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+# USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 import datetime
 import os
-from os.path import isdir, join
 import pyaudio
 import speech_recognition
-from hashlib import md5
-from speech_recognition import (
-    Microphone,
-    AudioSource,
-    AudioData
-)
-from tempfile import gettempdir
-from threading import Lock
+import audioop
 
+from time import sleep, time as get_time
+from collections import deque
+from os.path import isdir, join
+from hashlib import md5
+from speech_recognition import AudioSource, AudioData
+from tempfile import gettempdir
 from ovos_utils import resolve_resource_file
 from ovos_utils.signal import check_for_signal, get_ipc_directory
 from ovos_utils.sound import play_ogg, play_wav, play_mp3
@@ -60,149 +38,16 @@ from ovos_utils.log import LOG
 from ovos_utils.lang.phonemes import get_phonemes
 
 from mycroft.audio import is_speaking
-
-
-class MutableStream:
-    def __init__(self, wrapped_stream, format, muted=False):
-        assert wrapped_stream is not None
-        self.wrapped_stream = wrapped_stream
-
-        self.muted = muted
-        if muted:
-            self.mute()
-
-        self.SAMPLE_WIDTH = pyaudio.get_sample_size(format)
-        self.muted_buffer = b''.join([b'\x00' * self.SAMPLE_WIDTH])
-        self.read_lock = Lock()
-
-    def mute(self):
-        """Stop the stream and set the muted flag."""
-        with self.read_lock:
-            self.muted = True
-            self.wrapped_stream.stop_stream()
-
-    def unmute(self):
-        """Start the stream and clear the muted flag."""
-        with self.read_lock:
-            self.muted = False
-            self.wrapped_stream.start_stream()
-
-    def read(self, size, of_exc=False):
-        """Read data from stream.
-
-        Arguments:
-            size (int): Number of bytes to read
-            of_exc (bool): flag determining if the audio producer thread
-                           should throw IOError at overflows.
-
-        Returns:
-            (bytes) Data read from device
-        """
-        frames = deque()
-        remaining = size
-        with self.read_lock:
-            while remaining > 0:
-                # If muted during read return empty buffer. This ensures no
-                # reads occur while the stream is stopped
-                if self.muted:
-                    return self.muted_buffer
-
-                to_read = min(self.wrapped_stream.get_read_available(),
-                              remaining)
-                if to_read <= 0:
-                    sleep(.01)
-                    continue
-                result = self.wrapped_stream.read(to_read,
-                                                  exception_on_overflow=of_exc)
-                frames.append(result)
-                remaining -= to_read
-
-        input_latency = self.wrapped_stream.get_input_latency()
-        if input_latency > 0.2:
-            LOG.warning("High input latency: %f" % input_latency)
-        audio = b"".join(list(frames))
-        return audio
-
-    def close(self):
-        self.wrapped_stream.close()
-        self.wrapped_stream = None
-
-    def is_stopped(self):
-        try:
-            return self.wrapped_stream.is_stopped()
-        except Exception as e:
-            LOG.error(repr(e))
-            return True  # Assume the stream has been closed and thusly stopped
-
-    def stop_stream(self):
-        return self.wrapped_stream.stop_stream()
-
-
-class MutableMicrophone(Microphone):
-    def __init__(self, device_index=None, sample_rate=16000, chunk_size=1024,
-                 mute=False):
-        Microphone.__init__(self, device_index=device_index,
-                            sample_rate=sample_rate, chunk_size=chunk_size)
-        self.muted = False
-        if mute:
-            self.mute()
-
-    def __enter__(self):
-        return self._start()
-
-    def _start(self):
-        """Open the selected device and setup the stream."""
-        assert self.stream is None, \
-            "This audio source is already inside a context manager"
-        self.audio = pyaudio.PyAudio()
-        self.stream = MutableStream(self.audio.open(
-            input_device_index=self.device_index, channels=1,
-            format=self.format, rate=self.SAMPLE_RATE,
-            frames_per_buffer=self.CHUNK,
-            input=True,  # stream is an input stream
-        ), self.format, self.muted)
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        return self._stop()
-
-    def _stop(self):
-        """Stop and close an open stream."""
-        try:
-            if not self.stream.is_stopped():
-                self.stream.stop_stream()
-            self.stream.close()
-        except Exception:
-            LOG.exception('Failed to stop mic input stream')
-            # Let's pretend nothing is wrong...
-
-        self.stream = None
-        self.audio.terminate()
-
-    def restart(self):
-        """Shutdown input device and restart."""
-        self._stop()
-        self._start()
-
-    def mute(self):
-        self.muted = True
-        if self.stream:
-            self.stream.mute()
-
-    def unmute(self):
-        self.muted = False
-        if self.stream:
-            self.stream.unmute()
-
-    def is_muted(self):
-        return self.muted
-
-
-def get_silence(num_bytes):
-    return b'\0' * num_bytes
+from mycroft.client.speech.mic import MutableStream, MutableMicrophone, get_silence
 
 
 class ResponsiveRecognizer(speech_recognition.Recognizer):
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
     # Padding of silence when feeding to pocketsphinx
     SILENCE_SEC = 0.01
 
