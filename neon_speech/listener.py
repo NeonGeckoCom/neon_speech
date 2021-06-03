@@ -235,8 +235,9 @@ class AudioConsumer(Thread):
         """
         context = context or {}
         heard_time = time.time()
-        if self._audio_length(audio) < self.MIN_AUDIO_SIZE and self.use_wake_words:
-            LOG.info("Audio too short to be processed")
+        if self._audio_length(audio) < self.MIN_AUDIO_SIZE and not self.stt.can_stream:
+            LOG.info(f"Audio too short to be processed ({self._audio_length(audio)})")
+            self.emitter.unmute()
         else:
             transcriptions = self.transcribe(audio)
             if transcriptions and len(transcriptions) > 0:

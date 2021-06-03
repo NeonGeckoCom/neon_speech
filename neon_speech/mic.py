@@ -21,6 +21,7 @@
 
 import datetime
 import os
+from os.path import isdir, join, dirname
 import pyaudio
 import speech_recognition
 import audioop
@@ -401,11 +402,15 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                     LOG.debug("Hot Word: " + hotword)
                     # If enabled, play a wave file with a short sound to audibly
                     # indicate hotword was detected.
-                    if self.confirm_listening and sound:  # TODO: And preference value DM
+                    if self.confirm_listening and sound:
                         try:
-                            # TODO: Figure this out DM
+                            LOG.info(sound)
+                            LOG.info(self.config_core)
                             audio_file = resolve_resource_file(
                                 sound, config=self.config_core)
+                            if not audio_file:  # TODO: This is really just patching resolve_resource_file
+                                audio_file = join(dirname(dirname(__file__)), "neon_core", "res", sound)
+                            LOG.info(audio_file)
                             source.mute()
                             if audio_file.endswith(".wav"):
                                 play_wav(audio_file).wait()
@@ -415,7 +420,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                                 play_ogg(audio_file).wait()
                             source.unmute()
                         except Exception as e:
-                            LOG.warning(e)
+                            LOG.error(e)
 
                     # Hot Word succeeded
                     payload = {
