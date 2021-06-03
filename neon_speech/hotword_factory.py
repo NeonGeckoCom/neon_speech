@@ -1,66 +1,27 @@
-# Copyright 2017 Mycroft AI Inc.
+# NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
+# All trademark and other rights reserved by their respective owners
+# Copyright 2008-2021 Neongecko.com Inc.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-from time import sleep
-from threading import Event, Thread
+# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
+# following conditions are met:
+# 1. Redistributions of source code must retain the above copyright notice, this list of conditions
+#    and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions
+#    and the following disclaimer in the documentation and/or other materials provided with the distribution.
+# 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote
+#    products derived from this software without specific prior written permission.
 
-from neon_speech.plugins import load_plugin
-from ovos_utils.log import LOG
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
+# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+# USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-INIT_TIMEOUT = 120  # In seconds
+from threading import Event
 
-
-class TriggerReload(Exception):
-    pass
-
-
-class NoModelAvailable(Exception):
-    pass
-
-
-class HotWordEngine:
-    def __init__(self, key_phrase="hey mycroft", config=None, lang="en-us"):
-        self.key_phrase = str(key_phrase).lower()
-        # rough estimate 1 phoneme per 2 chars
-        self.num_phonemes = len(key_phrase) / 2 + 1
-        self.config = config or {}
-        self.listener_config = config  # Referenced by pocketsphinx plugin
-        self.module = self.config.get("module")
-        self.lang = str(self.config.get("lang", lang)).lower()
-
-    def found_wake_word(self, frame_data):
-        return False
-
-    def update(self, chunk):
-        pass
-
-    def stop(self):
-        """ Perform any actions needed to shut down the hot word engine.
-
-            This may include things such as unload loaded data or shutdown
-            external processess.
-        """
-        pass
-
-
-def load_wake_word_plugin(module_name):
-    """Wrapper function for loading wake word plugin.
-
-    Arguments:
-        (str) Mycroft wake word module name from config
-    """
-    return load_plugin('mycroft.plugin.wake_word', module_name)
+from mycroft.client.speech.hotword_factory import *
 
 
 class HotWordFactory:
