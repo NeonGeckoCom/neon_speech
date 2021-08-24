@@ -45,7 +45,7 @@ class TestAPIMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.bus_thread = Process(target=messagebus_service, daemon=False)
-        cls.speech_thread = Process(target=neon_speech_main, args=(TEST_CONFIG,), daemon=False)
+        cls.speech_thread = Process(target=neon_speech_main, kwargs={"speech_config": TEST_CONFIG}, daemon=False)
         cls.bus_thread.start()
         cls.speech_thread.start()
         cls.bus = MessageBusClient()

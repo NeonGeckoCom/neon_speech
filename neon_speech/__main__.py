@@ -381,13 +381,14 @@ def main(ready_hook=on_ready, error_hook=on_error, stopping_hook=on_stopping,
         connect_bus_events(bus)
         create_daemon(bus.run_forever)
         create_daemon(loop.run)
-        status.set_started()
 
         # If stt is streaming, we need a separate instance for API use
         while not loop.consumer or not loop.consumer.stt:
             time.sleep(1)
         if loop.consumer.stt.can_stream:
-            API_STT = STTFactory.create(config=speech_config, results_event=None)
+            API_STT = STTFactory.create(config=config, results_event=None)
+
+        status.set_started()
     except Exception as e:
         status.set_error(e)
     else:
