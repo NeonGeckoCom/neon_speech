@@ -31,7 +31,8 @@ from ovos_utils.log import LOG
 from ovos_utils.json_helper import merge_dict
 from pydub import AudioSegment
 from speech_recognition import AudioData
-
+from mycroft.util.process_utils import StatusCallbackMap, ProcessStatus
+from mycroft.lock import Lock as PIDLock
 from neon_speech.stt import STTFactory, StreamingSTT
 from neon_speech.plugins import AudioParsersService
 from neon_speech.listener import RecognizerLoop
@@ -212,95 +213,6 @@ def handle_stop(_):
     loop.force_unmute()
 
 
-# TODO: Depreciate this method
-def handle_input_from_klat(message):
-    """
-    Handles an input from the klat server
-    """
-    audio_file = message.data.get("raw_audio")
-    nick = message.data.get("user")
-    loop.consumer.chat_user_database.update_profile_for_nick(nick)
-    chat_user = loop.consumer.chat_user_database.get_profile(nick)
-    stt_language = chat_user["speech"].get('stt_language', 'en')
-    request_id = f"sid-{message.data.get('sid')}-{message.data.get('socketIdEncrypted')}-" \
-                 f"{nick}-{message.data.get('nano')}"  # Formerly known as 'flac_filename'
-
-    try:
-        nick_profiles = loop.consumer.chat_user_database.get_nick_profiles(message.data.get("cid_nicks"))
-    except TypeError:
-        nick_profiles = loop.consumer.chat_user_database.get_nick_profiles([nick])
-    mobile = message.data.get("nano") == "mobile"
-    if mobile:
-        client = "mobile"
-    elif message.data.get("nano") == "true":
-        client = "nano"
-    else:
-        client = "klat"
-    ident = time.time()
-
-    LOG.debug(audio_file)
-    if audio_file:
-        try:
-            audio_data, audio_context, transcriptions = _get_stt_from_file(audio_file, stt_language)
-            # segment = AudioSegment.from_file(audio_file)
-            # audio_data = AudioData(segment.raw_data, segment.frame_rate, segment.sample_width)
-            # LOG.debug("Got audio_data")
-            # audio, audio_context = loop.responsive_recognizer.audio_consumers.get_context(audio_data)
-            # LOG.debug(f"Got context: {audio_context}")
-            # audio_context["user"] = nick
-
-            if message.data.get("need_transcription"):
-                # transcriptions = loop.consumer.transcribe(audio)  # flac_data for Google Beta STT
-                LOG.debug(f"return stt to server: {transcriptions}")
-                bus.emit(Message("css.emit", {"event": "stt from mycroft",
-                                              "data": [transcriptions[0], request_id]}))
-            # else:
-            #     # transcriptions = [message.data.get("shout_text")]
-        except Exception as x:
-            LOG.error(x)
-            transcriptions = [message.data.get("shout_text")]
-            audio_context = None
-    elif message.data.get("need_transcription"):
-        LOG.error(f"Need transcription but no audio passed! {message}")
-        return
-    else:
-        audio_context = None
-        transcriptions = [message.data.get("shout_text")]
-
-    if not transcriptions:
-        LOG.warning(f"Null Transcription!")
-        return
-
-    data = {
-        "utterances": transcriptions,
-        "lang": stt_language
-    }
-    context = {'client_name': 'mycroft_listener',
-               'source': 'klat',
-               'destination': ["skills"],
-               "audio_parser_data": audio_context,
-               "raw_audio": message.data.get("raw_audio"),
-               "mobile": mobile,  # TODO: Depreciate and use client DM
-               "client": client,  # origin (local, klat, nano, mobile, api)
-               "klat_data": {"cid": message.data.get("cid"),
-                             "sid": message.data.get("sid"),
-                             "title": message.data.get("title"),
-                             "nano": message.data.get("nano"),
-                             "request_id": request_id},
-               # "flac_filename": flac_filename,
-               "neon_should_respond": False,
-               "username": nick,
-               "nick_profiles": nick_profiles,
-               "cc_data": {"speak_execute": transcriptions[0],
-                           "raw_utterance": transcriptions[0]},  # TODO: Are these necessary anymore? Shouldn't be DM
-               "timing": {"start": message.data.get("time"),
-                          "transcribed": time.time()},
-               "ident": ident
-               }
-    LOG.debug("Send server request to skills for processing")
-    _emit_utterance_to_skills(Message('recognizer_loop:utterance', data, context))
-
-
 def handle_get_stt(message: Message):
     """
     Handles a request for stt. Emits a response to the sender with stt data or error data
@@ -396,60 +308,92 @@ def _get_stt_from_file(wav_file: str, lang: str = "en-us") -> (AudioData, dict, 
     return audio, audio_context, transcriptions
 
 
-def main(speech_config=None):
+def on_ready():
+    LOG.info('Speech client is ready.')
+
+
+def on_stopping():
+    LOG.info('Speech service is shutting down...')
+
+
+def on_error(e='Unknown'):
+    LOG.error('Audio service failed to launch ({}).'.format(repr(e)))
+
+
+def connect_loop_events(_loop):
+    # Register handlers on internal RecognizerLoop emitter
+    _loop.on('recognizer_loop:utterance', handle_utterance)
+    _loop.on('recognizer_loop:speech.recognition.unknown', handle_unknown)
+    _loop.on('speak', handle_speak)
+    _loop.on('recognizer_loop:record_begin', handle_record_begin)
+    _loop.on('recognizer_loop:awoken', handle_awoken)
+    _loop.on('recognizer_loop:hotword', handle_hotword)
+    _loop.on('recognizer_loop:record_end', handle_record_end)
+    _loop.on('recognizer_loop:no_internet', handle_no_internet)
+
+
+def connect_bus_events(_bus):
+    # Register handlers for events on main Mycroft messagebus
+    _bus.on('complete_intent_failure', handle_complete_intent_failure)
+    _bus.on('recognizer_loop:sleep', handle_sleep)
+    _bus.on('recognizer_loop:wake_up', handle_wake_up)
+    _bus.on('mycroft.mic.mute', handle_mic_mute)
+    _bus.on('mycroft.mic.unmute', handle_mic_unmute)
+    _bus.on('mycroft.mic.get_status', handle_mic_get_status)
+    _bus.on('mycroft.mic.listen', handle_mic_listen)
+    _bus.on('recognizer_loop:audio_output_start', handle_audio_start)
+    _bus.on('recognizer_loop:audio_output_end', handle_audio_end)
+    _bus.on('mycroft.stop', handle_stop)
+
+    # Register API Handlers
+    _bus.on("neon.get_stt", handle_get_stt)
+    _bus.on("neon.audio_input", handle_audio_input)
+
+    # State Change Notifications
+    _bus.on("neon.wake_words_state", handle_wake_words_state)
+
+
+def main(ready_hook=on_ready, error_hook=on_error, stopping_hook=on_stopping,
+         watchdog=lambda: None, speech_config=None):
     global bus
     global loop
     global config
     global service
     global API_STT
-    reset_sigint_handler()
-    bus = get_mycroft_bus()  # Mycroft messagebus, see mycroft.messagebus
-    config = speech_config or get_config()
 
-    # Register handlers on internal RecognizerLoop emitter
-    loop = RecognizerLoop(config)
-    loop.on('recognizer_loop:utterance', handle_utterance)
-    loop.on('recognizer_loop:speech.recognition.unknown', handle_unknown)
-    loop.on('speak', handle_speak)
-    loop.on('recognizer_loop:record_begin', handle_record_begin)
-    loop.on('recognizer_loop:awoken', handle_awoken)
-    loop.on('recognizer_loop:hotword', handle_hotword)
-    loop.on('recognizer_loop:record_end', handle_record_end)
-    loop.on('recognizer_loop:no_internet', handle_no_internet)
+    try:
+        reset_sigint_handler()
+        PIDLock("voice")
 
-    # Register handlers for events on main Mycroft messagebus
-    bus.on('complete_intent_failure', handle_complete_intent_failure)
-    bus.on('recognizer_loop:sleep', handle_sleep)
-    bus.on('recognizer_loop:wake_up', handle_wake_up)
-    bus.on('mycroft.mic.mute', handle_mic_mute)
-    bus.on('mycroft.mic.unmute', handle_mic_unmute)
-    bus.on('mycroft.mic.get_status', handle_mic_get_status)
-    bus.on('mycroft.mic.listen', handle_mic_listen)
-    bus.on('recognizer_loop:audio_output_start', handle_audio_start)
-    bus.on('recognizer_loop:audio_output_end', handle_audio_end)
-    bus.on('mycroft.stop', handle_stop)
+        bus = get_mycroft_bus()  # Mycroft messagebus, see mycroft.messagebus
+        config = speech_config or get_config()
 
-    # Register API Handlers
-    bus.on("neon.get_stt", handle_get_stt)
-    bus.on("neon.audio_input", handle_audio_input)
-    bus.on('recognizer_loop:klat_utterance', handle_input_from_klat)  # TODO: Depreciate and move to server module DM
+        callbacks = StatusCallbackMap(on_ready=ready_hook, on_error=error_hook,
+                                      on_stopping=stopping_hook)
+        status = ProcessStatus('speech', bus, callbacks)
 
-    # State Change Notifications
-    bus.on("neon.wake_words_state", handle_wake_words_state)
+        loop = RecognizerLoop(config)
+        service = AudioParsersService(bus, config=config)
+        service.start()
+        loop.bind(service)
 
-    service = AudioParsersService(bus, config=config)
-    service.start()
-    loop.bind(service)
+        connect_loop_events(loop)
+        connect_bus_events(bus)
+        create_daemon(bus.run_forever)
+        create_daemon(loop.run)
+        status.set_started()
 
-    create_daemon(loop.run)
-
-    # If stt is streaming, we need a separate instance for API use
-    while not loop.consumer or not loop.consumer.stt:
-        time.sleep(1)
-    if loop.consumer.stt.can_stream:
-        API_STT = STTFactory.create(config=speech_config, results_event=None)
-
-    wait_for_exit_signal()
+        # If stt is streaming, we need a separate instance for API use
+        while not loop.consumer or not loop.consumer.stt:
+            time.sleep(1)
+        if loop.consumer.stt.can_stream:
+            API_STT = STTFactory.create(config=speech_config, results_event=None)
+    except Exception as e:
+        error_hook(repr(e))
+    else:
+        status.set_ready()
+        wait_for_exit_signal()
+        status.set_stopping()
 
 
 if __name__ == "__main__":
