@@ -27,6 +27,7 @@ from multiprocessing import Process
 
 from mycroft_bus_client import MessageBusClient, Message
 from neon_utils.configuration_utils import get_neon_speech_config
+from neon_utils.logger import LOG
 from mycroft.messagebus.service.__main__ import main as messagebus_service
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
@@ -63,6 +64,12 @@ class TestAPIMethods(unittest.TestCase):
         super(TestAPIMethods, cls).tearDownClass()
         cls.bus_thread.terminate()
         cls.speech_thread.terminate()
+        if cls.bus_thread.is_alive():
+            LOG.error("Bus still alive")
+            cls.bus_thread.kill()
+        if cls.speech_thread.is_alive():
+            LOG.error("Bus still alive")
+            cls.speech_thread.kill()
 
     def test_get_stt_no_file(self):
         context = {"client": "tester",
