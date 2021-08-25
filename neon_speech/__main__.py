@@ -223,6 +223,7 @@ def handle_get_stt(message: Message):
     ident = message.context.get("ident") or "neon.get_stt.response"
     if not wav_file_path:
         bus.emit(message.reply(ident, data={"error": f"audio_file not specified!"}))
+        return
 
     if not os.path.isfile(wav_file_path):
         bus.emit(message.reply(ident, data={"error": f"{wav_file_path} Not found!"}))
