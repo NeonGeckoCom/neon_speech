@@ -64,12 +64,15 @@ class TestAPIMethods(unittest.TestCase):
         super(TestAPIMethods, cls).tearDownClass()
         cls.bus_thread.terminate()
         cls.speech_thread.terminate()
-        if cls.bus_thread.is_alive():
-            LOG.error("Bus still alive")
-            cls.bus_thread.kill()
-        if cls.speech_thread.is_alive():
-            LOG.error("Bus still alive")
-            cls.speech_thread.kill()
+        try:
+            if cls.bus_thread.is_alive():
+                LOG.error("Bus still alive")
+                cls.bus_thread.kill()
+            if cls.speech_thread.is_alive():
+                LOG.error("Bus still alive")
+                cls.speech_thread.kill()
+        except Exception as e:
+            LOG.error(e)
 
     def test_get_stt_no_file(self):
         context = {"client": "tester",
