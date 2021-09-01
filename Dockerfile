@@ -30,6 +30,8 @@ RUN useradd -ms /bin/bash neon && \
     usermod -a -G audio neon
 USER neon
 
+RUN mkdir -p /home/neon/.config/neon && \
+    mkdir -p /home/neon/.local/share/neon && \
 COPY docker_overlay/asoundrc /home/neon/.asoundrc
 COPY docker_overlay/mycroft.conf /home/neon/.mycroft/mycroft.conf
 

@@ -24,7 +24,6 @@ docker run -d \
 --network=host \
 -v ~/.local/share/neon:/home/neon/.local/share/neon:rw \
 -v ~/.config/neon:/home/neon/.config/neon:rw \
--v ~/.local/share/tts:/home/neon/.local/share/tts \
 -v ~/.config/pulse/cookie:/home/mycroft/.config/pulse/cookie:ro \ 
 -v ${XDG_RUNTIME_DIR}/pulse:${XDG_RUNTIME_DIR}/pulse:ro \
 -v /tmp:/tmp:rw \
