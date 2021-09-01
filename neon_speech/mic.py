@@ -21,11 +21,12 @@
 
 import datetime
 import os
-from os.path import isdir, join, dirname
 import pyaudio
 import speech_recognition
 import audioop
 
+from typing import Optional
+from os.path import dirname
 from time import sleep, time as get_time
 from collections import deque
 from os.path import isdir, join
@@ -39,7 +40,7 @@ from ovos_utils.log import LOG
 from ovos_utils.lang.phonemes import get_phonemes
 
 from mycroft.audio import is_speaking
-from mycroft.client.speech.mic import MutableStream, MutableMicrophone, get_silence
+from mycroft.client.speech.mic import MutableMicrophone, get_silence
 
 
 class ResponsiveRecognizer(speech_recognition.Recognizer):
@@ -141,7 +142,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
         a buffer of RECORDING_TIMEOUT duration.
 
         Args:
-            source (AudioSource):  Source producing the audio chunks
+            source (MutableMicrophone):  Source producing the audio chunks
             sec_per_buffer (float):  Fractional number of seconds in each chunk
             stream (AudioStreamHandler): Stream target that will receive chunks
                                          of the utterance audio while it is
@@ -252,13 +253,11 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
         return int(sec * source.SAMPLE_RATE) * source.SAMPLE_WIDTH
 
     def _skip_wake_word(self):
-        """Check if told programatically to skip the wake word
-
+        """
+        Check if told programmatically to skip the wake word.
         For example when we are in a dialog with the user.
         """
-        # TODO: remove startListening signal check in 20.02
-        if check_for_signal('startListening',
-                            config=self.config_core) or self._listen_triggered:
+        if self._listen_triggered:
             return True
 
         # Pressing the Mark 1 button can start recording (unless
@@ -304,13 +303,14 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
     def trigger_listen(self):
         """Externally trigger listening."""
         LOG.debug('Listen triggered from external source.')
+        self._play_confirmation_sound()
         self._listen_triggered = True
 
     def _wait_until_wake_word(self, source, sec_per_buffer, bus):
         """Listen continuously on source until a wake word is spoken
 
         Args:
-            source (AudioSource):  Source producing the audio chunks
+            source (MutableMicrophone):  Source producing the audio chunks
             sec_per_buffer (float):  Fractional number of seconds in each chunk
         """
         num_silent_bytes = int(self.SILENCE_SEC * source.SAMPLE_RATE *
@@ -402,25 +402,8 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                     LOG.debug("Hot Word: " + hotword)
                     # If enabled, play a wave file with a short sound to audibly
                     # indicate hotword was detected.
-                    if self.confirm_listening and sound:
-                        try:
-                            LOG.info(sound)
-                            LOG.info(self.config_core)
-                            audio_file = resolve_resource_file(
-                                sound, config=self.config_core)
-                            if not audio_file:  # TODO: This is really just patching resolve_resource_file
-                                audio_file = join(dirname(dirname(__file__)), "neon_core", "res", sound)
-                            LOG.info(audio_file)
-                            source.mute()
-                            if audio_file.endswith(".wav"):
-                                play_wav(audio_file).wait()
-                            elif audio_file.endswith(".mp3"):
-                                play_mp3(audio_file).wait()
-                            elif audio_file.endswith(".ogg"):
-                                play_ogg(audio_file).wait()
-                            source.unmute()
-                        except Exception as e:
-                            LOG.error(e)
+                    if sound:
+                        self._play_confirmation_sound(sound, source)
 
                     # Hot Word succeeded
                     payload = {
@@ -438,7 +421,6 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                         }
                         bus.emit("recognizer_loop:utterance", payload)
 
-                    audio = None
                     mtd = self._compile_metadata(hotword)
                     if self.save_wake_words:
                         # Save wake word locally
@@ -461,6 +443,34 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                     # reset bytearray to store wake word audio in, else many
                     # serial detections
                     byte_data = silence
+
+    def _play_confirmation_sound(self, snd_file: Optional[str] = None, source: Optional[MutableMicrophone] = None):
+        """
+        Plays the specified snd_file (or default start_listening.wav). Optionally mutes the passed source.
+        :param snd_file: Resource name of sound file to play (i.e. snd/start_listening.wav)
+        :param source: Optional MutableMicrophone to mute while playing back audio
+        """
+        if self.confirm_listening:
+            try:
+                snd_file = snd_file or "snd/start_listening.wav"
+                LOG.info(snd_file)
+                LOG.info(self.config_core)
+                audio_file = resolve_resource_file(snd_file, config=self.config_core)
+                if not audio_file:  # TODO: This is really just patching resolve_resource_file
+                    audio_file = join(dirname(dirname(__file__)), "neon_core", "res", snd_file)
+                LOG.info(audio_file)
+                if source:
+                    source.mute()
+                if audio_file.endswith(".wav"):
+                    play_wav(audio_file).wait()
+                elif audio_file.endswith(".mp3"):
+                    play_mp3(audio_file).wait()
+                elif audio_file.endswith(".ogg"):
+                    play_ogg(audio_file).wait()
+                if source:
+                    source.unmute()
+            except Exception as e:
+                LOG.error(e)
 
     def check_for_hotwords(self, byte_data, source):
         # check hot word
@@ -491,7 +501,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
         afterwards.
 
         Args:
-            source (AudioSource):  Source producing the audio chunks
+            source (MutableMicrophone):  Source producing the audio chunks
             bus (EventEmitter): Emitter for notifications of when recording
                                     begins and ends.
             stream (AudioStreamHandler): Stream target that will receive chunks
