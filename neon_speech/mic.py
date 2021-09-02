@@ -26,7 +26,6 @@ import speech_recognition
 import audioop
 
 from typing import Optional
-from os.path import dirname
 from time import sleep, time as get_time
 from collections import deque
 from os.path import isdir, join
@@ -38,6 +37,7 @@ from ovos_utils.signal import check_for_signal, get_ipc_directory
 from ovos_utils.sound import play_ogg, play_wav, play_mp3
 from ovos_utils.log import LOG
 from ovos_utils.lang.phonemes import get_phonemes
+from neon_utils.file_utils import resolve_neon_resource_file
 
 from mycroft.audio import is_speaking
 from mycroft.client.speech.mic import MutableMicrophone, get_silence
@@ -455,8 +455,11 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
                 snd_file = snd_file or "snd/start_listening.wav"
                 LOG.debug(snd_file)
                 audio_file = resolve_resource_file(snd_file, config=self.config_core)
-                if not audio_file:  # TODO: This is really just patching resolve_resource_file
-                    audio_file = join(dirname(dirname(__file__)), "neon_core", "res", snd_file)
+                if not audio_file:
+                    audio_file = resolve_neon_resource_file(snd_file)
+                if not audio_file:
+                    LOG.error(f"Could not resolve {snd_file}")
+                    return
                 LOG.info(audio_file)
                 if source:
                     source.mute()
