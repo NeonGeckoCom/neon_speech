@@ -238,25 +238,17 @@ def handle_get_stt(message: Message):
 
 def handle_audio_input(message):
     """
-    Handles remote audio input to Neon.
-    :param message:
-    :return:
+    Handler for `neon.audio_input`. Handles remote audio input to Neon and replies with confirmation
+    :param message: Message associated with request
     """
     def build_context(msg: Message):
-        ctx = {'client_name': 'mycroft_listener',
-               'source': msg.context.get("source" or "speech_api"),
-               'destination': ["skills"],
-               "audio_parser_data": msg.context.get("audio_parser_data"),
-               "client": msg.context.get("client"),  # origin (local, klat, nano, mobile, api)
-               "neon_should_respond": msg.context.get("neon_should_respond"),
-               "username": msg.context.get("username"),
-               "timing": {"start": msg.data.get("time"),
-                          "transcribed": time.time()},
-               "ident": msg.context.get("ident", time.time())
-               }
-        if msg.context.get("klat_data"):
-            ctx["klat_data"] = msg.context("klat_data")
-            ctx["nick_profiles"] = msg.context.get("nick_profiles")
+        ctx: dict = message.context
+        defaults = {'client_name': 'mycroft_listener',
+                    'client': 'api',
+                    'source': 'speech_api',
+                    'ident': time.time()}
+        ctx = {**defaults, **ctx, 'destination': ['skills'], 'timing': {'start': msg.data.get('time'),
+                                                                        'transcribed': time.time()}}
         return ctx
 
     ident = message.context.get("ident") or "neon.audio_input.response"
