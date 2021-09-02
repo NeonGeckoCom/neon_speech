@@ -453,8 +453,7 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
         if self.confirm_listening:
             try:
                 snd_file = snd_file or "snd/start_listening.wav"
-                LOG.info(snd_file)
-                LOG.info(self.config_core)
+                LOG.debug(snd_file)
                 audio_file = resolve_resource_file(snd_file, config=self.config_core)
                 if not audio_file:  # TODO: This is really just patching resolve_resource_file
                     audio_file = join(dirname(dirname(__file__)), "neon_core", "res", snd_file)
