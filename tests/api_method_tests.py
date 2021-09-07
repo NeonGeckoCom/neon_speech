@@ -27,6 +27,7 @@ from multiprocessing import Process
 
 from mycroft_bus_client import MessageBusClient, Message
 from neon_utils.configuration_utils import get_neon_speech_config
+from neon_utils.logger import LOG
 from mycroft.messagebus.service.__main__ import main as messagebus_service
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
@@ -45,20 +46,33 @@ class TestAPIMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.bus_thread = Process(target=messagebus_service, daemon=False)
-        cls.speech_thread = Process(target=neon_speech_main, args=(TEST_CONFIG,), daemon=False)
+        cls.speech_thread = Process(target=neon_speech_main, kwargs={"speech_config": TEST_CONFIG}, daemon=False)
         cls.bus_thread.start()
         cls.speech_thread.start()
         cls.bus = MessageBusClient()
         cls.bus.run_in_thread()
         while not cls.bus.started_running:
             sleep(1)
-        sleep(45)  # TODO: Actually do something to check for speech started? DM
+        alive = False
+        while not alive:
+            message = cls.bus.wait_for_response(Message("mycroft.speech.is_ready"))
+            if message:
+                alive = message.data.get("status")
 
     @classmethod
     def tearDownClass(cls) -> None:
         super(TestAPIMethods, cls).tearDownClass()
         cls.bus_thread.terminate()
         cls.speech_thread.terminate()
+        try:
+            if cls.bus_thread.is_alive():
+                LOG.error("Bus still alive")
+                cls.bus_thread.kill()
+            if cls.speech_thread.is_alive():
+                LOG.error("Bus still alive")
+                cls.speech_thread.kill()
+        except Exception as e:
+            LOG.error(e)
 
     def test_get_stt_no_file(self):
         context = {"client": "tester",
