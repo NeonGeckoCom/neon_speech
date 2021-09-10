@@ -1,5 +1,8 @@
 FROM python:3.8
 
+LABEL vendor=neon.ai \
+    ai.neon.name="neon-speech"
+
 ADD . /neon_speech
 WORKDIR /neon_speech
 

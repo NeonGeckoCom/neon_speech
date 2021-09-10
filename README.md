@@ -19,12 +19,12 @@ which is currently only supported by Neon STT plugins.
 The included `Dockerfile` may be used to build a docker container for the neon_audio module. The below command may be used
 to start the container.
 
-```
+```shell
 docker run -d \
 --network=host \
 -v ~/.local/share/neon:/home/neon/.local/share/neon:rw \
 -v ~/.config/neon:/home/neon/.config/neon:rw \
--v ~/.config/pulse/cookie:/home/mycroft/.config/pulse/cookie:ro \ 
+-v ~/.config/pulse/cookie:/home/neon/.config/pulse/cookie:ro \ 
 -v ${XDG_RUNTIME_DIR}/pulse:${XDG_RUNTIME_DIR}/pulse:ro \
 -v /tmp:/tmp:rw \
 --device=/dev/snd:/dev/snd \
@@ -32,3 +32,6 @@ docker run -d \
 -e PULSE_COOKIE=/home/neon/.config/pulse/cookie \
 neon_speech
 ```
+
+>*Note:* The above example assumes Docker data is stored in the standard user locations `~/.local/share` and `~/.config`.
+> You may want to change these values to some other path to separate container and host system data.
