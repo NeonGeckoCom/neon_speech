@@ -227,6 +227,7 @@ def handle_get_stt(message: Message):
 
     if not os.path.isfile(wav_file_path):
         bus.emit(message.reply(ident, data={"error": f"{wav_file_path} Not found!"}))
+        return
 
     try:
         _, parser_data, transcriptions = _get_stt_from_file(wav_file_path, lang)
