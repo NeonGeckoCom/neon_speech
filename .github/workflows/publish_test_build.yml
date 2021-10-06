@@ -13,7 +13,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build_and_publish:
+  build_and_publish_pypi:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
