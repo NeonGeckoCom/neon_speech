@@ -31,7 +31,7 @@ from glob import glob
 from speech_recognition import AudioData
 from threading import Thread, Event
 from ovos_utils.json_helper import merge_dict
-from ovos_utils.log import LOG
+from neon_utils import LOG
 
 from neon_speech.utils import get_config
 

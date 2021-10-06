@@ -31,7 +31,7 @@ from queue import Queue, Empty
 from pyee import EventEmitter
 from requests import RequestException
 from requests.exceptions import ConnectionError
-from ovos_utils.log import LOG
+from neon_utils import LOG
 
 from neon_speech.hotword_factory import HotWordFactory
 from neon_speech.mic import MutableMicrophone, ResponsiveRecognizer
