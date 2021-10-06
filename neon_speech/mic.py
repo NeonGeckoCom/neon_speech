@@ -37,7 +37,7 @@ from tempfile import gettempdir
 from ovos_utils import resolve_resource_file
 from ovos_utils.signal import check_for_signal, get_ipc_directory
 from ovos_utils.sound import play_ogg, play_wav, play_mp3
-from ovos_utils.log import LOG
+from neon_utils import LOG
 from ovos_utils.lang.phonemes import get_phonemes
 from neon_utils.file_utils import resolve_neon_resource_file
 
