@@ -27,7 +27,7 @@ from typing import Optional
 from threading import Lock
 from ovos_utils import create_daemon, wait_for_exit_signal
 from ovos_utils.messagebus import Message, get_mycroft_bus
-from ovos_utils.log import LOG
+from neon_utils import LOG
 from ovos_utils.json_helper import merge_dict
 from pydub import AudioSegment
 from speech_recognition import AudioData
