@@ -119,7 +119,8 @@ class TestAPIMethods(unittest.TestCase):
         self.bus.once("recognizer_loop:utterance", handle_utterance)
         context = {"client": "tester",
                    "ident": "11111",
-                   "user": "TestRunner"}
+                   "user": "TestRunner",
+                   "extra_data": "something"}
         stt_resp = self.bus.wait_for_response(Message("neon.audio_input", {"audio_file": os.path.join(AUDIO_FILE_PATH,
                                                                                                       "stop.wav")},
                                                       context), context["ident"], 30.0)
@@ -128,7 +129,15 @@ class TestAPIMethods(unittest.TestCase):
             self.assertIn(key, stt_resp.context)
             self.assertEqual(context[key], stt_resp.context[key])
         self.assertIsInstance(stt_resp.data.get("skills_recv"), bool)
+
         handle_utterance.assert_called_once()
+        message = handle_utterance.call_args[0][0]
+        self.assertIsInstance(message, Message)
+        for key in context:
+            self.assertIn(key, message.context)
+            self.assertEqual(context[key], message.context[key])
+        self.assertIsInstance(message.context["timing"], dict)
+        self.assertEqual(message.context["destination"], ["skills"])
 
     # TODO: Test locking DM
 
