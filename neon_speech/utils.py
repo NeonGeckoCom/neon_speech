@@ -23,7 +23,7 @@ import re
 import pyaudio
 import signal as sig
 
-from ovos_utils.log import LOG
+from neon_utils import LOG
 from ovos_utils.configuration import read_mycroft_config
 from neon_utils.configuration_utils import get_neon_speech_config
 

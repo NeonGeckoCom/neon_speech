@@ -30,12 +30,14 @@ from time import sleep, time as get_time
 from collections import deque
 from os.path import isdir, join
 from hashlib import md5
+
+from phoneme_guesser import FailedToGuessPhonemes
 from speech_recognition import AudioSource, AudioData
 from tempfile import gettempdir
 from ovos_utils import resolve_resource_file
 from ovos_utils.signal import check_for_signal, get_ipc_directory
 from ovos_utils.sound import play_ogg, play_wav, play_mp3
-from ovos_utils.log import LOG
+from neon_utils import LOG
 from ovos_utils.lang.phonemes import get_phonemes
 from neon_utils.file_utils import resolve_neon_resource_file
 
@@ -102,10 +104,12 @@ class ResponsiveRecognizer(speech_recognition.Recognizer):
         num_phonemes = 10
         # use number of phonemes from longest hotword
         for w in self.hotword_engines:
-            phon = get_phonemes(w).split(" ")
-            if len(phon) > num_phonemes:
-                num_phonemes = len(phon)
-
+            try:
+                phon = get_phonemes(w).split(" ")
+                if len(phon) > num_phonemes:
+                    num_phonemes = len(phon)
+            except FailedToGuessPhonemes:
+                LOG.error(f"Failed to guess phonemes for: {w}")
         len_phoneme = listener_config.get('phoneme_duration', 120) / 1000.0
         self.TEST_WW_SEC = num_phonemes * len_phoneme
         self.SAVED_WW_SEC = max(3, self.TEST_WW_SEC)

@@ -27,7 +27,7 @@ from inspect import signature
 from multiprocessing import Queue
 from threading import Event
 from time import time
-from ovos_utils.log import LOG
+from neon_utils import LOG
 from ovos_plugin_manager.templates.stt import STT as _STT, StreamThread
 from ovos_plugin_manager.stt import load_stt_plugin
 from mycroft_bus_client import MessageBusClient, Message
