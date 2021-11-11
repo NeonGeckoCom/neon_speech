@@ -1,5 +1,5 @@
-neon-stt-plugin-deepspeech_stream_local @ git+https://github.com/NeonGeckoCom/neon-stt-plugin-deepspeech_stream_local
-holmesv
+neon-stt-plugin-deepspeech_stream_local
+ovos-core~=0.0.1
 pytest
 tornado
 mock~=4.0
