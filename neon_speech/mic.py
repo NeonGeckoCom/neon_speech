@@ -22,16 +22,20 @@ from mycroft.audio import is_speaking
 from mycroft.client.speech.mic import get_silence, ResponsiveRecognizer
 from neon_utils import LOG
 from speech_recognition import AudioSource, AudioData
+from mycroft.configuration import Configuration
 
 
 class NeonResponsiveRecognizer(ResponsiveRecognizer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.use_wake_word = True
+        self.config_core = Configuration.get()
+        listener_config = self.config_core.get("listener") or {}
+        self.use_wake_word = listener_config.get('wake_word_enabled', True)
         self.in_speech = False
         self.audio_consumers = None
-        self.recording_timeout = 10
+        # TODO auto generated yaml returned a string '10.0,'
+        self.recording_timeout = int(self.recording_timeout)
 
     def bind(self, audio_consumers):
         self.audio_consumers = audio_consumers
@@ -92,10 +96,10 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
             lang = self.loop.stt.lang
             self.loop.emit("recognizer_loop:record_begin")
             self.loop.stt.stream.stream_start()
-            self.loop.stt.stream.has_result.clear()
             frame_data = get_silence(source.SAMPLE_WIDTH)
             LOG.debug("Stream starting!")
-            while not self.loop.stt.stream.has_result.is_set():
+            # event set in OPM
+            while not self.loop.stt.transcript_ready.is_set():
                 # Pass audio until STT tells us to stop (this is called again immediately)
                 chunk = self.record_sound_chunk(source)
                 if not is_speaking():
