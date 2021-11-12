@@ -20,9 +20,11 @@
 # USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from mycroft.audio import is_speaking
 from mycroft.client.speech.mic import get_silence, ResponsiveRecognizer
+from mycroft.configuration import Configuration
 from neon_utils import LOG
 from speech_recognition import AudioSource, AudioData
-from mycroft.configuration import Configuration
+
+from neon_speech.transformers import AudioTransformersService
 
 
 class NeonResponsiveRecognizer(ResponsiveRecognizer):
@@ -33,12 +35,10 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
         listener_config = self.config_core.get("listener") or {}
         self.use_wake_word = listener_config.get('wake_word_enabled', True)
         self.in_speech = False
-        self.audio_consumers = None
+        self.audio_consumers = AudioTransformersService(self.loop.bus, config=self.config_core)
         # TODO auto generated yaml returned a string '10.0,'
-        self.recording_timeout = int(self.recording_timeout)
-
-    def bind(self, audio_consumers):
-        self.audio_consumers = audio_consumers
+        if not isinstance(self.recording_timeout, int):
+            self.recording_timeout = 10.0
 
     def record_sound_chunk(self, source):
         chunk = super().record_sound_chunk(source)
