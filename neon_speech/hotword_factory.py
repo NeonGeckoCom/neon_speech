@@ -20,7 +20,7 @@
 # USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from neon_utils.logger import LOG
-from mycroft.client.speech.hotword_factory import HotWordFactory
+from ovos_plugin_manager.wakewords import OVOSWakeWordFactory as HotWordFactory
 
 LOG.warning("This reference is deprecated; import directly from: "
-            "mycroft.client.speech.hotword_factory")
+            "ovos_plugin_manager.wakewords")

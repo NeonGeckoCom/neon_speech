@@ -34,7 +34,7 @@ from speech_recognition import AudioData
 from mycroft.util.process_utils import StatusCallbackMap, ProcessStatus
 from mycroft.lock import Lock as PIDLock
 from neon_speech.stt import STTFactory, StreamingSTT
-from neon_speech.plugins import AudioParsersService
+from neon_speech.audio_modules import AudioTransformersService
 from neon_speech.listener import RecognizerLoop
 from neon_speech.utils import reset_sigint_handler, get_config
 from neon_utils.configuration_utils import get_neon_user_config, NGIConfig
@@ -391,10 +391,8 @@ def main(ready_hook=on_ready, error_hook=on_error, stopping_hook=on_stopping,
 
     try:
         loop = RecognizerLoop(config)
-        service = AudioParsersService(bus, config=config)
-        service.start()
+        service = AudioTransformersService(bus, config=config)
         loop.bind(service)
-
         connect_loop_events(loop)
         connect_bus_events(bus)
         create_daemon(loop.run)
