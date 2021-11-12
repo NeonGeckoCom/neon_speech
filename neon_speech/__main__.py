@@ -35,7 +35,6 @@ from ovos_utils.json_helper import merge_dict
 from pydub import AudioSegment
 from speech_recognition import AudioData
 
-from neon_speech.audio_modules import AudioTransformersService
 from neon_speech.listener import NeonRecognizerLoop
 from neon_speech.stt import STTFactory, StreamingSTT
 from neon_speech.utils import reset_sigint_handler, get_config
@@ -395,8 +394,6 @@ def main(ready_hook=on_ready, error_hook=on_error, stopping_hook=on_stopping,
 
     try:
         loop = NeonRecognizerLoop(bus)
-        transformers = AudioTransformersService(bus, config=config)
-        loop.bind_transformers(transformers)
         connect_loop_events(loop)
         connect_bus_events(bus)
         # create_daemon(bus.run_forever)
