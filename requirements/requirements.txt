@@ -7,3 +7,11 @@ ovos_plugin_manager~=0.0.1
 neon-utils>=0.7.2
 pydub~=0.23
 phoneme_guesser~=0.1
+
+ovos-tts-plugin-mimic~=0.2.3
+ovos-tts-plugin-mimic2~=0.1.2
+ovos-tts-plugin-google-tx~=0.0.2
+ovos-ww-plugin-pocketsphinx~=0.1.1
+ovos-ww-plugin-precise-lite~=0.1.0
+ovos-ww-plugin-precise~=0.1.0
+ovos-stt-plugin-chromium~=0.1.1

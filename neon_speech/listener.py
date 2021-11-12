@@ -31,7 +31,7 @@ from queue import Queue, Empty
 from pyee import EventEmitter
 from requests import RequestException
 from requests.exceptions import ConnectionError
-from neon_utils import LOG
+from mycroft.util.log import LOG
 
 from neon_speech.hotword_factory import HotWordFactory
 from neon_speech.mic import MutableMicrophone, ResponsiveRecognizer
@@ -110,7 +110,7 @@ class AudioProducer(Thread):
                     if audio is not None:
                         audio, context = \
                             self.recognizer.audio_consumers.get_context(audio)
-                        if not context["audio_filename"]:
+                        if not context.get("audio_filename"):
                             context["audio_filename"] = filename
                         self.queue.put((AUDIO_DATA, audio, context))
                     else:
@@ -346,12 +346,15 @@ class RecognizerLoop(EventEmitter):
                                             mute=self.mute_calls > 0)
 
         # TODO - localization
-        self.wakeup_recognizer = self.create_wakeup_recognizer()
-        self.hotword_engines = {}
-        self.create_hotword_engines()
-        self.responsive_recognizer = ResponsiveRecognizer(
-            self.hotword_engines, config)
-        self.state = RecognizerLoopState()
+        try:
+            self.wakeup_recognizer = self.create_wakeup_recognizer()
+            self.hotword_engines = {}
+            self.create_hotword_engines()
+            self.responsive_recognizer = ResponsiveRecognizer(
+                self.hotword_engines, config)
+            self.state = RecognizerLoopState()
+        except Exception as e:
+            LOG.exception(e)
 
     def bind(self, parsers_service):
         self.responsive_recognizer.bind(parsers_service)

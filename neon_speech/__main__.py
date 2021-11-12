@@ -27,14 +27,14 @@ from typing import Optional
 from threading import Lock
 from ovos_utils import create_daemon, wait_for_exit_signal
 from ovos_utils.messagebus import Message, get_mycroft_bus
-from neon_utils import LOG
+from mycroft.util.log import LOG
 from ovos_utils.json_helper import merge_dict
 from pydub import AudioSegment
 from speech_recognition import AudioData
 from mycroft.util.process_utils import StatusCallbackMap, ProcessStatus
 from mycroft.lock import Lock as PIDLock
 from neon_speech.stt import STTFactory, StreamingSTT
-from neon_speech.plugins import AudioParsersService
+from neon_speech.audio_modules import AudioTransformersService
 from neon_speech.listener import RecognizerLoop
 from neon_speech.utils import reset_sigint_handler, get_config
 
@@ -366,13 +366,11 @@ def main(ready_hook=on_ready, error_hook=on_error, stopping_hook=on_stopping,
 
     try:
         loop = RecognizerLoop(config)
-        service = AudioParsersService(bus, config=config)
-        service.start()
+        service = AudioTransformersService(bus, config=config)
         loop.bind(service)
-
         connect_loop_events(loop)
         connect_bus_events(bus)
-        create_daemon(bus.run_forever)
+        #create_daemon(bus.run_forever)
         create_daemon(loop.run)
 
         # If stt is streaming, we need a separate instance for API use
