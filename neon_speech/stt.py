@@ -18,54 +18,35 @@
 # SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 # USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-import json
-
-from typing import Optional
-from abc import abstractmethod, ABCMeta, ABC
 from inspect import signature
-from multiprocessing import Queue
 from threading import Event
-from time import time
+
+from mycroft_bus_client import MessageBusClient
 from neon_utils import LOG
-from ovos_plugin_manager.templates.stt import STT as _STT, StreamThread, StreamingSTT
-from ovos_plugin_manager.stt import load_stt_plugin, OVOSSTTFactory, get_stt_config
-from mycroft_bus_client import MessageBusClient, Message
-from speech_recognition import Recognizer
 from neon_utils.configuration_utils import get_neon_speech_config
+from ovos_plugin_manager.stt import OVOSSTTFactory
+from ovos_plugin_manager.templates.stt import STT, StreamingSTT
 
 
-class STT(_STT, ABC):
-    """ STT Base class, all  STT backends derives from this one. """
-    def __init__(self, config=None):
-        config_core = config or get_neon_speech_config()
+class WrappedSTT:
+    def __new__(cls, clazz, *args, **kwargs):
+        # read config
+        config_core = kwargs.get("config") or get_neon_speech_config()
         metric_upload = config_core.get("metric_upload", False)
+        # build STT
+        for k in list(kwargs.keys()):
+            if k not in signature(clazz).parameters:
+                kwargs.pop(k)
+        stt = clazz(*args, **kwargs)
+        # add missing properties
         if metric_upload:
             server_addr = config_core.get("remote_server", "64.34.186.120")
-            self.server_bus = MessageBusClient(host=server_addr)
-            self.server_bus.run_in_thread()
+            stt.server_bus = MessageBusClient(host=server_addr)
+            stt.server_bus.run_in_thread()
         else:
-            self.server_bus = None
-        self.lang = str(self.init_language(config_core))
-        config_stt = config_core.get("stt", {})
-        module = config_stt.get("module", "")
-        if "google_cloud" in module:
-            module = "google_cloud"
-        self.config = config_stt.get(module, {})
-        self.credential = self.config.get("credential", {})
-        self.recognizer = Recognizer()
-        self.can_stream = False
-        self.keys = config_core.get("keys", {})
-
-    @staticmethod
-    def init_language(config_core):
-        lang = config_core.get("lang", "en-US")
-        langs = lang.split("-")
-        if len(langs) == 2:
-            return langs[0].lower() + "-" + langs[1].upper()
-        return lang
-
-
+            stt.server_bus = None
+        stt.keys = config_core.get("keys", {})
+        return stt
 
 
 class STTFactory(OVOSSTTFactory):
@@ -79,17 +60,9 @@ class STTFactory(OVOSSTTFactory):
         clazz = OVOSSTTFactory.get_class(config)
         if not clazz:
             LOG.warning("plugin not found, falling back to Chromium STT")
-            config["module"] = "google" # TODO configurable fallback plugin
+            config["module"] = "google"  # TODO configurable fallback plugin
             clazz = OVOSSTTFactory.get_class(config)
             if not clazz:
                 raise ValueError("fallback plugin not found")
 
-        # TODO wrapped STT class like in TTS
-        kwargs = {}
-        params = signature(clazz).parameters
-        if "results_event" in params:
-            kwargs["results_event"] = results_event
-        if "config" in params:
-            kwargs["config"] = config
-        return clazz(**kwargs)
-
+        return WrappedSTT(clazz, config=config)
