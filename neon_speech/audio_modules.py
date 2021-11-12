@@ -21,6 +21,7 @@ from ovos_utils.json_helper import merge_dict
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 # USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from ovos_utils.log import LOG
+from speech_recognition import AudioData
 
 
 class AudioTransformersService:
@@ -52,33 +53,35 @@ class AudioTransformersService:
     def shutdown(self):
         pass
 
+    def get_chunk(self, audio_data):
+        if isinstance(audio_data, AudioData):
+            chunk = audio_data.frame_data
+            for module in self.modules:
+                module.sample_rate = audio_data.sample_rate
+                module.sample_width = audio_data.sample_width
+        else:
+            chunk = audio_data
+        return chunk
+
     def feed_audio(self, audio_data):
-        chunk = audio_data.frame_data
+        chunk = self.get_chunk(audio_data)
         for module in self.modules:
-            module.sample_rate = audio_data.sample_rate
-            module.sample_width = audio_data.sample_width
             module.feed_audio_chunk(chunk)
 
     def feed_hotword(self, audio_data):
-        chunk = audio_data.frame_data
+        chunk = self.get_chunk(audio_data)
         for module in self.modules:
-            module.sample_rate = audio_data.sample_rate
-            module.sample_width = audio_data.sample_width
             module.feed_hotword_chunk(chunk)
 
     def feed_speech(self, audio_data):
-        chunk = audio_data.frame_data
+        chunk = self.get_chunk(audio_data)
         for module in self.modules:
-            module.sample_rate = audio_data.sample_rate
-            module.sample_width = audio_data.sample_width
             module.feed_speech_chunk(chunk)
 
     def get_context(self, audio_data):
         context = {}
-        chunk = audio_data.frame_data
+        chunk = self.get_chunk(audio_data)
         for module in self.modules:
-            module.sample_rate = audio_data.sample_rate
-            module.sample_width = audio_data.sample_width
             chunk, data = module.feed_speech_utterance(chunk)
             LOG.debug(f"{module.name}: {data}")
             context = merge_dict(context, data)

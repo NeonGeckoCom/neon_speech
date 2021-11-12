@@ -18,14 +18,10 @@
 # SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 # USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-import re
-import pyaudio
-import signal as sig
-
 from neon_utils import LOG
 from ovos_utils.configuration import read_mycroft_config
 from neon_utils.configuration_utils import get_neon_speech_config
+from mycroft.util import find_input_device, reset_sigint_handler
 
 
 def get_config():
@@ -46,31 +42,3 @@ def get_config():
         }
     }
 
-
-def reset_sigint_handler():
-    """
-    Reset the sigint handler to the default. This fixes KeyboardInterrupt
-    not getting raised when started via start-mycroft.sh
-    """
-    sig.signal(sig.SIGINT, sig.default_int_handler)
-
-
-def find_input_device(device_name):
-    """ Find audio input device by name.
-
-        Arguments:
-            device_name: device name or regex pattern to match
-
-        Returns: device_index (int) or None if device wasn't found
-    """
-    LOG.info('Searching for input device: {}'.format(device_name))
-    LOG.debug('Devices: ')
-    pa = pyaudio.PyAudio()
-    pattern = re.compile(device_name)
-    for device_index in range(pa.get_device_count()):
-        dev = pa.get_device_info_by_index(device_index)
-        LOG.debug('   {}'.format(dev['name']))
-        if dev['maxInputChannels'] > 0 and pattern.match(dev['name']):
-            LOG.debug('    ^-- matched')
-            return device_index
-    return None
