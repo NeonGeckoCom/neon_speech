@@ -21,21 +21,23 @@
 
 import os.path
 import time
-
-from mycroft_bus_client import MessageBusClient
-from typing import Optional
 from threading import Lock
+from typing import Optional
+
+from mycroft.lock import Lock as PIDLock
+from mycroft.util.log import LOG
+from mycroft.util.process_utils import StatusCallbackMap, ProcessStatus
+from mycroft_bus_client import MessageBusClient
 from ovos_utils import create_daemon, wait_for_exit_signal
 from ovos_utils.messagebus import Message
 from neon_utils.logger import LOG
 from ovos_utils.json_helper import merge_dict
 from pydub import AudioSegment
 from speech_recognition import AudioData
-from mycroft.util.process_utils import StatusCallbackMap, ProcessStatus
-from mycroft.lock import Lock as PIDLock
-from neon_speech.stt import STTFactory, StreamingSTT
+
 from neon_speech.audio_modules import AudioTransformersService
-from neon_speech.listener import RecognizerLoop
+from neon_speech.listener import NeonRecognizerLoop
+from neon_speech.stt import STTFactory, StreamingSTT
 from neon_speech.utils import reset_sigint_handler, get_config
 from neon_utils.configuration_utils import get_neon_user_config, NGIConfig
 from neon_utils.messagebus_utils import get_messagebus
@@ -43,11 +45,11 @@ from neon_utils.configuration_utils import init_config_dir
 
 bus: Optional[MessageBusClient] = None  # Mycroft messagebus connection
 lock = Lock()
-loop: Optional[RecognizerLoop] = None
+loop: Optional[NeonRecognizerLoop] = None
 config: Optional[dict] = None
 API_STT: Optional[StreamingSTT] = None
 _USER_CONFIG: Optional[NGIConfig] = None
-service = None
+transformers = None
 
 
 def handle_record_begin():
@@ -87,15 +89,16 @@ def handle_awoken():
 
 def handle_utterance(event):
     LOG.info("Utterance: " + str(event['utterances']))
-    context = {'client_name': 'mycroft_listener',
-               'source': 'audio',
-               'ident': event.pop('ident', str(round(time.time()))),
-               'raw_audio': event.pop('raw_audio'),
-               'destination': ["skills"],
-               "timing": event.pop("timing", {}),
-               'username': _USER_CONFIG["user"]["username"] or "local",
-               'user_profiles': [_USER_CONFIG.content]
-               }
+    context = event["context"]  # from audio transformers
+    context.update({'client_name': 'mycroft_listener',
+                    'source': 'audio',
+                    'ident': event.pop('ident', str(round(time.time()))),
+                    'raw_audio': event.pop('raw_audio'),
+                    'destination': ["skills"],
+                    "timing": event.pop("timing", {}),
+                    'username': _USER_CONFIG["user"]["username"] or "local",
+                    'user_profiles': [_USER_CONFIG.content]
+                    })
     if "data" in event:
         data = event.pop("data")
         context = merge_dict(context, data)
@@ -120,7 +123,7 @@ def _emit_utterance_to_skills(message_to_emit: Message) -> bool:
 
 def handle_wake_words_state(message):
     enabled = message.data.get("enabled", True)
-    loop.change_wake_word_state(enabled)
+    # TODO loop.change_wake_word_state(enabled)
 
 
 def handle_hotword(event):
@@ -246,6 +249,7 @@ def handle_audio_input(message):
     Handler for `neon.audio_input`. Handles remote audio input to Neon and replies with confirmation
     :param message: Message associated with request
     """
+
     def build_context(msg: Message):
         ctx: dict = message.context
         defaults = {'client_name': 'mycroft_listener',
@@ -329,7 +333,7 @@ def on_error(e='Unknown'):
 
 
 def connect_loop_events(_loop):
-    # Register handlers on internal RecognizerLoop emitter
+    # Register handlers on internal NeonRecognizerLoop emitter
     _loop.on('recognizer_loop:utterance', handle_utterance)
     _loop.on('recognizer_loop:speech.recognition.unknown', handle_unknown)
     _loop.on('speak', handle_speak)
@@ -371,7 +375,7 @@ def main(ready_hook=on_ready, error_hook=on_error, stopping_hook=on_stopping,
     global bus
     global loop
     global config
-    global service
+    global transformers
     global API_STT
     global _USER_CONFIG
 
@@ -390,23 +394,25 @@ def main(ready_hook=on_ready, error_hook=on_error, stopping_hook=on_stopping,
     status = ProcessStatus('speech', bus, callbacks)
 
     try:
-        loop = RecognizerLoop(config)
-        service = AudioTransformersService(bus, config=config)
-        loop.bind(service)
+        loop = NeonRecognizerLoop(bus)
+        transformers = AudioTransformersService(bus, config=config)
+        loop.bind_transformers(transformers)
         connect_loop_events(loop)
         connect_bus_events(bus)
+        # create_daemon(bus.run_forever)
         create_daemon(loop.run)
 
         # If stt is streaming, we need a separate instance for API use
-        while not loop.consumer or not loop.consumer.stt:
+        while not loop.audio_consumer or not loop.stt:
             time.sleep(1)
-        if loop.consumer.stt.can_stream:
+        if loop.stt.can_stream:
             API_STT = STTFactory.create(config=config, results_event=None)
 
         _USER_CONFIG = get_neon_user_config()
 
         status.set_started()
     except Exception as e:
+        LOG.exception(e)
         status.set_error(e)
     else:
         status.set_ready()
