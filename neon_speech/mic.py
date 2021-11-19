@@ -24,7 +24,7 @@ from mycroft.configuration import Configuration
 from neon_utils import LOG
 from speech_recognition import AudioSource, AudioData
 
-from neon_speech.transformers import AudioTransformersService
+from neon_transformers.audio_transformers import AudioTransformersService
 
 
 class NeonResponsiveRecognizer(ResponsiveRecognizer):
@@ -113,6 +113,6 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
         else:
             audio_data, lang = super().listen(source, stream)
         # one of the default plugins saves the speech to file and adds "filename" to context
-        audio_data, context = self.audio_consumers.get_context(audio_data)
+        audio_data, context = self.audio_consumers.transform(audio_data)
         context["lang"] = lang
         return audio_data, context
