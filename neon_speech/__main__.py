@@ -271,6 +271,14 @@ def handle_audio_input(message):
         bus.emit(message.reply(ident, data={"error": repr(e)}))
 
 
+def handle_internet_connected(_):
+    """
+    Handle notification from core that internet connection has been established
+    """
+    LOG.info(f"Internet Connected, Resetting STT Stream")
+    loop.producer.stream_handler.has_result.set()
+
+
 def _get_stt_from_file(wav_file: str, lang: str = "en-us") -> (AudioData, dict, list):
     """
     Performs STT and audio processing on the specified wav_file
@@ -337,6 +345,11 @@ def connect_bus_events(_bus):
     _bus.on('recognizer_loop:audio_output_start', handle_audio_start)
     _bus.on('recognizer_loop:audio_output_end', handle_audio_end)
     _bus.on('mycroft.stop', handle_stop)
+
+    # Register handler for internet (re-)connection
+    # TODO: This should be defined as a single event DM
+    _bus.on("mycroft.internet.connected", handle_internet_connected)
+    _bus.on("ovos.wifi.setup.completed", handle_internet_connected)
 
     # Register API Handlers
     _bus.on("neon.get_stt", handle_get_stt)
