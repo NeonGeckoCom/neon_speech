@@ -371,6 +371,9 @@ def main(ready_hook=on_ready, error_hook=on_error, stopping_hook=on_stopping,
     PIDLock("voice")
 
     bus = get_mycroft_bus()  # Mycroft messagebus, see mycroft.messagebus
+    from neon_utils.signal_utils import init_signal_handlers, init_signal_bus
+    init_signal_bus(bus)
+    init_signal_handlers()
     config = speech_config or get_config()
 
     callbacks = StatusCallbackMap(on_ready=ready_hook, on_error=error_hook,
