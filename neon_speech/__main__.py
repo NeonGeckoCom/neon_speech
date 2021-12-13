@@ -85,15 +85,13 @@ def handle_utterance(event):
     LOG.info("Utterance: " + str(event['utterances']))
     context = {'client_name': 'mycroft_listener',
                'source': 'audio',
+               'ident': event.pop('ident', str(round(time.time()))),
                'raw_audio': event.pop('raw_audio'),
                'destination': ["skills"],
                "timing": event.pop("timing", {})}
     if "data" in event:
         data = event.pop("data")
         context = merge_dict(context, data)
-    if 'ident' in event:
-        ident = event.pop('ident')
-        context['ident'] = ident
 
     _emit_utterance_to_skills(Message('recognizer_loop:utterance', event, context))
 
