@@ -61,6 +61,9 @@ setup(
     url='https://github.com/NeonGeckoCom/neon_speech',
     license='BSD-3-Clause',
     install_requires=get_requirements("requirements.txt"),
+    extras_require={
+        "docker": get_requirements("docker.txt")
+    },
     author='Neongecko',
     author_email='developers@neon.ai',
     description="Neon Speech Module",

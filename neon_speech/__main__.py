@@ -37,6 +37,7 @@ from neon_speech.stt import STTFactory, StreamingSTT
 from neon_speech.plugins import AudioParsersService
 from neon_speech.listener import RecognizerLoop
 from neon_speech.utils import reset_sigint_handler, get_config
+from neon_utils.messagebus_utils import get_messagebus
 
 bus: Optional[MessageBusClient] = None  # Mycroft messagebus connection
 lock = Lock()
@@ -368,7 +369,7 @@ def main(ready_hook=on_ready, error_hook=on_error, stopping_hook=on_stopping,
     reset_sigint_handler()
     PIDLock("voice")
 
-    bus = get_mycroft_bus()  # Mycroft messagebus, see mycroft.messagebus
+    bus = get_messagebus()
     from neon_utils.signal_utils import init_signal_handlers, init_signal_bus
     init_signal_bus(bus)
     init_signal_handlers()
