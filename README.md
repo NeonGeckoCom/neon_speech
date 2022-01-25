@@ -23,16 +23,12 @@ to start the container.
 docker run -d \
 --network=host \
 --name=neon_speech \
--v ${NEON_DATA_DIR}:/home/neon/.local/share/neon:rw \
--v ${NEON_CONFIG_DIR}:/home/neon/.config/neon:rw \
--v ~/.config/pulse/cookie:/home/neon/.config/pulse/cookie:ro \
+-v ~/.config/pulse/cookie:/root/.config/pulse/cookie:ro \
 -v ${XDG_RUNTIME_DIR}/pulse:${XDG_RUNTIME_DIR}/pulse:ro \
--v /tmp:/tmp:rw \
+-v ${NEON_CONFIG_DIR}:/config \
 --device=/dev/snd:/dev/snd \
 -e PULSE_SERVER=unix:${XDG_RUNTIME_DIR}/pulse/native \
--e PULSE_COOKIE=/home/neon/.config/pulse/cookie \
+-e PULSE_COOKIE=/root/.config/pulse/cookie \
 neon_speech
 ```
-
->*Note:* The above example assumes Docker data locations are specified in the `NEON_DATA_DIR` and `NEON_CONFIG_DIR`
-> environment variables.
+>*Note:* The above example assumes `NEON_CONFIG_DIR` contains valid configuration
