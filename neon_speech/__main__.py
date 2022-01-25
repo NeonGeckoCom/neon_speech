@@ -37,6 +37,7 @@ from neon_speech.stt import STTFactory, StreamingSTT
 from neon_speech.plugins import AudioParsersService
 from neon_speech.listener import RecognizerLoop
 from neon_speech.utils import reset_sigint_handler, get_config
+from neon_utils.configuration_utils import get_neon_user_config, NGIConfig
 from neon_utils.messagebus_utils import get_messagebus
 from neon_utils.configuration_utils import init_config_dir
 
@@ -45,6 +46,7 @@ lock = Lock()
 loop: Optional[RecognizerLoop] = None
 config: Optional[dict] = None
 API_STT: Optional[StreamingSTT] = None
+_USER_CONFIG: Optional[NGIConfig] = None
 service = None
 
 
@@ -90,7 +92,10 @@ def handle_utterance(event):
                'ident': event.pop('ident', str(round(time.time()))),
                'raw_audio': event.pop('raw_audio'),
                'destination': ["skills"],
-               "timing": event.pop("timing", {})}
+               "timing": event.pop("timing", {}),
+               'username': _USER_CONFIG["user"]["username"] or "local",
+               'user_profiles': [_USER_CONFIG.content]
+               }
     if "data" in event:
         data = event.pop("data")
         context = merge_dict(context, data)
@@ -246,7 +251,9 @@ def handle_audio_input(message):
         defaults = {'client_name': 'mycroft_listener',
                     'client': 'api',
                     'source': 'speech_api',
-                    'ident': time.time()}
+                    'ident': time.time(),
+                    'username': _USER_CONFIG["user"]["username"] or "local",
+                    'user_profiles': [_USER_CONFIG.content]}
         ctx = {**defaults, **ctx, 'destination': ['skills'], 'timing': {'start': msg.data.get('time'),
                                                                         'transcribed': time.time()}}
         return ctx
@@ -366,6 +373,7 @@ def main(ready_hook=on_ready, error_hook=on_error, stopping_hook=on_stopping,
     global config
     global service
     global API_STT
+    global _USER_CONFIG
 
     init_config_dir()
     reset_sigint_handler()
@@ -396,6 +404,8 @@ def main(ready_hook=on_ready, error_hook=on_error, stopping_hook=on_stopping,
             time.sleep(1)
         if loop.consumer.stt.can_stream:
             API_STT = STTFactory.create(config=config, results_event=None)
+
+        _USER_CONFIG = get_neon_user_config()
 
         status.set_started()
     except Exception as e:
