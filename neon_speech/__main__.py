@@ -389,7 +389,6 @@ def main(ready_hook=on_ready, error_hook=on_error, stopping_hook=on_stopping,
 
         connect_loop_events(loop)
         connect_bus_events(bus)
-        create_daemon(bus.run_forever)
         create_daemon(loop.run)
 
         # If stt is streaming, we need a separate instance for API use
