@@ -26,8 +26,8 @@ from mycroft_bus_client import MessageBusClient
 from typing import Optional
 from threading import Lock
 from ovos_utils import create_daemon, wait_for_exit_signal
-from ovos_utils.messagebus import Message, get_mycroft_bus
-from neon_utils import LOG
+from ovos_utils.messagebus import Message
+from neon_utils.logger import LOG
 from ovos_utils.json_helper import merge_dict
 from pydub import AudioSegment
 from speech_recognition import AudioData
@@ -38,6 +38,7 @@ from neon_speech.plugins import AudioParsersService
 from neon_speech.listener import RecognizerLoop
 from neon_speech.utils import reset_sigint_handler, get_config
 from neon_utils.messagebus_utils import get_messagebus
+from neon_utils.configuration_utils import init_config_dir
 
 bus: Optional[MessageBusClient] = None  # Mycroft messagebus connection
 lock = Lock()
@@ -366,6 +367,7 @@ def main(ready_hook=on_ready, error_hook=on_error, stopping_hook=on_stopping,
     global service
     global API_STT
 
+    init_config_dir()
     reset_sigint_handler()
     PIDLock("voice")
 
@@ -387,7 +389,6 @@ def main(ready_hook=on_ready, error_hook=on_error, stopping_hook=on_stopping,
 
         connect_loop_events(loop)
         connect_bus_events(bus)
-        create_daemon(bus.run_forever)
         create_daemon(loop.run)
 
         # If stt is streaming, we need a separate instance for API use
