@@ -15,6 +15,8 @@ env:
 jobs:
   build_and_publish_pypi:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -27,9 +29,10 @@ jobs:
         run: |
           python -m pip install build wheel
       - name: Increment Version
+        id: version
         run: |
-          VER=$(python setup.py --version)
           python version_bump.py
+          echo ::set-output name=version::$(sed "s/a/-a./" <<< $(python setup.py --version))
       - name: Push Version Change
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
