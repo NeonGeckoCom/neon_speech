@@ -23,4 +23,4 @@ from neon_utils.logger import LOG
 from mycroft.client.speech.hotword_factory import HotWordFactory
 
 LOG.warning("This reference is deprecated; import directly from: "
-            "ovos_plugin_manager.templates.hotwords")
+            "mycroft.client.speech.hotword_factory")
