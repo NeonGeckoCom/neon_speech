@@ -33,7 +33,7 @@ from requests import RequestException
 from requests.exceptions import ConnectionError
 from neon_utils.logger import LOG
 
-from neon_speech.hotword_factory import HotWordFactory
+from mycroft.client.speech.hotword_factory import HotWordFactory
 from neon_speech.mic import MutableMicrophone, ResponsiveRecognizer
 from neon_speech.utils import find_input_device, get_config
 from neon_speech.stt import STTFactory
