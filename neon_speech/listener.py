@@ -31,9 +31,9 @@ from queue import Queue, Empty
 from pyee import EventEmitter
 from requests import RequestException
 from requests.exceptions import ConnectionError
-from neon_utils import LOG
+from neon_utils.logger import LOG
 
-from neon_speech.hotword_factory import HotWordFactory
+from mycroft.client.speech.hotword_factory import HotWordFactory
 from neon_speech.mic import MutableMicrophone, ResponsiveRecognizer
 from neon_speech.utils import find_input_device, get_config
 from neon_speech.stt import STTFactory
@@ -380,8 +380,9 @@ class RecognizerLoop(EventEmitter):
         hot_words = self.config_core.get("hotwords") or adapt_neon_config()
         for word in hot_words:
             data = hot_words[word]
-            if word == self.wakeup_recognizer.key_phrase \
-                    or not data.get("active", True):
+            if self.wakeup_recognizer and (
+                    word == self.wakeup_recognizer.key_phrase
+                    or not data.get("active", True)):
                 continue
             sound = data.get("sound")
             utterance = data.get("utterance")
@@ -398,9 +399,12 @@ class RecognizerLoop(EventEmitter):
     def create_wakeup_recognizer(self):
         LOG.info("creating stand up word engine")
         word = self.config.get("stand_up_word", "wake up")
-        return HotWordFactory.create_hotword(
-            word, lang=self.lang, loop=self,
-            config=self.config_core.get("hotwords"))
+        try:
+            return HotWordFactory.create_hotword(
+                word, lang=self.lang, loop=self,
+                config=self.config_core.get("hotwords"))
+        except KeyError:
+            return None
 
     def start_async(self):
         """Start consumer and producer threads."""

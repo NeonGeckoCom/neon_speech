@@ -16,15 +16,14 @@
 # Specialized conversational reconveyance options from Conversation Processing Intelligence Corp.
 # US Patents 2008-2021: US7424516, US20140161250, US20140177813, US8638908, US8068604, US8553852, US10530923, US10530924
 # China Patent: CN102017585  -  Europe Patent: EU2156652  -  Patents Pending
-from time import sleep
 
 import os
 import sys
 import mock
 import unittest
 
+from time import sleep, time
 from multiprocessing import Process
-
 from mycroft_bus_client import MessageBusClient, Message
 from neon_utils.configuration_utils import get_neon_speech_config
 from neon_utils.logger import LOG
@@ -51,13 +50,17 @@ class TestAPIMethods(unittest.TestCase):
         cls.speech_thread.start()
         cls.bus = MessageBusClient()
         cls.bus.run_in_thread()
-        while not cls.bus.started_running:
-            sleep(1)
+        if not cls.bus.connected_event.wait(60):
+            raise TimeoutError("Bus not connected after 60 seconds")
         alive = False
-        while not alive:
-            message = cls.bus.wait_for_response(Message("mycroft.speech.is_ready"))
+        timeout = time() + 120
+        while not alive and time() < timeout:
+            message = cls.bus.wait_for_response(
+                Message("mycroft.speech.is_ready"))
             if message:
                 alive = message.data.get("status")
+        if not alive:
+            raise TimeoutError("Speech module not ready after 120 seconds")
 
     @classmethod
     def tearDownClass(cls) -> None:
