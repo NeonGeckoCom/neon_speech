@@ -45,7 +45,7 @@ class BackgroundNoise(AudioParser):
         if len(self._audio.frame_data) > max_size:
             self._audio.frame_data = self._audio.frame_data[-max_size:]
 
-    def noise_level(self):
+    def noise_level(self) -> float:
         # NOTE: on_audio will usually include a partial wake word at the end,
         # discard the last ~0.7 seconds of audio
         try:
@@ -54,7 +54,7 @@ class BackgroundNoise(AudioParser):
             decibel = 20 * log10(rms)
             return decibel
         except ValueError:
-            return None
+            return 0
 
     def on_hotword(self, audio_data):
         # In here we can run predictions, for example classify the
