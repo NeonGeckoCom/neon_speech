@@ -60,7 +60,7 @@ class TestAPIMethods(unittest.TestCase):
             if message:
                 alive = message.data.get("status")
         if not alive:
-            raise TimeoutError("Skills module not ready after 120 seconds")
+            raise TimeoutError("Speech module not ready after 120 seconds")
 
     @classmethod
     def tearDownClass(cls) -> None:
