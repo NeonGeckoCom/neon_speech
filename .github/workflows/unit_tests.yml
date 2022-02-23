@@ -25,13 +25,13 @@ jobs:
             python setup.py bdist_wheel sdist
   docker_build_tests:
     timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
       runs-on: ubuntu-latest
       steps:
-        runs-on: ubuntu-latest
-        steps:
-          - uses: actions/checkout@v2
-          - name: Build image
-            run: docker build .
+        - uses: actions/checkout@v2
+        - name: Build image
+          run: docker build .
   unit_tests:
     timeout-minutes: 15
     strategy:
