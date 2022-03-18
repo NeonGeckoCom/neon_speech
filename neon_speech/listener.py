@@ -171,16 +171,6 @@ class AudioConsumer(Thread):
         self.wakeup_recognizer = wakeup_recognizer
         self.use_wake_words = self.config.get("wake_word_enabled", True)
 
-        # TODO: Revisit after user database #24 DM
-        if get_neon_device_type() == "server":
-            try:
-                from neon_core_server.chat_user_database import KlatUserDatabase
-                self.chat_user_database = KlatUserDatabase()
-            except Exception as e:
-                LOG.error(e)
-        else:
-            self.chat_user_database = None
-
     def run(self):
         while self.state.running:
             self.read()
@@ -410,24 +400,27 @@ class RecognizerLoop(EventEmitter):
         """Start consumer and producer threads."""
         self.state.running = True
         results_event = Event()
-        stt = STTFactory.create(config=self.config_core, results_event=results_event)
+        stt = STTFactory.create(config=self.config_core,
+                                results_event=results_event)
         queue = Queue()
         stream_handler = None
         if stt.can_stream:
             stream_handler = AudioStreamHandler(queue, results_event)
-        self.producer = AudioProducer(self.state, queue, self.microphone,
-                                      self.responsive_recognizer, self,
-                                      stream_handler)
-        self.producer.start()
+        if get_neon_device_type() != "server":
+            self.producer = AudioProducer(self.state, queue, self.microphone,
+                                          self.responsive_recognizer, self,
+                                          stream_handler)
+            self.producer.start()
         self.consumer = AudioConsumer(self.state, queue, self,
                                       stt, self.wakeup_recognizer)
         self.consumer.start()
 
     def stop(self):
         self.state.running = False
-        self.producer.stop()
         # wait for threads to shutdown
-        self.producer.join()
+        if self.producer:
+            self.producer.stop()
+            self.producer.join()
         self.consumer.join()
 
     def mute(self):
