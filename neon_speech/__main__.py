@@ -25,7 +25,7 @@ from threading import Lock
 from typing import Optional
 
 from mycroft.lock import Lock as PIDLock
-from mycroft.util.process_utils import StatusCallbackMap, ProcessStatus
+from mycroft.util.process_utils import StatusCallbackMap, ProcessStatus, reset_sigint_handler
 from mycroft_bus_client import MessageBusClient
 from ovos_utils import create_daemon, wait_for_exit_signal
 from ovos_utils.messagebus import Message
@@ -36,7 +36,7 @@ from speech_recognition import AudioData
 
 from neon_speech.listener import NeonRecognizerLoop
 from neon_speech.stt import STTFactory, StreamingSTT
-from neon_speech.utils import reset_sigint_handler, get_config
+from neon_speech.utils import get_config
 from neon_utils.configuration_utils import get_neon_user_config, NGIConfig
 from neon_utils.messagebus_utils import get_messagebus
 from neon_utils.configuration_utils import init_config_dir
@@ -333,6 +333,12 @@ def on_error(e='Unknown'):
     LOG.error('Audio service failed to launch ({}).'.format(repr(e)))
 
 
+def on_alive():
+    LOG.debug("Speech client alive")
+
+def on_started():
+    LOG.debug("Speech client started")
+
 def connect_loop_events(_loop):
     # Register handlers on internal NeonRecognizerLoop emitter
     _loop.on('recognizer_loop:utterance', handle_utterance)
@@ -372,6 +378,7 @@ def connect_bus_events(_bus):
 
 
 def main(ready_hook=on_ready, error_hook=on_error, stopping_hook=on_stopping,
+         alive_hook=on_alive, started_hook=on_started,
          watchdog=lambda: None, speech_config=None):
     global bus
     global loop
@@ -391,7 +398,8 @@ def main(ready_hook=on_ready, error_hook=on_error, stopping_hook=on_stopping,
     config = speech_config or get_config()
 
     callbacks = StatusCallbackMap(on_ready=ready_hook, on_error=error_hook,
-                                  on_stopping=stopping_hook)
+                                  on_stopping=stopping_hook,
+                                  on_alive=alive_hook, on_started=started_hook)
     status = ProcessStatus('speech', bus, callbacks)
 
     try:
