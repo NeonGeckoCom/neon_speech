@@ -19,7 +19,7 @@
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 # USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from setuptools import setup
+from setuptools import setup, find_packages
 from os import getenv, path
 
 
@@ -54,10 +54,7 @@ with open("./version.py", "r", encoding="utf-8") as v:
 setup(
     name='neon_speech',
     version=version,
-    packages=['neon_speech', 'neon_speech.plugins',
-              'neon_speech.plugins.modules',
-              'neon_speech.plugins.modules.background',
-              'neon_speech.plugins.modules.audio_normalizer'],
+    packages=find_packages(),
     url='https://github.com/NeonGeckoCom/neon_speech',
     license='BSD-3-Clause',
     install_requires=get_requirements("requirements.txt"),
