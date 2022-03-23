@@ -131,7 +131,8 @@ class TestAPIMethods(unittest.TestCase):
         for key in context:
             self.assertIn(key, stt_resp.context)
             self.assertEqual(context[key], stt_resp.context[key])
-        self.assertIsInstance(stt_resp.data.get("skills_recv"), bool)
+        self.assertIsInstance(stt_resp.data.get("skills_recv"), bool,
+                              stt_resp.serialize())
 
         handle_utterance.assert_called_once()
         message = handle_utterance.call_args[0][0]

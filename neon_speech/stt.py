@@ -65,4 +65,4 @@ class STTFactory(OVOSSTTFactory):
             if not clazz:
                 raise ValueError("fallback plugin not found")
 
-        return WrappedSTT(clazz, config=config)
+        return WrappedSTT(clazz, config=config, results_event=results_event)

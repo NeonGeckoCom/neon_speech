@@ -317,7 +317,8 @@ def _get_stt_from_file(wav_file: str,
     else:
         transcriptions = loop.audio_consumer.transcribe(audio_data, lang)
 
-    audio, audio_context = loop.responsive_recognizer.audio_consumers.get_context(audio_data)
+    audio, audio_context = \
+        loop.responsive_recognizer.audio_consumers.transform(audio_data)
     return audio, audio_context, transcriptions
 
 
@@ -336,8 +337,10 @@ def on_error(e='Unknown'):
 def on_alive():
     LOG.debug("Speech client alive")
 
+
 def on_started():
     LOG.debug("Speech client started")
+
 
 def connect_loop_events(_loop):
     # Register handlers on internal NeonRecognizerLoop emitter
