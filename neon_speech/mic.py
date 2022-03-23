@@ -40,6 +40,12 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
         if not isinstance(self.recording_timeout, int):
             self.recording_timeout = 10.0
 
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+
     def record_sound_chunk(self, source):
         chunk = super().record_sound_chunk(source)
         if self.in_speech:

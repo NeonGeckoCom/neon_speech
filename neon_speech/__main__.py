@@ -25,7 +25,6 @@ from threading import Lock
 from typing import Optional
 
 from mycroft.lock import Lock as PIDLock
-from mycroft.util.log import LOG
 from mycroft.util.process_utils import StatusCallbackMap, ProcessStatus
 from mycroft_bus_client import MessageBusClient
 from ovos_utils import create_daemon, wait_for_exit_signal
@@ -272,7 +271,8 @@ def handle_audio_input(message):
             "utterances": transcriptions,
             "lang": message.data.get("lang", "en-us")
         }
-        handled = _emit_utterance_to_skills(Message('recognizer_loop:utterance', data, context))
+        handled = _emit_utterance_to_skills(Message(
+            'recognizer_loop:utterance', data, context))
         bus.emit(message.reply(ident, data={"parser_data": parser_data,
                                             "transcripts": transcriptions,
                                             "skills_recv": handled}))
@@ -286,10 +286,11 @@ def handle_internet_connected(_):
     Handle notification from core that internet connection has been established
     """
     LOG.info(f"Internet Connected, Resetting STT Stream")
-    loop.producer.stream_handler.has_result.set()
+    loop.audio_producer.stream_handler.has_result.set()
 
 
-def _get_stt_from_file(wav_file: str, lang: str = "en-us") -> (AudioData, dict, list):
+def _get_stt_from_file(wav_file: str,
+                       lang: str = "en-us") -> (AudioData, dict, list):
     """
     Performs STT and audio processing on the specified wav_file
     :param wav_file: wav audio file to process
@@ -300,7 +301,8 @@ def _get_stt_from_file(wav_file: str, lang: str = "en-us") -> (AudioData, dict, 
     global lock
     from neon_utils.file_utils import get_audio_file_stream
     segment = AudioSegment.from_file(wav_file)
-    audio_data = AudioData(segment.raw_data, segment.frame_rate, segment.sample_width)
+    audio_data = AudioData(segment.raw_data, segment.frame_rate,
+                           segment.sample_width)
     if API_STT:
         audio_stream = get_audio_file_stream(wav_file)
         with lock:
@@ -313,7 +315,7 @@ def _get_stt_from_file(wav_file: str, lang: str = "en-us") -> (AudioData, dict, 
                     break
             transcriptions = API_STT.stream_stop()
     else:
-        transcriptions = loop.consumer.transcribe(audio_data, lang)  # TODO: Add lang here DM
+        transcriptions = loop.audio_consumer.transcribe(audio_data, lang)
 
     audio, audio_context = loop.responsive_recognizer.audio_consumers.get_context(audio_data)
     return audio, audio_context, transcriptions

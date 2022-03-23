@@ -18,10 +18,9 @@
 # SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 # USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from neon_utils import LOG
+
 from ovos_utils.configuration import read_mycroft_config
 from neon_utils.configuration_utils import get_neon_speech_config
-from mycroft.util import find_input_device, reset_sigint_handler
 
 
 def get_config():

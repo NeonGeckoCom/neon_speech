@@ -24,7 +24,7 @@ from mycroft.client.speech.listener import RecognizerLoop, AudioConsumer, AudioP
     find_input_device, RecognizerLoopState
 from mycroft.client.speech.mic import MutableMicrophone
 from mycroft.util.log import LOG
-from mycroft.metrics import MetricsAggregator, Stopwatch, report_timing
+from mycroft.metrics import Stopwatch
 
 from neon_speech.mic import NeonResponsiveRecognizer
 from neon_speech.stt import STTFactory
@@ -64,9 +64,13 @@ class NeonRecognizerLoop(RecognizerLoop):
 
     Local wake word recognizer and remote general speech recognition.
     """
+    def __init__(self, bus, watchdog=None, stt=None, fallback_stt=None,
+                 config=None):
+        self.config = config
+        super().__init__(bus, watchdog, stt, fallback_stt)
 
-    def bind_transformers(self, parsers_service):
-        self.responsive_recognizer.bind(parsers_service)
+    # def bind_transformers(self, parsers_service):
+    #     self.responsive_recognizer.bind(parsers_service)
 
     def _load_config(self):
         """Load configuration parameters from configuration."""
@@ -94,7 +98,7 @@ class NeonRecognizerLoop(RecognizerLoop):
         """Start consumer and producer threads."""
         self.state.running = True
         if not self.stt:
-            self.stt = STTFactory.create()
+            self.stt = STTFactory.create(self.config)
         self.queue = Queue()
         self.audio_consumer = NeonAudioConsumer(self)
         self.audio_consumer.start()
