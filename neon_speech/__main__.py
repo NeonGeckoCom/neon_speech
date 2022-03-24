@@ -319,7 +319,7 @@ def _get_stt_from_file(wav_file: str,
         transcriptions = loop.audio_consumer.transcribe(audio_data, lang)
     if isinstance(transcriptions, str):
         LOG.warning("Transcriptions is a str, no alternatives provided")
-        transcriptions = list(transcriptions)
+        transcriptions = [transcriptions]
     audio, audio_context = \
         loop.responsive_recognizer.audio_consumers.transform(audio_data)
     return audio, audio_context, transcriptions

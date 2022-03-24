@@ -42,14 +42,14 @@ class StreamingSTT(_Streaming, ABC):
         if self.stream is not None:
             self.queue.put(None)
             text = self.stream.finalize()
+            to_return = [text]
             self.stream.join()
             if hasattr(self.stream, 'transcriptions'):
-                return self.stream.transcriptions
+                to_return = self.stream.transcriptions
             self.stream = None
             self.queue = None
             self.transcript_ready.set()
-
-            return [text]
+            return to_return
         return None
 
 
