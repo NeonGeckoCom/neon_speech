@@ -290,7 +290,7 @@ def handle_internet_connected(_):
 
 
 def _get_stt_from_file(wav_file: str,
-                       lang: str = "en-us") -> (AudioData, dict, list):
+                       lang: str = None) -> (AudioData, dict, list):
     """
     Performs STT and audio processing on the specified wav_file
     :param wav_file: wav audio file to process
@@ -300,6 +300,7 @@ def _get_stt_from_file(wav_file: str,
     global API_STT
     global lock
     from neon_utils.file_utils import get_audio_file_stream
+    lang = lang or 'en-us'  # TODO: read default from config
     segment = AudioSegment.from_file(wav_file)
     audio_data = AudioData(segment.raw_data, segment.frame_rate,
                            segment.sample_width)
@@ -316,7 +317,9 @@ def _get_stt_from_file(wav_file: str,
             transcriptions = API_STT.stream_stop()
     else:
         transcriptions = loop.audio_consumer.transcribe(audio_data, lang)
-
+    if isinstance(transcriptions, str):
+        LOG.warning("Transcriptions is a str, no alternatives provided")
+        transcriptions = list(transcriptions)
     audio, audio_context = \
         loop.responsive_recognizer.audio_consumers.transform(audio_data)
     return audio, audio_context, transcriptions

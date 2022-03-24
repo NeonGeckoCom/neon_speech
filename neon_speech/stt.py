@@ -18,6 +18,7 @@
 # SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 # USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+from abc import ABC
 from inspect import signature
 from threading import Event
 
@@ -25,7 +26,31 @@ from mycroft_bus_client import MessageBusClient
 from neon_utils import LOG
 from neon_utils.configuration_utils import get_neon_speech_config
 from ovos_plugin_manager.stt import OVOSSTTFactory
-from ovos_plugin_manager.templates.stt import STT, StreamingSTT
+from ovos_plugin_manager.templates.stt import STT, StreamThread
+from ovos_plugin_manager.templates.stt import StreamingSTT as _Streaming
+
+
+class StreamingSTT(_Streaming, ABC):
+    def __init__(self, results_event=None, *_, **__):
+        super(StreamingSTT, self).__init__()
+        if results_event:
+            # TODO: Deprecate this
+            self.results_event = results_event
+            self.transcript_ready = results_event
+
+    def stream_stop(self):
+        if self.stream is not None:
+            self.queue.put(None)
+            text = self.stream.finalize()
+            self.stream.join()
+            if hasattr(self.stream, 'transcriptions'):
+                return self.stream.transcriptions
+            self.stream = None
+            self.queue = None
+            self.transcript_ready.set()
+
+            return [text]
+        return None
 
 
 class WrappedSTT:
