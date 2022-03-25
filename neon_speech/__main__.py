@@ -91,7 +91,7 @@ def handle_utterance(event):
     context.update({'client_name': 'mycroft_listener',
                     'source': 'audio',
                     'ident': event.pop('ident', str(round(time.time()))),
-                    'raw_audio': event.pop('raw_audio'),
+                    'raw_audio': event.pop('raw_audio', None),
                     'destination': ["skills"],
                     "timing": event.pop("timing", {}),
                     'username': _USER_CONFIG["user"]["username"] or "local",

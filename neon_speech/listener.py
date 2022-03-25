@@ -32,6 +32,7 @@ from neon_speech.stt import STTFactory
 
 class NeonAudioConsumer(AudioConsumer):
     def process(self, audio, context=None):
+        context = context or {}
         # NOTE: in the parent class context is a string for lang
         # in neon we pass a dict around instead
         lang = context.get("lang") or self.loop.stt.lang
@@ -46,9 +47,9 @@ class NeonAudioConsumer(AudioConsumer):
             with stopwatch:
                 transcription = self.transcribe(audio, lang)
             if transcription:
-                ident = str(stopwatch.timestamp) + str(hash(transcription))
                 if isinstance(transcription, str):
                     transcription = [transcription]
+                ident = str(stopwatch.timestamp) + str(hash(transcription[0]))
                 # STT succeeded, send the transcribed speech on for processing
                 payload = {
                     'utterances': transcription,
@@ -57,6 +58,37 @@ class NeonAudioConsumer(AudioConsumer):
                     'context': context
                 }
                 self.loop.emit("recognizer_loop:utterance", payload)
+
+    def transcribe(self, audio, lang):
+        def send_unknown_intent():
+            """ Send message that nothing was transcribed. """
+            self.loop.emit('recognizer_loop:speech.recognition.unknown')
+
+        try:
+            # Invoke the STT engine on the audio clip
+            try:
+                transcriptions = self.loop.stt.execute(audio, language=lang)
+            except Exception as e:
+                if self.loop.fallback_stt:
+                    LOG.warning(f"Using fallback STT, main plugin failed: {e}")
+                    transcriptions = self.loop.fallback_stt.execute(audio, language=lang)
+                else:
+                    raise e
+            if isinstance(transcriptions, str):
+                LOG.info("Casting str transcriptions to list")
+                transcriptions = [transcriptions]
+            if transcriptions is not None:
+                transcriptions = [t.lower().strip() for t in transcriptions]
+                LOG.debug(f"STT: {transcriptions}")
+            else:
+                send_unknown_intent()
+                LOG.info('no words were transcribed')
+            return transcriptions
+        except Exception as e:
+            send_unknown_intent()
+            LOG.error(e)
+            LOG.exception("Speech Recognition could not understand audio")
+            return None
 
 
 class NeonRecognizerLoop(RecognizerLoop):
