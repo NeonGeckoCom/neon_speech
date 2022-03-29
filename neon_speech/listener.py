@@ -19,12 +19,12 @@
 # WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
 # USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from queue import Queue
+from neon_utils.logger import LOG
+from ovos_utils.metrics import Stopwatch
 from mycroft.configuration import Configuration
 from mycroft.client.speech.listener import RecognizerLoop, AudioConsumer, AudioProducer, recognizer_conf_hash, \
     find_input_device, RecognizerLoopState
 from mycroft.client.speech.mic import MutableMicrophone
-from mycroft.util.log import LOG
-from mycroft.metrics import Stopwatch
 
 from neon_speech.mic import NeonResponsiveRecognizer
 from neon_speech.stt import STTFactory
