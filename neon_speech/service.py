@@ -64,9 +64,19 @@ class NeonSpeechClient(SpeechClient):
     def __init__(self, ready_hook=on_ready, error_hook=on_error,
                  stopping_hook=on_stopping, alive_hook=on_alive,
                  started_hook=on_started, watchdog=lambda: None,
-                 speech_config=None):
+                 speech_config=None, daemonic=False):
+        """
+        Creates a Speech service thread
+        :param ready_hook: function callback when service is ready
+        :param error_hook: function callback to handle uncaught exceptions
+        :param stopping_hook: function callback when service is stopping
+        :param alive_hook: function callback when service is alive
+        :param started_hook: function callback when service is started
+        :param speech_config: global core configuration override
+        :param daemonic: if True, run this thread as a daemon
+        """
         Thread.__init__(self)
-
+        self.setDaemon(daemonic)
         # Init messagebus and handlers
         self.bus = get_messagebus()
         from neon_utils.signal_utils import init_signal_handlers, init_signal_bus
@@ -81,6 +91,7 @@ class NeonSpeechClient(SpeechClient):
                                       on_stopping=stopping_hook,
                                       on_alive=alive_hook, on_started=started_hook)
         self.status = ProcessStatus('speech', self.bus, callbacks)
+        self.status.set_started()
         self.status.bind(self.bus)
         self.loop = NeonRecognizerLoop(self.bus, watchdog)
         self.connect_loop_events()
