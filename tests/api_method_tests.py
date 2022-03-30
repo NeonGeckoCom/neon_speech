@@ -111,10 +111,12 @@ class TestAPIMethods(unittest.TestCase):
                    "user": "TestRunner"}
         stt_resp = self.bus.wait_for_response(Message("neon.get_stt", {"audio_file": os.path.join(AUDIO_FILE_PATH,
                                                                                                   "stop.wav")},
-                                                      context), context["ident"])
+                                                      context), context["ident"], 60.0)
         self.assertEqual(stt_resp.context, context)
-        self.assertIsInstance(stt_resp.data.get("parser_data"), dict)
-        self.assertIsInstance(stt_resp.data.get("transcripts"), list)
+        self.assertIsInstance(stt_resp.data.get("parser_data"), dict,
+                              stt_resp.serialize())
+        self.assertIsInstance(stt_resp.data.get("transcripts"), list,
+                              stt_resp.serialize())
         self.assertIn("stop", stt_resp.data.get("transcripts"))
 
     def test_audio_input_valid(self):
@@ -126,12 +128,13 @@ class TestAPIMethods(unittest.TestCase):
                    "extra_data": "something"}
         stt_resp = self.bus.wait_for_response(Message("neon.audio_input", {"audio_file": os.path.join(AUDIO_FILE_PATH,
                                                                                                       "stop.wav")},
-                                                      context), context["ident"], 30.0)
+                                                      context), context["ident"], 60.0)
         self.assertIsInstance(stt_resp, Message)
         for key in context:
             self.assertIn(key, stt_resp.context)
             self.assertEqual(context[key], stt_resp.context[key])
-        self.assertIsInstance(stt_resp.data.get("skills_recv"), bool)
+        self.assertIsInstance(stt_resp.data.get("skills_recv"), bool,
+                              stt_resp.serialize())
 
         handle_utterance.assert_called_once()
         message = handle_utterance.call_args[0][0]
@@ -139,6 +142,9 @@ class TestAPIMethods(unittest.TestCase):
         for key in context:
             self.assertIn(key, message.context)
             self.assertEqual(context[key], message.context[key])
+        self.assertIsInstance(message.data["utterances"], list, message.data)
+        self.assertIn("stop", message.data["utterances"],
+                      message.data.get("utterances"))
         self.assertIsInstance(message.context["timing"], dict)
         self.assertEqual(message.context["destination"], ["skills"])
 
