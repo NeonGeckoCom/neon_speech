@@ -26,8 +26,14 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import os
+import sys
+
+from subprocess import Popen
 from ovos_utils.configuration import read_mycroft_config
 from neon_utils.configuration_utils import get_neon_speech_config
+from neon_utils.lock_utils import create_lock
+from neon_utils.logger import LOG
 
 
 def get_config():
@@ -48,3 +54,38 @@ def get_config():
         }
     }
 
+
+def _plugin_to_package(plugin: str) -> str:
+    """
+    Get a PyPI spec for a known plugin entrypoint
+    :param plugin: plugin spec (i.e. config['stt']['module'])
+    :returns: package name associated with `plugin` or `plugin`
+    """
+    known_plugins = {
+        "deepspeech_stream_local": "neon-stt-plugin-deepspeech-stream-local",
+        "polyglot": "neon-stt-plugin-polyglot",
+        "google_cloud_streaming": "neon-stt-plugin-google-cloud-streaming",
+    }
+    return known_plugins.get(plugin) or plugin
+
+
+def install_stt_plugin(plugin: str) -> bool:
+    """
+    Install an stt plugin using pip
+    :param plugin: entrypoint of plugin to install
+    :returns: True if the plugin installation is successful
+    """
+    LOG.info(f"Requested installation of plugin: {plugin}")
+    # TODO: Translate plugin entrypoint to package
+    can_pip = os.access(os.path.dirname(sys.executable), os.W_OK | os.X_OK)
+    pip_cmd = [sys.executable, '-m', 'pip', 'install', plugin]
+    if not can_pip:
+        pip_cmd = ['sudo', '-n'] + pip_cmd
+    with create_lock("stt_pip.lock"):
+        proc = Popen(pip_cmd)
+        code = proc.wait()
+        if code != 0:
+            error_trace = proc.stderr.read().decode()
+            LOG.error(error_trace)
+            return False
+    return True

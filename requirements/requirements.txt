@@ -5,6 +5,9 @@ SpeechRecognition~=3.8
 ovos_utils~=0.0.15
 ovos_plugin_manager~=0.0.5,>=0.0.7a0
 pydub~=0.23
+click~=8.0
+click-default-group~=1.2
+
 phoneme_guesser~=0.1
 
 neon_transformers

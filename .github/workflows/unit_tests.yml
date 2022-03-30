@@ -45,7 +45,14 @@ jobs:
           sudo apt install portaudio19-dev python3-pyaudio libpulse-dev
           python -m pip install --upgrade pip
           pip install . -r requirements/test_requirements.txt
-
+      - name: Unit Tests
+        run: |
+          pytest tests/unit_tests.py --doctest-modules --junitxml=tests/unit-test-results.xml
+      - name: Upload Unit test results
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit-test-results
+          path: tests/unit-test-results.xml
       - name: Test API Methods
         run: |
           pytest tests/api_method_tests.py --doctest-modules --junitxml=tests/api-method-test-results.xml
