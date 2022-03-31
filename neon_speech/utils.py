@@ -25,14 +25,10 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+from tempfile import mkstemp
 
-import os
-import sys
-
-from subprocess import Popen
 from ovos_utils.configuration import read_mycroft_config
 from neon_utils.configuration_utils import get_neon_speech_config
-from neon_utils.lock_utils import create_lock
 from neon_utils.logger import LOG
 
 
@@ -69,6 +65,14 @@ def _plugin_to_package(plugin: str) -> str:
     return known_plugins.get(plugin) or plugin
 
 
+def get_module_constraints() -> list:
+    import pkg_resources
+    speech_constraints = pkg_resources.working_set.by_key["neon-speech"].requires()
+    constraints_spec = [str(c) for c in speech_constraints]
+    LOG.debug(constraints_spec)
+    return constraints_spec
+
+
 def install_stt_plugin(plugin: str) -> bool:
     """
     Install an stt plugin using pip
@@ -76,7 +80,10 @@ def install_stt_plugin(plugin: str) -> bool:
     :returns: True if the plugin installation is successful
     """
     import pip
+    _, tmp_file = mkstemp()
+    with open(tmp_file, 'w') as f:
+        f.write('\n'.join(get_module_constraints()))
     LOG.info(f"Requested installation of plugin: {plugin}")
-    returned = pip.main(['install', _plugin_to_package(plugin)])
+    returned = pip.main(['install', _plugin_to_package(plugin), "-c", tmp_file])
     LOG.info(f"pip status: {returned}")
     return returned == 0
