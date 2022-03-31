@@ -57,8 +57,8 @@ class UtilTests(unittest.TestCase):
 
     def test_install_stt_plugin(self):
         from neon_speech.utils import install_stt_plugin
-        self.assertTrue(install_stt_plugin("google_cloud_streaming"))
-        import neon_stt_plugin_google_cloud_streaming
+        self.assertTrue(install_stt_plugin("neon-stt-plugin-polyglot"))
+        import neon_stt_plugin_polyglot
 
 
 if __name__ == '__main__':

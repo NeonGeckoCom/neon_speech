@@ -45,20 +45,30 @@ def neon_speech_cli(version: bool = False):
 
 
 @neon_speech_cli.command(help="Start Neon Speech module")
-@click.option("--plugin", "-p", default=None,
-              help="STT Plugin to install and configure")
 @click.option("--module", "-m", default=None,
-              help="STT module configuration value")
-def run(plugin, module):
+              help="STT Plugin to configure")
+@click.option("--package", "-p", default=None,
+              help="STT package spec to install")
+@click.option("--force-install", "-f", default=False, is_flag=True,
+              help="Force pip installation of configured module")
+def run(module, package, force_install):
     from neon_speech.utils import install_stt_plugin, get_config
     from neon_speech.__main__ import main
     speech_config = get_config()
-    if plugin:
-        install_stt_plugin(plugin)
+
+    if force_install and not (package or module):
+        click.echo("Installing STT plugin from configuration")
+        module = module or speech_config["stt"]["module"]
+        package = package or speech_config["stt"].get("package_spec")
+
+    if module:
+        install_stt_plugin(package or module)
         if not module:
             click.echo("Plugin specified without module")
-        else:
+        if module != speech_config["stt"]["module"]:
+            click.echo("Updating runtime config with module and package")
             speech_config["stt"]["module"] = module
+            speech_config["stt"]["package_spec"] = package
         click.echo(f'Loading STT Module: {speech_config["stt"]["module"]}')
 
     click.echo("Starting Speech Client")

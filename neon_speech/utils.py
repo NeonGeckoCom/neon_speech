@@ -30,6 +30,7 @@ from tempfile import mkstemp
 from ovos_utils.configuration import read_mycroft_config
 from neon_utils.configuration_utils import get_neon_speech_config
 from neon_utils.logger import LOG
+from neon_utils.packaging_utils import get_package_dependencies
 
 
 def get_config():
@@ -65,14 +66,6 @@ def _plugin_to_package(plugin: str) -> str:
     return known_plugins.get(plugin) or plugin
 
 
-def get_module_constraints() -> list:
-    import pkg_resources
-    speech_constraints = pkg_resources.working_set.by_key["neon-speech"].requires()
-    constraints_spec = [str(c) for c in speech_constraints]
-    LOG.debug(constraints_spec)
-    return constraints_spec
-
-
 def install_stt_plugin(plugin: str) -> bool:
     """
     Install an stt plugin using pip
@@ -82,7 +75,7 @@ def install_stt_plugin(plugin: str) -> bool:
     import pip
     _, tmp_file = mkstemp()
     with open(tmp_file, 'w') as f:
-        f.write('\n'.join(get_module_constraints()))
+        f.write('\n'.join(get_package_dependencies("neon-speech")))
     LOG.info(f"Requested installation of plugin: {plugin}")
     returned = pip.main(['install', _plugin_to_package(plugin), "-c", tmp_file])
     LOG.info(f"pip status: {returned}")

@@ -27,4 +27,4 @@ RUN pip install wheel && \
 COPY docker_overlay/asoundrc /root/.asoundrc
 COPY docker_overlay/client.conf /etc/pulse/client.conf
 
-CMD ["neon_speech_client"]
+CMD ["neon-speech", "run", "-f"]
