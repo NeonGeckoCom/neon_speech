@@ -58,8 +58,7 @@ class UtilTests(unittest.TestCase):
     def test_install_stt_plugin(self):
         from neon_speech.utils import install_stt_plugin
         self.assertTrue(install_stt_plugin("polyglot"))
-        self.assertIsInstance(
-            get_package_version_spec("neon-stt-plugin-polyglot"), str)
+        import neon_stt_plugin_polyglot
 
 
 if __name__ == '__main__':

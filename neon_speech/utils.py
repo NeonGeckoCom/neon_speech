@@ -75,17 +75,8 @@ def install_stt_plugin(plugin: str) -> bool:
     :param plugin: entrypoint of plugin to install
     :returns: True if the plugin installation is successful
     """
+    import pip
     LOG.info(f"Requested installation of plugin: {plugin}")
-    # TODO: Translate plugin entrypoint to package
-    can_pip = os.access(os.path.dirname(sys.executable), os.W_OK | os.X_OK)
-    pip_cmd = [sys.executable, '-m', 'pip', 'install', plugin]
-    if not can_pip:
-        pip_cmd = ['sudo', '-n'] + pip_cmd
-    with create_lock("stt_pip.lock"):
-        proc = Popen(pip_cmd)
-        code = proc.wait()
-        if code != 0:
-            error_trace = proc.stderr.read().decode()
-            LOG.error(error_trace)
-            return False
-    return True
+    returned = pip.main(['install', _plugin_to_package(plugin)])
+    LOG.info(f"pip status: {returned}")
+    return returned == 0
