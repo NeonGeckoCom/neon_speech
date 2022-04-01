@@ -1,3 +1,4 @@
+#!/bin/bash
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Framework
 # All trademark and other rights reserved by their respective owners
 # Copyright 2008-2022 Neongecko.com Inc.
@@ -25,45 +26,7 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from tempfile import mkstemp
 
-from ovos_utils.configuration import read_mycroft_config
-from neon_utils.configuration_utils import get_neon_speech_config
-from neon_utils.logger import LOG
-from neon_utils.packaging_utils import get_package_dependencies
-
-
-def get_config():
-    mycroft = read_mycroft_config()
-    neon = get_neon_speech_config()
-    return {**mycroft, **neon}
-
-
-def _plugin_to_package(plugin: str) -> str:
-    """
-    Get a PyPI spec for a known plugin entrypoint
-    :param plugin: plugin spec (i.e. config['stt']['module'])
-    :returns: package name associated with `plugin` or `plugin`
-    """
-    known_plugins = {
-        "deepspeech_stream_local": "neon-stt-plugin-deepspeech-stream-local",
-        "polyglot": "neon-stt-plugin-polyglot",
-        "google_cloud_streaming": "neon-stt-plugin-google-cloud-streaming",
-    }
-    return known_plugins.get(plugin) or plugin
-
-
-def install_stt_plugin(plugin: str) -> bool:
-    """
-    Install an stt plugin using pip
-    :param plugin: entrypoint of plugin to install
-    :returns: True if the plugin installation is successful
-    """
-    import pip
-    _, tmp_file = mkstemp()
-    with open(tmp_file, 'w') as f:
-        f.write('\n'.join(get_package_dependencies("neon-speech")))
-    LOG.info(f"Requested installation of plugin: {plugin}")
-    returned = pip.main(['install', _plugin_to_package(plugin), "-c", tmp_file])
-    LOG.info(f"pip status: {returned}")
-    return returned == 0
+# Plugin installation must occur in a separate thread, before module load, for the entry point to be loaded.
+neon-speech install-plugin -f
+neon-speech run
