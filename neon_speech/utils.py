@@ -25,18 +25,43 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from tempfile import mkstemp
 
-from ovos_utils.configuration import read_mycroft_config
+import json
+
+from os.path import join
+from tempfile import mkstemp
+from ovos_utils.configuration import get_ovos_config
+from ovos_utils.xdg_utils import xdg_config_home
 from neon_utils.configuration_utils import get_neon_speech_config
 from neon_utils.logger import LOG
 from neon_utils.packaging_utils import get_package_dependencies
 
 
-def get_config():
-    mycroft = read_mycroft_config()
+def get_speech_module_config() -> dict:
+    """
+    Get a dict config with all values required for the speech module read from
+    Neon YML config
+    :returns: dict Mycroft config with Neon YML values where defined
+    """
+    ovos = get_ovos_config()
+    if "hotwords" in ovos:
+        conf = ovos.pop("hotwords")
+        LOG.debug(f"removed hostwords config: {conf}")
     neon = get_neon_speech_config()
-    return {**mycroft, **neon}
+    return {**ovos, **neon}
+
+
+def patch_config(config: dict = None):
+    """
+    Write the specified speech configuration to the global config file
+    :param config: Mycroft-compatible configuration override
+    """
+    config = config or dict()
+    updated_config = {**get_speech_module_config(), **config}
+    config_path = join(xdg_config_home(), "neon", "neon.conf")
+    with open(config_path, "w+") as f:
+        json.dump(updated_config, f)
+    LOG.info(f"Updated config file: {config_path}")
 
 
 def _plugin_to_package(plugin: str) -> str:

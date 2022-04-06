@@ -30,6 +30,7 @@ import os
 
 from threading import Thread, Lock
 from time import time
+
 from ovos_utils.process_utils import StatusCallbackMap, ProcessStatus
 from pydub import AudioSegment
 from speech_recognition import AudioData
@@ -41,8 +42,8 @@ from ovos_utils.json_helper import merge_dict
 from mycroft_bus_client import Message
 
 from mycroft.client.speech.service import SpeechClient
+from mycroft.configuration import Configuration
 
-from neon_speech.utils import get_config
 from neon_speech.listener import NeonRecognizerLoop
 from neon_speech.stt import STTFactory
 
@@ -91,7 +92,9 @@ class NeonSpeechClient(SpeechClient):
         init_signal_handlers()
 
         self.user_config = get_neon_user_config()
-        self.config = speech_config or get_config()
+        if speech_config:
+            LOG.warning("Passed configuration will not be handled!")
+        self.config = Configuration.get()
         self.lock = Lock()
 
         callbacks = StatusCallbackMap(on_ready=ready_hook, on_error=error_hook,

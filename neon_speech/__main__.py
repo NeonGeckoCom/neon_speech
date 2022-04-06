@@ -27,16 +27,19 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from ovos_utils import wait_for_exit_signal
-
-from neon_speech.service import NeonSpeechClient
 from neon_utils.configuration_utils import init_config_dir
-
-from mycroft.lock import Lock
-from mycroft.util.process_utils import reset_sigint_handler
 
 
 def main(*args, **kwargs):
+    # Initialize configuration
     init_config_dir()
+    if kwargs.get("config"):
+        from neon_speech.utils import patch_config
+        patch_config(kwargs.pop("config"))
+
+    from mycroft.lock import Lock
+    from mycroft.util.process_utils import reset_sigint_handler
+    from neon_speech.service import NeonSpeechClient
     reset_sigint_handler()
     Lock("speech")
     service = NeonSpeechClient(*args, **kwargs)

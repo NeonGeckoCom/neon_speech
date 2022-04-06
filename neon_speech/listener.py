@@ -104,24 +104,26 @@ class NeonRecognizerLoop(RecognizerLoop):
 
     Local wake word recognizer and remote general speech recognition.
     """
-    def __init__(self, bus, watchdog=None, stt=None, fallback_stt=None,
-                 config=None):
-        self.config = config
+    def __init__(self, bus, watchdog=None, stt=None, fallback_stt=None):
         super().__init__(bus, watchdog, stt, fallback_stt)
 
     # def bind_transformers(self, parsers_service):
     #     self.responsive_recognizer.bind(parsers_service)
 
     def _load_config(self):
-        """Load configuration parameters from configuration."""
-        config = Configuration.get()
-        self.config_core = config
-        self._config_hash = recognizer_conf_hash(config)
-        self.lang = config.get('lang')
-        self.config = config.get('listener')
+        """
+        Load configuration parameters from configuration and initialize
+        self.microphone, self.responsive_recognizer
+        """
+        # self.config_core = self._init_config_core or Configuration.get()
+        self.config_core = Configuration.get()
+        self.config = self.config_core.get('listener')
+        self._config_hash = recognizer_conf_hash(self.config_core)
+        self.lang = self.config_core.get('lang')
         rate = self.config.get('sample_rate')
 
-        device_index = self.config.get('device_index')
+        device_index = self.config.get('device_index') or \
+            self.config.get("dev_index")
         device_name = self.config.get('device_name')
         if not device_index and device_name:
             device_index = find_input_device(device_name)
@@ -133,12 +135,13 @@ class NeonRecognizerLoop(RecognizerLoop):
         self.create_hotword_engines()
         self.state = RecognizerLoopState()
         self.responsive_recognizer = NeonResponsiveRecognizer(self)
+        # TODO: Update recognizer to support passed config
 
     def start_async(self):
         """Start consumer and producer threads."""
         self.state.running = True
         if not self.stt:
-            self.stt = STTFactory.create(self.config)
+            self.stt = STTFactory.create(self.config_core)
         self.queue = Queue()
         self.audio_consumer = NeonAudioConsumer(self)
         self.audio_consumer.start()
