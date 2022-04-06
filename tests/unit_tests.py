@@ -63,7 +63,7 @@ class UtilTests(unittest.TestCase):
     def test_patch_config(self):
         from neon_speech.utils import patch_config
         test_config_dir = os.path.join(os.path.dirname(__file__), "config")
-        os.makedirs(test_config_dir)
+        os.makedirs(test_config_dir, exist_ok=True)
         os.environ["XDG_CONFIG_HOME"] = test_config_dir
         test_config = {"new_key": {'val': True}}
         patch_config(test_config)
