@@ -43,7 +43,6 @@ from mycroft_bus_client import Message
 
 from mycroft.client.speech.service import SpeechClient
 from mycroft.configuration import Configuration
-
 from neon_speech.listener import NeonRecognizerLoop
 from neon_speech.stt import STTFactory
 
@@ -93,13 +92,14 @@ class NeonSpeechClient(SpeechClient):
 
         self.user_config = get_neon_user_config()
         if speech_config:
-            LOG.warning("Passed configuration will not be handled!")
-        self.config = Configuration.get()
+            LOG.warning("Passed configuration will not be handled in listener")
+        self.config = speech_config or Configuration.get()
         self.lock = Lock()
 
         callbacks = StatusCallbackMap(on_ready=ready_hook, on_error=error_hook,
                                       on_stopping=stopping_hook,
-                                      on_alive=alive_hook, on_started=started_hook)
+                                      on_alive=alive_hook,
+                                      on_started=started_hook)
         self.status = ProcessStatus('speech', self.bus, callbacks)
         self.status.set_started()
         self.status.bind(self.bus)
@@ -117,8 +117,10 @@ class NeonSpeechClient(SpeechClient):
         super(NeonSpeechClient, self).connect_bus_events()
         # Register handler for internet (re-)connection
         # TODO: This should be defined as a single event DM
-        self.bus.on("mycroft.internet.connected", self.handle_internet_connected)
-        self.bus.on("ovos.wifi.setup.completed", self.handle_internet_connected)
+        self.bus.on("mycroft.internet.connected",
+                    self.handle_internet_connected)
+        self.bus.on("ovos.wifi.setup.completed",
+                    self.handle_internet_connected)
 
         # Register API Handlers
         self.bus.on("neon.get_stt", self.handle_get_stt)
@@ -137,7 +139,7 @@ class NeonSpeechClient(SpeechClient):
                         'destination': ["skills"],
                         "timing": event.pop("timing", {}),
                         'username': self.user_config["user"]["username"] or
-                                    "local",
+                        "local",
                         'user_profiles': [self.user_config.content]
                         })
         if "data" in event:
@@ -157,29 +159,36 @@ class NeonSpeechClient(SpeechClient):
 
     def handle_get_stt(self, message: Message):
         """
-        Handles a request for stt. Emits a response to the sender with stt data or error data
+        Handles a request for stt.
+        Emits a response to the sender with stt data or error data
         :param message: Message associated with request
         """
         wav_file_path = message.data.get("audio_file")
         lang = message.data.get("lang")
         ident = message.context.get("ident") or "neon.get_stt.response"
         if not wav_file_path:
-            self.bus.emit(message.reply(ident, data={"error": f"audio_file not specified!"}))
+            self.bus.emit(message.reply(
+                ident, data={"error": f"audio_file not specified!"}))
             return
 
         if not os.path.isfile(wav_file_path):
-            self.bus.emit(message.reply(ident, data={"error": f"{wav_file_path} Not found!"}))
+            self.bus.emit(message.reply(
+                ident, data={"error": f"{wav_file_path} Not found!"}))
 
         try:
-            _, parser_data, transcriptions = self._get_stt_from_file(wav_file_path, lang)
-            self.bus.emit(message.reply(ident, data={"parser_data": parser_data, "transcripts": transcriptions}))
+            _, parser_data, transcriptions = \
+                self._get_stt_from_file(wav_file_path, lang)
+            self.bus.emit(message.reply(ident,
+                                        data={"parser_data": parser_data,
+                                              "transcripts": transcriptions}))
         except Exception as e:
             LOG.error(e)
             self.bus.emit(message.reply(ident, data={"error": repr(e)}))
 
     def handle_audio_input(self, message):
         """
-        Handler for `neon.audio_input`. Handles remote audio input to Neon and replies with confirmation
+        Handler for `neon.audio_input`.
+        Handles remote audio input to Neon and replies with confirmation
         :param message: Message associated with request
         """
 
@@ -190,7 +199,7 @@ class NeonSpeechClient(SpeechClient):
                         'source': 'speech_api',
                         'ident': time(),
                         'username': self.user_config["user"]["username"] or
-                                    "local",
+                        "local",
                         'user_profiles': [self.user_config.content]}
             ctx = {**defaults, **ctx, 'destination': ['skills'],
                    'timing': {'start': msg.data.get('time'),
@@ -221,7 +230,7 @@ class NeonSpeechClient(SpeechClient):
 
     def handle_internet_connected(self, _):
         """
-        Handle notification from core that internet connection has been established
+        Handle notification from core that internet connection is established
         """
         LOG.info(f"Internet Connected, Resetting STT Stream")
         self.loop.audio_producer.stream_handler.has_result.set()
@@ -252,7 +261,7 @@ class NeonSpeechClient(SpeechClient):
         if isinstance(transcriptions, str):
             LOG.warning("Transcriptions is a str, no alternatives provided")
             transcriptions = [transcriptions]
-        audio, audio_context = self.loop.responsive_recognizer.\
+        audio, audio_context = self.loop.responsive_recognizer. \
             audio_consumers.transform(audio_data)
         return audio, audio_context, transcriptions
 

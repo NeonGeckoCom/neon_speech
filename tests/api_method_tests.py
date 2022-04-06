@@ -46,7 +46,6 @@ TEST_CONFIG = get_neon_speech_config()
 TEST_CONFIG["stt"]["module"] = "deepspeech_stream_local"
 
 
-# TODO: Test non-streaming STT module DM
 class TestAPIMethods(unittest.TestCase):
     bus_thread = None
     speech_thread = None

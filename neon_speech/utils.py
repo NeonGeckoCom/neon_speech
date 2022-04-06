@@ -27,6 +27,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import json
+import os.path
 
 from os.path import join
 from tempfile import mkstemp
@@ -58,10 +59,12 @@ def patch_config(config: dict = None):
     """
     config = config or dict()
     updated_config = {**get_speech_module_config(), **config}
-    config_path = join(xdg_config_home(), "neon", "neon.conf")
-    with open(config_path, "w+") as f:
+    config_file = join(xdg_config_home(), "neon", "neon.conf")
+    if not os.path.isdir(os.path.dirname(config_file)):
+        os.makedirs(os.path.dirname(config_file))
+    with open(config_file, "w+") as f:
         json.dump(updated_config, f)
-    LOG.info(f"Updated config file: {config_path}")
+    LOG.info(f"Updated config file: {config_file}")
 
 
 def _plugin_to_package(plugin: str) -> str:
