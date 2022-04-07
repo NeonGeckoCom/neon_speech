@@ -12,7 +12,8 @@ license_overrides = {
     'ptyprocess': 'ISC license',
     'psutil': 'BSD3',
     'pyaudio': 'MIT',
-    'petact': 'MIT'
+    'petact': 'MIT',
+    "precise-runner": "Apache-2.0"
 }
 # explicitly allow these packages that would fail otherwise
 whitelist = ["neon-api-proxy"]
