@@ -11,7 +11,8 @@ license_overrides = {
     'pyxdg': 'GPL-2.0',
     'ptyprocess': 'ISC license',
     'psutil': 'BSD3',
-    'pyaudio': 'MIT'
+    'pyaudio': 'MIT',
+    'petact': 'MIT'
 }
 # explicitly allow these packages that would fail otherwise
 whitelist = ["neon-api-proxy"]
