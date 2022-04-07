@@ -14,7 +14,7 @@ license_overrides = {
     'pyaudio': 'MIT'
 }
 # explicitly allow these packages that would fail otherwise
-whitelist = []
+whitelist = ["neon-api-proxy"]
 
 # validation flags
 allow_nonfree = False
