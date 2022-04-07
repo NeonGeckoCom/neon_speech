@@ -27,6 +27,8 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from queue import Queue
+
+from neon_utils.configuration_utils import get_neon_device_type
 from neon_utils.logger import LOG
 from ovos_utils.metrics import Stopwatch
 from mycroft.configuration import Configuration
@@ -146,4 +148,5 @@ class NeonRecognizerLoop(RecognizerLoop):
         self.audio_consumer = NeonAudioConsumer(self)
         self.audio_consumer.start()
         self.audio_producer = AudioProducer(self)
-        self.audio_producer.start()
+        if get_neon_device_type() != "server":
+            self.audio_producer.start()
