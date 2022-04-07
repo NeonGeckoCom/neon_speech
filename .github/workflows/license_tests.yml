@@ -20,7 +20,7 @@ jobs:
       - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt install python3-dev swig libssl-dev gcc
+          sudo apt install python3-dev swig libssl-dev portaudio19-dev python3-pyaudio libpulse-dev
       - name: Install core repo
         run: |
           pip install .
