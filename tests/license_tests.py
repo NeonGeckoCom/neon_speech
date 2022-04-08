@@ -13,7 +13,9 @@ license_overrides = {
     'psutil': 'BSD3',
     'pyaudio': 'MIT',
     'petact': 'MIT',
-    "precise-runner": "Apache-2.0"
+    "precise-runner": "Apache-2.0",
+    'soupsieve': 'MIT',
+    'setuptools': 'MIT'
 }
 # explicitly allow these packages that would fail otherwise
 whitelist = ["neon-api-proxy"]
