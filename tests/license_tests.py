@@ -15,7 +15,8 @@ license_overrides = {
     'petact': 'MIT',
     "precise-runner": "Apache-2.0",
     'soupsieve': 'MIT',
-    'setuptools': 'MIT'
+    'setuptools': 'MIT',
+    'sonopy': 'Apache-2.0'
 }
 # explicitly allow these packages that would fail otherwise
 whitelist = ["neon-api-proxy"]
