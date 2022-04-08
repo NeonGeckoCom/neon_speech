@@ -39,8 +39,11 @@ from ovos_plugin_manager.templates.stt import StreamingSTT as _Streaming
 
 
 class StreamingSTT(_Streaming, ABC):
-    def __init__(self, results_event=None, *_, **__):
+    def __init__(self, results_event=None, *_, **kwargs):
         super(StreamingSTT, self).__init__()
+        if kwargs.get("config"):
+            config = kwargs['config']
+            self.config = config.get(config['module']) or self.config
         if results_event:
             # TODO: Deprecate this
             self.results_event = results_event
@@ -64,7 +67,7 @@ class StreamingSTT(_Streaming, ABC):
 class WrappedSTT:
     def __new__(cls, clazz, *args, **kwargs):
         # read config
-        config_core = kwargs.get("config") or get_neon_speech_config()
+        config_core = {'stt': kwargs.get("config")} or get_neon_speech_config()
         metric_upload = config_core.get("metric_upload", False)
         # build STT
         for k in list(kwargs.keys()):
@@ -90,6 +93,7 @@ class STTFactory(OVOSSTTFactory):
         if not config:  # No config, go get it
             config = get_neon_speech_config().get("stt", {})
 
+        LOG.info(f"Create STT with config: {config}")
         clazz = OVOSSTTFactory.get_class(config)
         if not clazz:
             LOG.warning("plugin not found, falling back to Chromium STT")

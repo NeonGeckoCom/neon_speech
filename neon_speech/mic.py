@@ -38,12 +38,15 @@ from neon_transformers.audio_transformers import AudioTransformersService
 class NeonResponsiveRecognizer(ResponsiveRecognizer):
 
     def __init__(self, *args, **kwargs):
+        _config = kwargs.pop("config", None)
         super().__init__(*args, **kwargs)
-        self.config_core = Configuration.get()
-        listener_config = self.config_core.get("listener") or {}
+        config = _config or self.config
+        # TODO: Pass config to parent instead of reading from disk
+        listener_config = config.get("listener") or {}
         self.use_wake_word = listener_config.get('wake_word_enabled', True)
         self.in_speech = False
-        self.audio_consumers = AudioTransformersService(self.loop.bus, config=self.config_core)
+        self.audio_consumers = AudioTransformersService(self.loop.bus,
+                                                        config=config)
         # TODO auto generated yaml returned a string '10.0,'
         if not isinstance(self.recording_timeout, int):
             self.recording_timeout = 10.0

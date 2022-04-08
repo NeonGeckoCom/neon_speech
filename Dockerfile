@@ -24,7 +24,7 @@ WORKDIR /neon_speech
 RUN pip install wheel && \
   pip install .[docker]
 
-COPY docker_overlay/asoundrc /root/.asoundrc
-COPY docker_overlay/client.conf /etc/pulse/client.conf
+COPY docker_overlay/ /
+RUN chmod ugo+x /root/run.sh
 
-CMD ["neon_speech_client"]
+CMD ["/root/run.sh"]

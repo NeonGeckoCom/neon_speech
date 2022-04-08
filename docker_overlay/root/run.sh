@@ -1,3 +1,4 @@
+#!/bin/bash
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Framework
 # All trademark and other rights reserved by their respective owners
 # Copyright 2008-2022 Neongecko.com Inc.
@@ -26,27 +27,6 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from ovos_utils import wait_for_exit_signal
-from neon_utils.configuration_utils import init_config_dir
-
-
-def main(*args, **kwargs):
-    # Initialize configuration
-    init_config_dir()
-    if kwargs.get("config"):
-        from neon_speech.utils import patch_config
-        patch_config(kwargs.pop("config"))
-
-    from mycroft.lock import Lock
-    from mycroft.util.process_utils import reset_sigint_handler
-    from neon_speech.service import NeonSpeechClient
-    reset_sigint_handler()
-    Lock("speech")
-    service = NeonSpeechClient(*args, **kwargs)
-    service.start()
-    wait_for_exit_signal()
-    service.shutdown()
-
-
-if __name__ == "__main__":
-    main()
+# Plugin installation must occur in a separate thread, before module load, for the entry point to be loaded.
+neon-speech install-plugin -f
+neon-speech run
