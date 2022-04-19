@@ -17,7 +17,8 @@ license_overrides = {
     'soupsieve': 'MIT',
     'setuptools': 'MIT',
     'sonopy': 'Apache-2.0',
-    "python-dateutil": "Apache-2.0"
+    "python-dateutil": "Apache-2.0",
+    "pyparsing": "MIT"
 }
 # explicitly allow these packages that would fail otherwise
 whitelist = ["neon-api-proxy"]
