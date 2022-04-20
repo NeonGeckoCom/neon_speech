@@ -37,7 +37,7 @@ from mycroft_bus_client import MessageBusClient, Message
 from neon_utils.configuration_utils import get_neon_speech_config
 from neon_utils.file_utils import encode_file_to_base64_string
 from neon_utils.logger import LOG
-from mycroft.messagebus.service.__main__ import main as messagebus_service
+from neon_messagebus.service.__main__ import main as messagebus_service
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from neon_speech.__main__ import main as neon_speech_main
