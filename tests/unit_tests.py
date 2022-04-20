@@ -90,7 +90,7 @@ class UtilTests(unittest.TestCase):
         TEST_CONFIG = get_neon_speech_config()
         TEST_CONFIG["stt"]["module"] = "deepspeech_stream_local"
         bus = NeonBusService(daemonic=True)
-        bus.run()
+        bus.start()
         client = NeonSpeechClient(speech_config=TEST_CONFIG, daemonic=True)
         audio, context, transcripts = \
             client._get_stt_from_file(join(AUDIO_FILE_PATH, "stop.wav"))
@@ -114,10 +114,8 @@ class UtilTests(unittest.TestCase):
             t.start()
 
         for t in threads:
-            t.join()
+            t.join(30)
         bus.shutdown()
-        client.shutdown()
-
     # TODO: Test other speech service methods directly
 
 

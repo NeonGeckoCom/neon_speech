@@ -37,7 +37,7 @@ from mycroft_bus_client import MessageBusClient, Message
 from neon_utils.configuration_utils import get_neon_speech_config
 from neon_utils.file_utils import encode_file_to_base64_string
 from neon_utils.logger import LOG
-from neon_messagebus.service.__main__ import main as messagebus_service
+from neon_messagebus.service import NeonBusService
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from neon_speech.__main__ import main as neon_speech_main
@@ -49,16 +49,15 @@ TEST_CONFIG["stt"]["module"] = "deepspeech_stream_local"
 
 
 class TestAPIMethods(unittest.TestCase):
-    bus_thread = None
     speech_thread = None
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.bus_thread = Process(target=messagebus_service, daemon=False)
+        cls.messagebus = NeonBusService(debug=True, daemonic=True)
+        cls.messagebus.start()
         cls.speech_thread = Process(target=neon_speech_main,
                                     kwargs={"speech_config": TEST_CONFIG},
                                     daemon=False)
-        cls.bus_thread.start()
         cls.speech_thread.start()
         cls.bus = MessageBusClient()
         cls.bus.run_in_thread()
@@ -77,12 +76,9 @@ class TestAPIMethods(unittest.TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         super(TestAPIMethods, cls).tearDownClass()
-        cls.bus_thread.terminate()
+        cls.messagebus.shutdown()
         cls.speech_thread.terminate()
         try:
-            if cls.bus_thread.is_alive():
-                LOG.error("Bus still alive")
-                cls.bus_thread.kill()
             if cls.speech_thread.is_alive():
                 LOG.error("Bus still alive")
                 cls.speech_thread.kill()
