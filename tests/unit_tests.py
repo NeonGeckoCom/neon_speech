@@ -90,6 +90,7 @@ class UtilTests(unittest.TestCase):
         TEST_CONFIG = get_neon_speech_config()
         TEST_CONFIG["stt"]["module"] = "deepspeech_stream_local"
         bus = NeonBusService(daemonic=True)
+        bus.run()
         client = NeonSpeechClient(speech_config=TEST_CONFIG, daemonic=True)
         audio, context, transcripts = \
             client._get_stt_from_file(join(AUDIO_FILE_PATH, "stop.wav"))
