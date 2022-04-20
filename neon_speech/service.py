@@ -27,6 +27,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import os
+from tempfile import mkstemp
 
 from threading import Thread, Lock
 from time import time
@@ -35,6 +36,7 @@ from ovos_utils.process_utils import StatusCallbackMap, ProcessStatus
 from pydub import AudioSegment
 from speech_recognition import AudioData
 
+from neon_utils.file_utils import decode_base64_string_to_file
 from neon_utils.messagebus_utils import get_messagebus
 from neon_utils.logger import LOG
 from neon_utils.configuration_utils import get_neon_user_config
@@ -163,7 +165,11 @@ class NeonSpeechClient(SpeechClient):
         Emits a response to the sender with stt data or error data
         :param message: Message associated with request
         """
-        wav_file_path = message.data.get("audio_file")
+        if message.data.get("audio_data"):
+            wav_file_path = self._write_encoded_file(
+                message.data.pop("audio_data"))
+        else:
+            wav_file_path = message.data.get("audio_file")
         lang = message.data.get("lang")
         ident = message.context.get("ident") or "neon.get_stt.response"
         if not wav_file_path:
@@ -207,7 +213,11 @@ class NeonSpeechClient(SpeechClient):
             return ctx
 
         ident = message.context.get("ident") or "neon.audio_input.response"
-        wav_file_path = message.data.get("audio_file")
+        if message.data.get("audio_data"):
+            wav_file_path = self._write_encoded_file(
+                message.data.pop("audio_data"))
+        else:
+            wav_file_path = message.data.get("audio_file")
         lang = message.data.get("lang")
         try:
             _, parser_data, transcriptions = \
@@ -234,6 +244,14 @@ class NeonSpeechClient(SpeechClient):
         """
         LOG.info(f"Internet Connected, Resetting STT Stream")
         self.loop.audio_producer.stream_handler.has_result.set()
+
+    @staticmethod
+    def _write_encoded_file(audio_data: str) -> str:
+        _, output_path = mkstemp()
+        if os.path.isfile(output_path):
+            os.remove(output_path)
+        wav_file_path = decode_base64_string_to_file(audio_data, output_path)
+        return wav_file_path
 
     def _get_stt_from_file(self, wav_file: str,
                            lang: str = None) -> (AudioData, dict, list):

@@ -35,13 +35,15 @@ from time import sleep, time
 from multiprocessing import Process
 from mycroft_bus_client import MessageBusClient, Message
 from neon_utils.configuration_utils import get_neon_speech_config
+from neon_utils.file_utils import encode_file_to_base64_string
 from neon_utils.logger import LOG
 from mycroft.messagebus.service.__main__ import main as messagebus_service
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from neon_speech.__main__ import main as neon_speech_main
 
-AUDIO_FILE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "audio_files")
+AUDIO_FILE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                               "audio_files")
 TEST_CONFIG = get_neon_speech_config()
 TEST_CONFIG["stt"]["module"] = "deepspeech_stream_local"
 
@@ -53,7 +55,9 @@ class TestAPIMethods(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.bus_thread = Process(target=messagebus_service, daemon=False)
-        cls.speech_thread = Process(target=neon_speech_main, kwargs={"speech_config": TEST_CONFIG}, daemon=False)
+        cls.speech_thread = Process(target=neon_speech_main,
+                                    kwargs={"speech_config": TEST_CONFIG},
+                                    daemon=False)
         cls.bus_thread.start()
         cls.speech_thread.start()
         cls.bus = MessageBusClient()
@@ -89,7 +93,9 @@ class TestAPIMethods(unittest.TestCase):
         context = {"client": "tester",
                    "ident": "123",
                    "user": "TestRunner"}
-        stt_resp = self.bus.wait_for_response(Message("neon.get_stt", {}, context), context["ident"])
+        stt_resp = self.bus.wait_for_response(Message("neon.get_stt",
+                                                      {}, context),
+                                              context["ident"])
         self.assertEqual(stt_resp.context, context)
         self.assertIsInstance(stt_resp.data.get("error"), str)
         self.assertEqual(stt_resp.data["error"], "audio_file not specified!")
@@ -98,8 +104,9 @@ class TestAPIMethods(unittest.TestCase):
         context = {"client": "tester",
                    "ident": "1234",
                    "user": "TestRunner"}
-        stt_resp = self.bus.wait_for_response(Message("neon.get_stt", {"audio_file": "~/invalid_file.wav"}, context),
-                                              context["ident"])
+        stt_resp = self.bus.wait_for_response(
+            Message("neon.get_stt", {"audio_file": "~/invalid_file.wav"},
+                    context), context["ident"])
         self.assertEqual(stt_resp.context, context)
         self.assertIsInstance(stt_resp.data.get("error"), str)
 
@@ -107,9 +114,10 @@ class TestAPIMethods(unittest.TestCase):
         context = {"client": "tester",
                    "ident": "123456",
                    "user": "TestRunner"}
-        stt_resp = self.bus.wait_for_response(Message("neon.get_stt", {"audio_file": os.path.join(AUDIO_FILE_PATH,
-                                                                                                  "test.txt")},
-                                                      context), context["ident"])
+        stt_resp = self.bus.wait_for_response(
+            Message("neon.get_stt",
+                    {"audio_file": os.path.join(AUDIO_FILE_PATH, "test.txt")},
+                    context), context["ident"])
         self.assertEqual(stt_resp.context, context)
         self.assertIsInstance(stt_resp.data.get("error"), str)
 
@@ -117,9 +125,26 @@ class TestAPIMethods(unittest.TestCase):
         context = {"client": "tester",
                    "ident": "12345",
                    "user": "TestRunner"}
-        stt_resp = self.bus.wait_for_response(Message("neon.get_stt", {"audio_file": os.path.join(AUDIO_FILE_PATH,
-                                                                                                  "stop.wav")},
-                                                      context), context["ident"], 60.0)
+        stt_resp = self.bus.wait_for_response(Message(
+            "neon.get_stt", {"audio_file": os.path.join(AUDIO_FILE_PATH,
+                                                        "stop.wav")},
+            context), context["ident"], 60.0)
+        self.assertEqual(stt_resp.context, context)
+        self.assertIsInstance(stt_resp.data.get("parser_data"), dict,
+                              stt_resp.serialize())
+        self.assertIsInstance(stt_resp.data.get("transcripts"), list,
+                              stt_resp.serialize())
+        self.assertIn("stop", stt_resp.data.get("transcripts"))
+
+    def test_get_stt_valid_contents(self):
+        context = {"client": "tester",
+                   "ident": "12345",
+                   "user": "TestRunner"}
+        audio_data = encode_file_to_base64_string(os.path.join(AUDIO_FILE_PATH,
+                                                               "stop.wav"))
+        stt_resp = self.bus.wait_for_response(Message(
+            "neon.get_stt", {"audio_data": audio_data},
+            context), context["ident"], 60.0)
         self.assertEqual(stt_resp.context, context)
         self.assertIsInstance(stt_resp.data.get("parser_data"), dict,
                               stt_resp.serialize())
@@ -134,9 +159,11 @@ class TestAPIMethods(unittest.TestCase):
                    "ident": "11111",
                    "user": "TestRunner",
                    "extra_data": "something"}
-        stt_resp = self.bus.wait_for_response(Message("neon.audio_input", {"audio_file": os.path.join(AUDIO_FILE_PATH,
-                                                                                                      "stop.wav")},
-                                                      context), context["ident"], 60.0)
+        audio_data = encode_file_to_base64_string(os.path.join(AUDIO_FILE_PATH,
+                                                               "stop.wav"))
+        stt_resp = self.bus.wait_for_response(Message(
+            "neon.audio_input", {"audio_data": audio_data},
+            context), context["ident"], 60.0)
         self.assertIsInstance(stt_resp, Message)
         for key in context:
             self.assertIn(key, stt_resp.context)
