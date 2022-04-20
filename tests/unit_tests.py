@@ -25,8 +25,13 @@ import shutil
 import sys
 import unittest
 
-from os.path import dirname
-from neon_utils.configuration_utils import get_neon_local_config
+from os.path import dirname, join
+from threading import Thread
+
+from speech_recognition import AudioData
+
+from neon_utils.configuration_utils import get_neon_local_config, get_neon_speech_config
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 
@@ -76,6 +81,39 @@ class UtilTests(unittest.TestCase):
         self.assertTrue(config['new_key']['val'])
         shutil.rmtree(test_config_dir)
         os.environ.pop("XDG_CONFIG_HOME")
+
+    def test_get_stt_from_file(self):
+        from neon_speech.service import NeonSpeechClient
+        AUDIO_FILE_PATH = os.path.join(os.path.dirname(
+            os.path.realpath(__file__)), "audio_files")
+        TEST_CONFIG = get_neon_speech_config()
+        TEST_CONFIG["stt"]["module"] = "deepspeech_stream_local"
+        client = NeonSpeechClient(speech_config=TEST_CONFIG, daemonic=True)
+        audio, context, transcripts = \
+            client._get_stt_from_file(join(AUDIO_FILE_PATH, "stop.wav"))
+        self.assertIsInstance(audio, AudioData)
+        self.assertIsInstance(context, dict)
+        self.assertIsInstance(transcripts, list)
+        self.assertIn("stop", transcripts)
+
+        def threaded_get_stt():
+            audio, context, transcripts = \
+                client._get_stt_from_file(join(AUDIO_FILE_PATH, "stop.wav"))
+            self.assertIsInstance(audio, AudioData)
+            self.assertIsInstance(context, dict)
+            self.assertIsInstance(transcripts, list)
+            self.assertIn("stop", transcripts)
+
+        threads = list()
+        for i in range(0, 12):
+            t = Thread(target=threaded_get_stt)
+            threads.append(t)
+            t.start()
+
+        for t in threads:
+            t.join()
+
+    # TODO: Test other speech service methods directly
 
 
 if __name__ == '__main__':

@@ -183,8 +183,6 @@ class TestAPIMethods(unittest.TestCase):
         self.assertIsInstance(message.context["timing"], dict)
         self.assertEqual(message.context["destination"], ["skills"])
 
-    # TODO: Test locking DM
-
 
 if __name__ == '__main__':
     unittest.main()

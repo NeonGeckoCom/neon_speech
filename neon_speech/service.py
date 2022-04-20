@@ -172,6 +172,7 @@ class NeonSpeechClient(SpeechClient):
             wav_file_path = message.data.get("audio_file")
         lang = message.data.get("lang")
         ident = message.context.get("ident") or "neon.get_stt.response"
+        LOG.info(f"Handling STT request: {ident}")
         if not wav_file_path:
             self.bus.emit(message.reply(
                 ident, data={"error": f"audio_file not specified!"}))
@@ -213,6 +214,7 @@ class NeonSpeechClient(SpeechClient):
             return ctx
 
         ident = message.context.get("ident") or "neon.audio_input.response"
+        LOG.info(f"Handling audio input: {ident}")
         if message.data.get("audio_data"):
             wav_file_path = self._write_encoded_file(
                 message.data.pop("audio_data"))
@@ -267,7 +269,8 @@ class NeonSpeechClient(SpeechClient):
         audio_data = AudioData(segment.raw_data, segment.frame_rate,
                                segment.sample_width)
         audio_stream = get_audio_file_stream(wav_file)
-        with self.lock:
+        if self.lock.acquire(True, 30):
+            LOG.info(f"Starting STT processing: {wav_file}")
             self.api_stt.stream_start(lang)
             while True:
                 try:
@@ -276,6 +279,9 @@ class NeonSpeechClient(SpeechClient):
                 except EOFError:
                     break
             transcriptions = self.api_stt.stream_stop()
+            self.lock.release()
+        else:
+            LOG.error(f"Timed out acquiring lock, not processing: {wav_file}")
         if isinstance(transcriptions, str):
             LOG.warning("Transcriptions is a str, no alternatives provided")
             transcriptions = [transcriptions]
