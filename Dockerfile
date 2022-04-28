@@ -16,7 +16,8 @@ RUN apt-get update && \
     portaudio19-dev \
     flac \
     gcc \
-    ffmpeg
+    ffmpeg \
+    git
 
 ADD . /neon_speech
 WORKDIR /neon_speech
