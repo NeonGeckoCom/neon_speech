@@ -270,7 +270,7 @@ class NeonSpeechClient(SpeechClient):
                                segment.sample_width)
         audio_stream = get_audio_file_stream(wav_file)
         if self.lock.acquire(True, 30):
-            LOG.info(f"Starting STT processing: {wav_file}")
+            LOG.info(f"Starting STT processing (lang={lang}): {wav_file}")
             self.api_stt.stream_start(lang)
             while True:
                 try:
@@ -282,11 +282,13 @@ class NeonSpeechClient(SpeechClient):
             self.lock.release()
         else:
             LOG.error(f"Timed out acquiring lock, not processing: {wav_file}")
+            transcriptions = []
         if isinstance(transcriptions, str):
             LOG.warning("Transcriptions is a str, no alternatives provided")
             transcriptions = [transcriptions]
         audio, audio_context = self.loop.responsive_recognizer. \
             audio_consumers.transform(audio_data)
+        LOG.info(f"Transcribed: {transcriptions}")
         return audio, audio_context, transcriptions
 
     def _emit_utterance_to_skills(self, message_to_emit: Message) -> bool:

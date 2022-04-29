@@ -1,6 +1,5 @@
-# neon-stt-plugin-deepspeech_stream_local~=0.1
-# neon-stt-plugin-google_cloud_streaming~=0.2
 chatterbox-wake-word-plugin-dummy~=0.1
 ovos-ww-plugin-pocketsphinx~=0.1
 ovos-ww-plugin-precise~=0.1
 ovos-core[bus,stt]~=0.0.2a28
+# TODO: Update to release
