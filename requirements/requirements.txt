@@ -4,7 +4,6 @@ mycroft-messagebus-client~=0.9,>=0.9.5
 SpeechRecognition~=3.8
 ovos_utils~=0.0.15
 ovos_plugin_manager~=0.0.16
-ovos-core[stt]~=0.0.3
 pydub~=0.23
 click~=8.0
 click-default-group~=1.2
