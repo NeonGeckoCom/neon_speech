@@ -1,5 +1,5 @@
 neon-stt-plugin-deepspeech_stream_local
-ovos-core~=0.0.1
+ovos-core[stt]~=0.0.3
 pytest
-tornado
 mock~=4.0
+neon-messagebus

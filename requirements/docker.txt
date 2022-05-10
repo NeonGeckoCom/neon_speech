@@ -1,0 +1,4 @@
+chatterbox-wake-word-plugin-dummy~=0.1
+ovos-ww-plugin-pocketsphinx~=0.1
+ovos-ww-plugin-precise~=0.1
+ovos-core[bus,stt]~=0.0.3

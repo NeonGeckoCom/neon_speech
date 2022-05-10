@@ -1,3 +1,4 @@
+#!/bin/bash
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Framework
 # All trademark and other rights reserved by their respective owners
 # Copyright 2008-2022 Neongecko.com Inc.
@@ -26,4 +27,6 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-__version__ = "1.0.0"
+# Plugin installation must occur in a separate thread, before module load, for the entry point to be loaded.
+neon-speech install-plugin -f
+neon-speech run
