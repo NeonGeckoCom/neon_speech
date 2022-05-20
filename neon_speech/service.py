@@ -40,6 +40,7 @@ from neon_utils.file_utils import decode_base64_string_to_file
 from neon_utils.messagebus_utils import get_messagebus
 from neon_utils.logger import LOG
 from neon_utils.configuration_utils import get_neon_user_config
+from neon_utils.user_utils import apply_local_user_profile_updates
 from ovos_utils.json_helper import merge_dict
 from mycroft_bus_client import Message
 
@@ -92,7 +93,9 @@ class NeonSpeechClient(SpeechClient):
         init_signal_bus(self.bus)
         init_signal_handlers()
 
-        self.user_config = get_neon_user_config()
+        self._default_user = get_neon_user_config()
+        self._default_user['user']['username'] = "local"
+
         if speech_config:
             LOG.warning("Passed configuration will not be handled in listener")
         self.config = speech_config or Configuration.get()
@@ -130,8 +133,25 @@ class NeonSpeechClient(SpeechClient):
 
         # State Change Notifications
         self.bus.on("neon.wake_words_state", self.handle_wake_words_state)
+        self.bus.on("neon.profile_update", self.handle_profile_update)
 
-    def handle_utterance(self, event):
+    def handle_profile_update(self, message):
+        """
+        Handle an emitted profile update. If username associated with update is
+        "local", updates the default profile applied to audio input messages.
+        :param message: Message associated with profile update
+        """
+        updated_profile = message.data.get("profile")
+        if updated_profile["user"]["username"] == \
+                self._default_user["user"]["username"]:
+            apply_local_user_profile_updates(updated_profile,
+                                             self._default_user)
+
+    def handle_utterance(self, event: dict):
+        """
+        Handle an utterance event on the Recognizer Loop
+        :param event: Utterance event
+        """
         LOG.info("Utterance: " + str(event['utterances']))
         context = event["context"]  # from audio transformers
         context.update({'client_name': 'mycroft_listener',
@@ -140,9 +160,8 @@ class NeonSpeechClient(SpeechClient):
                         'raw_audio': event.pop('raw_audio', None),
                         'destination': ["skills"],
                         "timing": event.pop("timing", {}),
-                        'username': self.user_config["user"]["username"] or
-                        "local",
-                        'user_profiles': [self.user_config.content]
+                        'username': self._default_user["user"]["username"],
+                        'user_profiles': [self._default_user.content]
                         })
         if "data" in event:
             data = event.pop("data")
@@ -205,9 +224,9 @@ class NeonSpeechClient(SpeechClient):
                         'client': 'api',
                         'source': 'speech_api',
                         'ident': time(),
-                        'username': self.user_config["user"]["username"] or
+                        'username': self._default_user["user"]["username"] or
                         "local",
-                        'user_profiles': [self.user_config.content]}
+                        'user_profiles': [self._default_user.content]}
             ctx = {**defaults, **ctx, 'destination': ['skills'],
                    'timing': {'start': msg.data.get('time'),
                               'transcribed': time()}}
