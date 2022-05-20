@@ -136,13 +136,22 @@ class NeonSpeechClient(SpeechClient):
         self.bus.on("neon.profile_update", self.handle_profile_update)
 
     def handle_profile_update(self, message):
+        """
+        Handle an emitted profile update. If username associated with update is
+        "local", updates the default profile applied to audio input messages.
+        :param message: Message associated with profile update
+        """
         updated_profile = message.data.get("profile")
         if updated_profile["user"]["username"] == \
                 self._default_user["user"]["username"]:
             apply_local_user_profile_updates(updated_profile,
                                              self._default_user)
 
-    def handle_utterance(self, event):
+    def handle_utterance(self, event: dict):
+        """
+        Handle an utterance event on the Recognizer Loop
+        :param event: Utterance event
+        """
         LOG.info("Utterance: " + str(event['utterances']))
         context = event["context"]  # from audio transformers
         context.update({'client_name': 'mycroft_listener',
