@@ -88,7 +88,8 @@ class WrappedSTT:
 class STTFactory(OVOSSTTFactory):
     @staticmethod
     def create(config=None, results_event: Event = None):
-        if config and not config.get("module"):  # No module, try getting stt config from passed config
+        if config and not config.get("module"):
+            # No module, try getting stt config from passed config
             config = config.get("stt")
         if not config:  # No config, go get it
             config = get_neon_speech_config().get("stt", {})

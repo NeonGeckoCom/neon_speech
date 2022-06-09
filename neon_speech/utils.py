@@ -92,6 +92,7 @@ def install_stt_plugin(plugin: str) -> bool:
     with open(tmp_file, 'w') as f:
         f.write('\n'.join(get_package_dependencies("neon-speech")))
     LOG.info(f"Requested installation of plugin: {plugin}")
-    returned = pip.main(['install', _plugin_to_package(plugin), "-c", tmp_file])
+    returned = pip.main(['install', _plugin_to_package(plugin), "-c",
+                         tmp_file])
     LOG.info(f"pip status: {returned}")
     return returned == 0
