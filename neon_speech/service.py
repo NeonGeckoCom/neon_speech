@@ -89,7 +89,8 @@ class NeonSpeechClient(SpeechClient):
         self.setDaemon(daemonic)
         # Init messagebus and handlers
         self.bus = get_messagebus()
-        from neon_utils.signal_utils import init_signal_handlers, init_signal_bus
+        from neon_utils.signal_utils import init_signal_handlers, \
+            init_signal_bus
         init_signal_bus(self.bus)
         init_signal_handlers()
 

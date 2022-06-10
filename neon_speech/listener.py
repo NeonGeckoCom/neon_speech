@@ -32,7 +32,8 @@ from neon_utils.configuration_utils import get_neon_device_type
 from neon_utils.logger import LOG
 from ovos_utils.metrics import Stopwatch
 from mycroft.configuration import Configuration
-from mycroft.client.speech.listener import RecognizerLoop, AudioConsumer, AudioProducer, recognizer_conf_hash, \
+from mycroft.client.speech.listener import RecognizerLoop, AudioConsumer, \
+    AudioProducer, recognizer_conf_hash, \
     find_input_device, RecognizerLoopState
 from mycroft.client.speech.mic import MutableMicrophone
 
@@ -81,7 +82,8 @@ class NeonAudioConsumer(AudioConsumer):
             except Exception as e:
                 if self.loop.fallback_stt:
                     LOG.warning(f"Using fallback STT, main plugin failed: {e}")
-                    transcriptions = self.loop.fallback_stt.execute(audio, language=lang)
+                    transcriptions = \
+                        self.loop.fallback_stt.execute(audio, language=lang)
                 else:
                     raise e
             if isinstance(transcriptions, str):

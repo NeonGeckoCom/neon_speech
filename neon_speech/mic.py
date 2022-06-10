@@ -117,7 +117,8 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
             LOG.debug("Stream starting!")
             # event set in OPM
             while not self.loop.stt.transcript_ready.is_set():
-                # Pass audio until STT tells us to stop (this is called again immediately)
+                # Pass audio until STT tells us to stop
+                # (this is called again immediately)
                 chunk = self.record_sound_chunk(source)
                 if not is_speaking():
                     # Filter out Neon speech
@@ -126,10 +127,12 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
             LOG.debug("stream ended!")
             audio_data = self._create_audio_data(frame_data, source)
             self.loop.emit("recognizer_loop:record_end")
-        # If using wake words, wait until the wake_word is detected and then record the following phrase
+        # If using wake words, wait until the wake_word is detected and
+        # then record the following phrase
         else:
             audio_data, lang = super().listen(source, stream)
-        # one of the default plugins saves the speech to file and adds "filename" to context
+        # one of the default plugins saves the speech to file and
+        # adds "filename" to context
         audio_data, context = self.audio_consumers.transform(audio_data)
         context["lang"] = lang
         return audio_data, context
