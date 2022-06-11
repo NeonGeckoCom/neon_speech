@@ -32,10 +32,11 @@ from threading import Event
 
 from mycroft_bus_client import MessageBusClient
 from neon_utils import LOG
-from neon_utils.configuration_utils import get_neon_speech_config
 from ovos_plugin_manager.stt import OVOSSTTFactory
 from ovos_plugin_manager.templates.stt import STT, StreamThread
 from ovos_plugin_manager.templates.stt import StreamingSTT as _Streaming
+
+from mycroft.configuration import Configuration
 
 
 class StreamingSTT(_Streaming, ABC):
@@ -67,20 +68,12 @@ class StreamingSTT(_Streaming, ABC):
 class WrappedSTT:
     def __new__(cls, clazz, *args, **kwargs):
         # read config
-        config_core = {'stt': kwargs.get("config")} or get_neon_speech_config()
-        metric_upload = config_core.get("metric_upload", False)
+        config_core = {'stt': kwargs.get("config")} or Configuration()
         # build STT
         for k in list(kwargs.keys()):
             if k not in signature(clazz).parameters:
                 kwargs.pop(k)
         stt = clazz(*args, **kwargs)
-        # add missing properties
-        if metric_upload:
-            server_addr = config_core.get("remote_server", "64.34.186.120")
-            stt.server_bus = MessageBusClient(host=server_addr)
-            stt.server_bus.run_in_thread()
-        else:
-            stt.server_bus = None
         stt.keys = config_core.get("keys", {})
         return stt
 
@@ -91,8 +84,11 @@ class STTFactory(OVOSSTTFactory):
         if config and not config.get("module"):
             # No module, try getting stt config from passed config
             config = config.get("stt")
+            LOG.info("Using passed config")
         if not config:  # No config, go get it
-            config = get_neon_speech_config().get("stt", {})
+            config = Configuration().get("stt", {})
+            from mycroft.configuration import USER_CONFIG
+            LOG.info(f"Getting config from disk: {USER_CONFIG}")
 
         LOG.info(f"Create STT with config: {config}")
         clazz = OVOSSTTFactory.get_class(config)

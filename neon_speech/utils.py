@@ -27,29 +27,11 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import json
-import os.path
 
-from os.path import join
 from tempfile import mkstemp
-from ovos_utils.configuration import get_ovos_config
-from ovos_utils.xdg_utils import xdg_config_home
-from neon_utils.configuration_utils import get_neon_speech_config
 from neon_utils.logger import LOG
 from neon_utils.packaging_utils import get_package_dependencies
-
-
-def get_speech_module_config() -> dict:
-    """
-    Get a dict config with all values required for the speech module read from
-    Neon YML config
-    :returns: dict Mycroft config with Neon YML values where defined
-    """
-    ovos = get_ovos_config()
-    if "hotwords" in ovos:
-        conf = ovos.pop("hotwords")
-        LOG.debug(f"removed hostwords config: {conf}")
-    neon = get_neon_speech_config()
-    return {**ovos, **neon}
+from mycroft.configuration import Configuration, USER_CONFIG
 
 
 def patch_config(config: dict = None):
@@ -58,13 +40,9 @@ def patch_config(config: dict = None):
     :param config: Mycroft-compatible configuration override
     """
     config = config or dict()
-    updated_config = {**get_speech_module_config(), **config}
-    config_file = join(xdg_config_home(), "neon", "neon.conf")
-    if not os.path.isdir(os.path.dirname(config_file)):
-        os.makedirs(os.path.dirname(config_file))
-    with open(config_file, "w+") as f:
-        json.dump(updated_config, f)
-    LOG.info(f"Updated config file: {config_file}")
+    updated = {**Configuration(), **config}
+    with open(USER_CONFIG, 'w+') as f:
+        json.dump(updated, f, indent=4)
 
 
 def _plugin_to_package(plugin: str) -> str:

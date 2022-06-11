@@ -120,7 +120,7 @@ class NeonRecognizerLoop(RecognizerLoop):
         self.microphone, self.responsive_recognizer
         """
         # self.config_core = self._init_config_core or Configuration.get()
-        self.config_core = Configuration.get()
+        self.config_core = Configuration()
         self.config = self.config_core.get('listener')
         self._config_hash = recognizer_conf_hash(self.config_core)
         self.lang = self.config_core.get('lang')

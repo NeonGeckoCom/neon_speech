@@ -30,8 +30,6 @@ from threading import Thread
 
 from speech_recognition import AudioData
 
-from neon_utils.configuration_utils import get_neon_local_config, get_neon_speech_config
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 
@@ -47,29 +45,19 @@ class UtilTests(unittest.TestCase):
         if os.path.exists(config_path):
             shutil.rmtree(config_path)
 
-    def test_get_speech_module_config(self):
-        from neon_speech.utils import get_speech_module_config
-        config = get_speech_module_config()
-        self.assertIsInstance(config, dict)
-        self.assertIsInstance(config["stt"], dict)
-        self.assertIsInstance(config["listener"], dict)
-        local_config = get_neon_local_config()
-        local_config["stt"]["module"] = "test_mod"
-        local_config.write_changes()
-        new_config = get_speech_module_config()
-        self.assertNotEqual(config, new_config)
-        self.assertEqual(new_config["stt"]["module"], "test_mod")
-
     def test_install_stt_plugin(self):
         from neon_speech.utils import install_stt_plugin
         self.assertTrue(install_stt_plugin("neon-stt-plugin-google_cloud_streaming"))
         import neon_stt_plugin_google_cloud_streaming
 
     def test_patch_config(self):
-        from neon_speech.utils import patch_config
+        from neon_utils.configuration_utils import init_config_dir
         test_config_dir = os.path.join(os.path.dirname(__file__), "config")
         os.makedirs(test_config_dir, exist_ok=True)
         os.environ["XDG_CONFIG_HOME"] = test_config_dir
+        init_config_dir()
+
+        from neon_speech.utils import patch_config
         test_config = {"new_key": {'val': True}}
         patch_config(test_config)
         conf_file = os.path.join(test_config_dir, 'neon',
@@ -85,9 +73,10 @@ class UtilTests(unittest.TestCase):
     def test_get_stt_from_file(self):
         from neon_speech.service import NeonSpeechClient
         from neon_messagebus.service import NeonBusService
+        from mycroft.configuration import Configuration
         AUDIO_FILE_PATH = os.path.join(os.path.dirname(
             os.path.realpath(__file__)), "audio_files")
-        TEST_CONFIG = get_neon_speech_config()
+        TEST_CONFIG = Configuration()
         TEST_CONFIG["stt"]["module"] = "deepspeech_stream_local"
         bus = NeonBusService(daemonic=True)
         bus.start()

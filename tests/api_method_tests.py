@@ -31,21 +31,19 @@ import sys
 import mock
 import unittest
 
-from time import sleep, time
-from multiprocessing import Process
+from time import time
 from mycroft_bus_client import MessageBusClient, Message
-from neon_utils.configuration_utils import get_neon_speech_config
+from neon_utils.configuration_utils import init_config_dir
 from neon_utils.file_utils import encode_file_to_base64_string
-from neon_utils.logger import LOG
+
+from mycroft.configuration import Configuration
 from neon_messagebus.service import NeonBusService
+from neon_speech.service import NeonSpeechClient
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-from neon_speech.__main__ import main as neon_speech_main
 
 AUDIO_FILE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                "audio_files")
-TEST_CONFIG = get_neon_speech_config()
-TEST_CONFIG["stt"]["module"] = "deepspeech_stream_local"
 
 
 class TestAPIMethods(unittest.TestCase):
@@ -53,12 +51,20 @@ class TestAPIMethods(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        test_config_dir = os.path.join(os.path.dirname(__file__), "config")
+        os.makedirs(test_config_dir, exist_ok=True)
+        os.environ["XDG_CONFIG_HOME"] = test_config_dir
+        init_config_dir()
+
+
+        TEST_CONFIG = Configuration()
+        TEST_CONFIG["stt"]["module"] = "deepspeech_stream_local"
+
         cls.messagebus = NeonBusService(debug=True, daemonic=True)
         cls.messagebus.start()
-        cls.speech_thread = Process(target=neon_speech_main,
-                                    kwargs={"speech_config": TEST_CONFIG},
-                                    daemon=False)
-        cls.speech_thread.start()
+        cls.speech_service = NeonSpeechClient(speech_config=TEST_CONFIG,
+                                              daemonic=False)
+        cls.speech_service.start()
         cls.bus = MessageBusClient()
         cls.bus.run_in_thread()
         if not cls.bus.connected_event.wait(60):
@@ -77,13 +83,7 @@ class TestAPIMethods(unittest.TestCase):
     def tearDownClass(cls) -> None:
         super(TestAPIMethods, cls).tearDownClass()
         cls.messagebus.shutdown()
-        cls.speech_thread.terminate()
-        try:
-            if cls.speech_thread.is_alive():
-                LOG.error("Bus still alive")
-                cls.speech_thread.kill()
-        except Exception as e:
-            LOG.error(e)
+        cls.speech_service.shutdown()
 
     def test_get_stt_no_file(self):
         context = {"client": "tester",
