@@ -56,13 +56,12 @@ class TestAPIMethods(unittest.TestCase):
         os.environ["XDG_CONFIG_HOME"] = test_config_dir
         init_config_dir()
 
-
-        TEST_CONFIG = Configuration()
-        TEST_CONFIG["stt"]["module"] = "deepspeech_stream_local"
+        test_config = Configuration()
+        test_config["stt"]["module"] = "deepspeech_stream_local"
 
         cls.messagebus = NeonBusService(debug=True, daemonic=True)
         cls.messagebus.start()
-        cls.speech_service = NeonSpeechClient(speech_config=TEST_CONFIG,
+        cls.speech_service = NeonSpeechClient(speech_config=test_config,
                                               daemonic=False)
         cls.speech_service.start()
         cls.bus = MessageBusClient()
