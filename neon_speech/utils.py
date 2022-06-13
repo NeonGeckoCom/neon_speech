@@ -66,6 +66,7 @@ def install_stt_plugin(plugin: str) -> bool:
     """
     import pip
     _, tmp_file = mkstemp()
+    LOG.info(f"deps={get_package_dependencies('neon-speech')}")
     with open(tmp_file, 'w') as f:
         f.write('\n'.join(get_package_dependencies("neon-speech")))
     LOG.info(f"Requested installation of plugin: {plugin}")

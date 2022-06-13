@@ -85,6 +85,11 @@ class NeonSpeechClient(SpeechClient):
         :param speech_config: DEPRECATED global core configuration override
         :param daemonic: if True, run this thread as a daemon
         """
+        if speech_config:
+            LOG.info("Updating global config with passed config")
+            from neon_speech.utils import patch_config
+            patch_config(speech_config)
+        # Don't init SpeechClient, because we're overriding self.loop
         Thread.__init__(self)
         self.setDaemon(daemonic)
         # Init messagebus and handlers
@@ -96,11 +101,6 @@ class NeonSpeechClient(SpeechClient):
 
         self._default_user = get_neon_user_config()
         self._default_user['user']['username'] = "local"
-
-        if speech_config:
-            LOG.info("Updating global config with passed config")
-            from neon_speech.utils import patch_config
-            patch_config(speech_config)
 
         self.config = Configuration()
         self.lock = Lock()
