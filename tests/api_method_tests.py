@@ -39,7 +39,7 @@ from neon_utils.file_utils import encode_file_to_base64_string
 from mycroft.configuration import Configuration
 from neon_messagebus.service import NeonBusService
 from neon_speech.service import NeonSpeechClient
-
+from neon_speech.utils import use_neon_speech
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 AUDIO_FILE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)),
@@ -54,7 +54,7 @@ class TestAPIMethods(unittest.TestCase):
         test_config_dir = os.path.join(os.path.dirname(__file__), "config")
         os.makedirs(test_config_dir, exist_ok=True)
         os.environ["XDG_CONFIG_HOME"] = test_config_dir
-        init_config_dir()
+        use_neon_speech(init_config_dir)()
 
         test_config = Configuration()
         test_config["stt"]["module"] = "deepspeech_stream_local"
