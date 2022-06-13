@@ -45,17 +45,39 @@ class UtilTests(unittest.TestCase):
         if os.path.exists(config_path):
             shutil.rmtree(config_path)
 
+    def test_use_neon_speech(self):
+        from neon_speech.utils import use_neon_speech
+        test_args = ("one", 1, True)
+
+        def _wrapped_method(*args):
+            import inspect
+
+            stack = inspect.stack()
+            mod = inspect.getmodule(stack[1][0])
+            name = mod.__name__.split('.')[0]
+            self.assertEqual(name, "neon_speech")
+            self.assertEqual(args, test_args)
+
+        use_neon_speech(_wrapped_method)(*test_args)
+
     def test_install_stt_plugin(self):
         from neon_speech.utils import install_stt_plugin
         self.assertTrue(install_stt_plugin("neon-stt-plugin-google_cloud_streaming"))
         import neon_stt_plugin_google_cloud_streaming
 
     def test_patch_config(self):
+        from neon_speech.utils import use_neon_speech
         from neon_utils.configuration_utils import init_config_dir
         test_config_dir = os.path.join(os.path.dirname(__file__), "config")
         os.makedirs(test_config_dir, exist_ok=True)
         os.environ["XDG_CONFIG_HOME"] = test_config_dir
-        init_config_dir()
+        use_neon_speech(init_config_dir)()
+
+        with open(join(test_config_dir, "OpenVoiceOS", 'ovos.conf')) as f:
+            ovos_conf = json.load(f)
+        self.assertEqual(ovos_conf['submodule_mappings']['neon_speech'],
+                         "neon_core")
+        self.assertIsInstance(ovos_conf['module_overrides']['neon_core'], dict)
 
         from neon_speech.utils import patch_config
         test_config = {"new_key": {'val': True}}

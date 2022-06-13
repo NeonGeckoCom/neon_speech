@@ -16,4 +16,5 @@ ovos-ww-plugin-precise-lite~=0.1.0
 ovos-ww-plugin-precise~=0.1.0
 ovos-stt-plugin-chromium~=0.1.1
 
-neon-utils~=0.17
+# neon-utils~=0.17
+neon-utils @ git+https://github.com/neondaniel/neon-skill-utils@FEAT_MycroftConfigCompat

@@ -26,12 +26,9 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import json
-
 from tempfile import mkstemp
 from neon_utils.logger import LOG
 from neon_utils.packaging_utils import get_package_dependencies
-from mycroft.configuration import Configuration, USER_CONFIG
 
 
 def patch_config(config: dict = None):
@@ -39,10 +36,12 @@ def patch_config(config: dict = None):
     Write the specified speech configuration to the global config file
     :param config: Mycroft-compatible configuration override
     """
+    from mycroft.configuration import USER_CONFIG, LocalConf
+
     config = config or dict()
-    updated = {**Configuration(), **config}
-    with open(USER_CONFIG, 'w+') as f:
-        json.dump(updated, f, indent=4)
+    local_config = LocalConf(USER_CONFIG)
+    local_config.update(config)
+    local_config.store()
 
 
 def _plugin_to_package(plugin: str) -> str:
@@ -74,3 +73,15 @@ def install_stt_plugin(plugin: str) -> bool:
                          tmp_file])
     LOG.info(f"pip status: {returned}")
     return returned == 0
+
+
+def use_neon_speech(func):
+    """
+    Wrapper to ensure call originates from neon_speech for stack checks.
+    This is used for ovos-utils config platform detection which uses the stack
+    to determine which module config to return.
+    """
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
+
