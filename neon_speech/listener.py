@@ -28,7 +28,7 @@
 
 from queue import Queue
 
-from neon_utils.configuration_utils import get_neon_device_type
+# from neon_utils.configuration_utils import get_neon_device_type
 from neon_utils.logger import LOG
 from ovos_utils.metrics import Stopwatch
 from mycroft.configuration import Configuration
@@ -148,7 +148,9 @@ class NeonRecognizerLoop(RecognizerLoop):
             self.stt = STTFactory.create(self.config_core)
         self.queue = Queue()
         self.audio_consumer = NeonAudioConsumer(self)
+        self.audio_consumer.setName("audio_consumer")
         self.audio_consumer.start()
         self.audio_producer = AudioProducer(self)
-        if get_neon_device_type() != "server":
-            self.audio_producer.start()
+        self.audio_producer.setName("audio_producer")
+        # if get_neon_device_type() != "server":
+        self.audio_producer.start()
