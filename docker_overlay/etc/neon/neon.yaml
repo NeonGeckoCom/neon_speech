@@ -1,0 +1,67 @@
+audio_parsers:
+  blacklist:
+  - gender
+stt:
+  module: deepspeech_stream_local
+  module_spec: neon-stt-plugin-deepspeech_stream_local
+  fallback_module: neon-stt-plugin-coqui
+  ovos-stt-plugin-server:
+    url: https://stt.openvoiceos.com/stt
+play_wav_cmdline: "play %1"
+play_mp3_cmdline: "play %1"
+play_ogg_cmdline: "play %1"
+confirm_listening: true
+listener:
+  sample_rate: 16000
+  mic_meter_ipc: true
+  record_wake_words: false
+  save_utterances: false
+  wake_word_upload:
+    disable: false
+    url: https://training.mycroft.ai/precise/upload
+  wake_word_enabled: true  # TODO: Deprecate and replace with `continuous_listen`
+  continuous_listen: false
+  VAD:
+    silence_method: vad_and_ratio
+    speech_seconds: 0.1
+    silence_seconds: 0.5
+    before_seconds: 0.5
+    min_seconds: 1
+    max_current_ratio_threshold: 2
+    initial_energy_threshold: 1000.0
+    module: ''
+    ovos-vad-plugin-silero:
+      threshold: 0.2
+    ovos-vad-plugin-webrtcvad:
+      vad_mode: 3
+  mute_during_output: true
+  duck_while_listening: 0.3
+  phoneme_duration: 120
+  multiplier: 1.0
+  energy_ratio: 1.5
+  recording_timeout: 10.0
+  recording_timeout_with_silence: 3.0
+  instant_listen: false
+hotwords:
+  hey neon:
+    module: ovos-ww-plugin-pocketsphinx
+    phonemes: HH EY . N IY AA N .
+    threshold: 1e-20
+    lang: en-us
+    sample_rate: 16000
+    listen: true
+    sound: snd/start_listening.wav
+sounds:
+  start_listening: snd/start_listening.wav
+  end_listening: snd/end_listening.wav
+  acknowledge: snd/acknowledge.mp3
+MQ:
+  server: mq.2021.us
+  port: 5672
+  users:
+    mq_handler:
+      user: neon_api_utils
+      password: Klatchat2021
+signal:
+  use_signal_files: false
+  max_wait_seconds: 300
