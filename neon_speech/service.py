@@ -45,7 +45,7 @@ from ovos_utils.json_helper import merge_dict
 from mycroft_bus_client import Message
 
 from mycroft.client.speech.service import SpeechClient
-from mycroft.configuration import Configuration
+from ovos_config.config import Configuration
 from neon_speech.listener import NeonRecognizerLoop
 from neon_speech.stt import STTFactory
 

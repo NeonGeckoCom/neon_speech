@@ -36,7 +36,7 @@ def patch_config(config: dict = None):
     Write the specified speech configuration to the global config file
     :param config: Mycroft-compatible configuration override
     """
-    from mycroft.configuration import USER_CONFIG, LocalConf
+    from ovos_config import USER_CONFIG, LocalConf
 
     config = config or dict()
     local_config = LocalConf(USER_CONFIG)

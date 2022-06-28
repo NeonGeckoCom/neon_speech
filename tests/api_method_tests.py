@@ -37,7 +37,7 @@ from neon_utils.configuration_utils import init_config_dir
 from neon_utils.file_utils import encode_file_to_base64_string
 from neon_messagebus.service import NeonBusService
 
-from mycroft.configuration import Configuration
+from ovos_config.config import Configuration
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from neon_speech.service import NeonSpeechClient

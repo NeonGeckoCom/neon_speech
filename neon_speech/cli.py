@@ -53,7 +53,7 @@ def neon_speech_cli(version: bool = False):
               help="Force pip installation of configured module")
 def run(module, package, force_install):
     from neon_speech.__main__ import main
-    from mycroft.configuration import Configuration
+    from ovos_config.config import Configuration
     speech_config = Configuration()
     if force_install or module or package:
         install_plugin(module, package, force_install)
@@ -81,7 +81,7 @@ def run(module, package, force_install):
               help="Force pip installation of configured module")
 def install_plugin(module, package, force_install):
     from neon_speech.utils import install_stt_plugin
-    from mycroft.configuration import Configuration
+    from ovos_config.config import Configuration
     speech_config = Configuration()
 
     if force_install and not (package or module):

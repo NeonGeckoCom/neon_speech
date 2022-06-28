@@ -31,7 +31,7 @@ from queue import Queue
 # from neon_utils.configuration_utils import get_neon_device_type
 from neon_utils.logger import LOG
 from ovos_utils.metrics import Stopwatch
-from mycroft.configuration import Configuration
+from ovos_config.config import Configuration
 from mycroft.client.speech.listener import RecognizerLoop, AudioConsumer, \
     AudioProducer, recognizer_conf_hash, \
     find_input_device, RecognizerLoopState

@@ -30,13 +30,12 @@ from abc import ABC
 from inspect import signature
 from threading import Event
 
-from mycroft_bus_client import MessageBusClient
 from neon_utils import LOG
 from ovos_plugin_manager.stt import OVOSSTTFactory
 from ovos_plugin_manager.templates.stt import STT, StreamThread
 from ovos_plugin_manager.templates.stt import StreamingSTT as _Streaming
 
-from mycroft.configuration import Configuration
+from ovos_config.config import Configuration
 
 
 class StreamingSTT(_Streaming, ABC):
@@ -87,7 +86,7 @@ class STTFactory(OVOSSTTFactory):
             LOG.info("Using passed config")
         if not config:  # No config, go get it
             config = Configuration().get("stt", {})
-            from mycroft.configuration import USER_CONFIG
+            from ovos_config.locations import USER_CONFIG
             LOG.info(f"Getting config from disk: {USER_CONFIG}")
 
         LOG.info(f"Create STT with config: {config}")

@@ -28,7 +28,6 @@
 
 from mycroft.audio import is_speaking
 from mycroft.client.speech.mic import get_silence, ResponsiveRecognizer
-from mycroft.configuration import Configuration
 from neon_utils import LOG
 from speech_recognition import AudioSource, AudioData
 

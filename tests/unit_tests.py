@@ -95,7 +95,7 @@ class UtilTests(unittest.TestCase):
     def test_get_stt_from_file(self):
         from neon_speech.service import NeonSpeechClient
         from neon_messagebus.service import NeonBusService
-        from mycroft.configuration import Configuration
+        from ovos_config.config import Configuration
         AUDIO_FILE_PATH = os.path.join(os.path.dirname(
             os.path.realpath(__file__)), "audio_files")
         TEST_CONFIG = Configuration()
