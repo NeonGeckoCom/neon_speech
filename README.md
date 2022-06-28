@@ -23,10 +23,10 @@ to start the container.
 docker run -d \
 --network=host \
 --name=neon_speech \
--v ~/.config/pulse/cookie:/root/.config/pulse/cookie:ro \
+-v ~/.config/pulse/cookie:/tmp/pulse_cookie:ro \
 -v ${XDG_RUNTIME_DIR}/pulse:${XDG_RUNTIME_DIR}/pulse:ro \
 --device=/dev/snd:/dev/snd \
 -e PULSE_SERVER=unix:${XDG_RUNTIME_DIR}/pulse/native \
--e PULSE_COOKIE=/root/.config/pulse/cookie \
+-e PULSE_COOKIE=/tmp/pulse_cookie \
 neon_speech
 ```
