@@ -28,4 +28,6 @@ RUN pip install wheel && \
 COPY docker_overlay/ /
 RUN chmod ugo+x /root/run.sh
 
+RUN neon-speech install-plugin -f
+
 CMD ["/root/run.sh"]
