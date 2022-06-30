@@ -80,13 +80,14 @@ class UtilTests(unittest.TestCase):
         self.assertIsInstance(ovos_conf['module_overrides']['neon_core'], dict)
 
         from neon_speech.utils import patch_config
+        import yaml
         test_config = {"new_key": {'val': True}}
         patch_config(test_config)
         conf_file = os.path.join(test_config_dir, 'neon',
-                                 'neon.conf')
+                                 'neon.yaml')
         self.assertTrue(os.path.isfile(conf_file))
         with open(conf_file) as f:
-            config = json.load(f)
+            config = yaml.safe_load(f)
 
         self.assertTrue(config['new_key']['val'])
         shutil.rmtree(test_config_dir)
