@@ -134,6 +134,8 @@ class NeonSpeechClient(SpeechClient):
 
         # State Change Notifications
         self.bus.on("neon.wake_words_state", self.handle_wake_words_state)
+        self.bus.on("neon.query_wake_words_state",
+                    self.handle_query_wake_words_state)
         self.bus.on("neon.profile_update", self.handle_profile_update)
 
     def handle_profile_update(self, message):
@@ -178,6 +180,14 @@ class NeonSpeechClient(SpeechClient):
         """
         enabled = message.data.get("enabled", True)
         self.loop.responsive_recognizer.use_wake_word = enabled
+
+    def handle_query_wake_words_state(self, message):
+        """
+        Query the current WW state
+        :param message: Message associated with request
+        """
+        enabled = self.loop.responsive_recognizer.use_wake_word
+        self.bus.emit(message.response({"enabled": enabled}))
 
     def handle_get_stt(self, message: Message):
         """
