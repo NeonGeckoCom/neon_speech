@@ -9,8 +9,7 @@ click-default-group~=1.2
 neon_transformers~=0.1
 # neon-utils~=0.17
 neon-utils @ git+https://github.com/neondaniel/neon-skill-utils@FEAT_MycroftConfigCompat
-# ovos-config~=0.0
-ovos-config @ git+https://github.com/openvoiceos/ovos-config@FIX_ConfigConstraints
+ovos-config~=0.0,>=0.0.2a3
 ovos-ww-plugin-pocketsphinx~=0.1.1
 ovos-ww-plugin-precise-lite~=0.1.0
 ovos-ww-plugin-precise~=0.1.0
