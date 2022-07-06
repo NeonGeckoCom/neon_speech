@@ -62,7 +62,8 @@ class UtilTests(unittest.TestCase):
 
     def test_install_stt_plugin(self):
         from neon_speech.utils import install_stt_plugin
-        self.assertTrue(install_stt_plugin("neon-stt-plugin-google_cloud_streaming"))
+        self.assertTrue(install_stt_plugin(
+            "neon-stt-plugin-google_cloud_streaming>=0.2.7a0"))
         import neon_stt_plugin_google_cloud_streaming
 
     def test_patch_config(self):

@@ -92,8 +92,9 @@ class STTFactory(OVOSSTTFactory):
         LOG.info(f"Create STT with config: {config}")
         clazz = OVOSSTTFactory.get_class(config)
         if not clazz:
-            LOG.warning("plugin not found, falling back to Chromium STT")
-            config["module"] = "google"  # TODO configurable fallback plugin
+            LOG.warning(f"{config.get('module')} plugin not found, "
+                        f"falling back to Chromium STT")
+            config["module"] = config.get("fallback_module") or "google"
             clazz = OVOSSTTFactory.get_class(config)
             if not clazz:
                 raise ValueError("fallback plugin not found")
