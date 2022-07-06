@@ -49,6 +49,13 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
         """
         return self.config["listener"].get('wake_word_enabled', True)
 
+    @use_wake_word.setter
+    def use_wake_word(self, new_val: bool):
+        if not isinstance(new_val, bool):
+            raise ValueError(f"Expected bool, got: {new_val}")
+        self.config["listener"]["wake_word_enabled"] = new_val
+        # TODO: Write config changes to disk?
+
     def __enter__(self):
         pass
 
