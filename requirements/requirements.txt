@@ -1,7 +1,6 @@
 ovos-core[stt]~=0.0.4a33
 mycroft-messagebus-client~=0.9,>=0.9.5
-# ovos_utils~=0.0.15
-ovos_utils @ git+https://github.com/neondaniel/ovos_utils@FEAT_YamlConfig
+ovos_utils~=0.0,>=0.0.23a6
 ovos_plugin_manager~=0.0.16
 pydub~=0.23
 click~=8.0
