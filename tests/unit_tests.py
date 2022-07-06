@@ -27,7 +27,7 @@ import unittest
 
 from os.path import dirname, join
 from threading import Thread
-
+from neon_utils.logger import LOG
 from speech_recognition import AudioData
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
@@ -95,11 +95,12 @@ class UtilTests(unittest.TestCase):
 
     def test_get_stt_from_file(self):
         from neon_speech.service import NeonSpeechClient
+        from neon_speech.utils import use_neon_speech
         from neon_messagebus.service import NeonBusService
         from ovos_config.config import Configuration
         AUDIO_FILE_PATH = os.path.join(os.path.dirname(
             os.path.realpath(__file__)), "audio_files")
-        TEST_CONFIG = Configuration()
+        TEST_CONFIG = use_neon_speech(Configuration)()
         TEST_CONFIG["stt"]["module"] = "deepspeech_stream_local"
         bus = NeonBusService(daemonic=True)
         bus.start()
@@ -127,7 +128,10 @@ class UtilTests(unittest.TestCase):
 
         for t in threads:
             t.join(30)
-        bus.shutdown()
+        try:
+            bus.shutdown()
+        except Exception as e:
+            LOG.error(e)
     # TODO: Test other speech service methods directly
 
 
