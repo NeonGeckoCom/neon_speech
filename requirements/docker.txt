@@ -1,2 +1,2 @@
 chatterbox-wake-word-plugin-dummy~=0.1
-neon-stt-plugin-coqui
+neon-stt-plugin-coqui>=0.0.2a9
