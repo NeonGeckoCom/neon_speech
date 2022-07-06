@@ -65,7 +65,7 @@ def run(module, package, force_install):
         click.echo(f'Loading STT Module: {speech_config["stt"]["module"]}')
         click.echo(f'Speech Config={speech_config}')
         click.echo("Starting Speech Client")
-        main(config=speech_config, daemonic=True)
+        main(speech_config=speech_config, daemonic=True)
     else:
         click.echo("Starting Speech Client")
         main(daemonic=True)
