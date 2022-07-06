@@ -1,5 +1,4 @@
-neon-stt-plugin-deepspeech_stream_local
-ovos-core[stt]~=0.0.3
+neon-stt-plugin-deepspeech_stream_local>=1.0.1a0
 pytest
 mock~=4.0
-neon-messagebus
+neon-messagebus>=0.1.2a1

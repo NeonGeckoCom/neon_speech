@@ -28,14 +28,15 @@
 
 from ovos_utils import wait_for_exit_signal
 from neon_utils.configuration_utils import init_config_dir
+from neon_utils.logger import LOG
 
 
 def main(*args, **kwargs):
     # Initialize configuration
     init_config_dir()
     if kwargs.get("config"):
-        from neon_speech.utils import patch_config
-        patch_config(kwargs.pop("config"))
+        LOG.warning("Found config kwarg, updating to 'speech_config'")
+        kwargs["speech_config"] = kwargs.pop("config")
 
     from mycroft.lock import Lock
     from mycroft.util.process_utils import reset_sigint_handler

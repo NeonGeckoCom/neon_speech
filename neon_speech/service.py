@@ -45,7 +45,7 @@ from ovos_utils.json_helper import merge_dict
 from mycroft_bus_client import Message
 
 from mycroft.client.speech.service import SpeechClient
-from mycroft.configuration import Configuration
+from ovos_config.config import Configuration
 from neon_speech.listener import NeonRecognizerLoop
 from neon_speech.stt import STTFactory
 
@@ -82,9 +82,14 @@ class NeonSpeechClient(SpeechClient):
         :param stopping_hook: function callback when service is stopping
         :param alive_hook: function callback when service is alive
         :param started_hook: function callback when service is started
-        :param speech_config: global core configuration override
+        :param speech_config: DEPRECATED global core configuration override
         :param daemonic: if True, run this thread as a daemon
         """
+        if speech_config:
+            LOG.info("Updating global config with passed config")
+            from neon_speech.utils import patch_config
+            patch_config(speech_config)
+        # Don't init SpeechClient, because we're overriding self.loop
         Thread.__init__(self)
         self.setDaemon(daemonic)
         # Init messagebus and handlers
@@ -97,9 +102,7 @@ class NeonSpeechClient(SpeechClient):
         self._default_user = get_neon_user_config()
         self._default_user['user']['username'] = "local"
 
-        if speech_config:
-            LOG.warning("Passed configuration will not be handled in listener")
-        self.config = speech_config or Configuration.get()
+        self.config = Configuration()
         self.lock = Lock()
 
         callbacks = StatusCallbackMap(on_ready=ready_hook, on_error=error_hook,

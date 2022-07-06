@@ -53,8 +53,8 @@ def neon_speech_cli(version: bool = False):
               help="Force pip installation of configured module")
 def run(module, package, force_install):
     from neon_speech.__main__ import main
-    from neon_speech.utils import get_speech_module_config
-    speech_config = get_speech_module_config()
+    from ovos_config.config import Configuration
+    speech_config = Configuration()
     if force_install or module or package:
         install_plugin(module, package, force_install)
     if module and module != speech_config["stt"]["module"]:
@@ -62,10 +62,13 @@ def run(module, package, force_install):
         package = package or speech_config["stt"].get("package_spec")
         speech_config["stt"]["module"] = module
         speech_config["stt"]["package_spec"] = package
-    click.echo(f'Loading STT Module: {speech_config["stt"]["module"]}')
-    click.echo(f'Speech Config={speech_config}')
-    click.echo("Starting Speech Client")
-    main(config=speech_config, daemonic=True)
+        click.echo(f'Loading STT Module: {speech_config["stt"]["module"]}')
+        click.echo(f'Speech Config={speech_config}')
+        click.echo("Starting Speech Client")
+        main(speech_config=speech_config, daemonic=True)
+    else:
+        click.echo("Starting Speech Client")
+        main(daemonic=True)
     click.echo("Speech Client Shutdown")
 
 
@@ -77,13 +80,14 @@ def run(module, package, force_install):
 @click.option("--force-install", "-f", default=False, is_flag=True,
               help="Force pip installation of configured module")
 def install_plugin(module, package, force_install):
-    from neon_speech.utils import install_stt_plugin, get_speech_module_config
-    speech_config = get_speech_module_config()
+    from neon_speech.utils import install_stt_plugin
+    from ovos_config.config import Configuration
+    speech_config = Configuration()
 
     if force_install and not (package or module):
         click.echo("Installing STT plugin from configuration")
-        module = module or speech_config["stt"]["module"]
-        package = package or speech_config["stt"].get("package_spec")
+        module = module or speech_config.get("stt", {}).get("module")
+        package = package or speech_config.get("stt", {}).get("package_spec")
 
     if module:
         install_stt_plugin(package or module)

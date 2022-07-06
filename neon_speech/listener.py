@@ -28,10 +28,10 @@
 
 from queue import Queue
 
-from neon_utils.configuration_utils import get_neon_device_type
+# from neon_utils.configuration_utils import get_neon_device_type
 from neon_utils.logger import LOG
 from ovos_utils.metrics import Stopwatch
-from mycroft.configuration import Configuration
+from ovos_config.config import Configuration
 from mycroft.client.speech.listener import RecognizerLoop, AudioConsumer, \
     AudioProducer, recognizer_conf_hash, \
     find_input_device, RecognizerLoopState
@@ -120,7 +120,7 @@ class NeonRecognizerLoop(RecognizerLoop):
         self.microphone, self.responsive_recognizer
         """
         # self.config_core = self._init_config_core or Configuration.get()
-        self.config_core = Configuration.get()
+        self.config_core = Configuration()
         self.config = self.config_core.get('listener')
         self._config_hash = recognizer_conf_hash(self.config_core)
         self.lang = self.config_core.get('lang')
@@ -148,7 +148,9 @@ class NeonRecognizerLoop(RecognizerLoop):
             self.stt = STTFactory.create(self.config_core)
         self.queue = Queue()
         self.audio_consumer = NeonAudioConsumer(self)
+        self.audio_consumer.setName("audio_consumer")
         self.audio_consumer.start()
         self.audio_producer = AudioProducer(self)
-        if get_neon_device_type() != "server":
-            self.audio_producer.start()
+        self.audio_producer.setName("audio_producer")
+        # if get_neon_device_type() != "server":
+        self.audio_producer.start()

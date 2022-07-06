@@ -28,7 +28,6 @@
 
 from mycroft.audio import is_speaking
 from mycroft.client.speech.mic import get_silence, ResponsiveRecognizer
-from mycroft.configuration import Configuration
 from neon_utils import LOG
 from speech_recognition import AudioSource, AudioData
 
@@ -38,18 +37,24 @@ from neon_transformers.audio_transformers import AudioTransformersService
 class NeonResponsiveRecognizer(ResponsiveRecognizer):
 
     def __init__(self, *args, **kwargs):
-        _config = kwargs.pop("config", None)
         super().__init__(*args, **kwargs)
-        config = _config or self.config
-        # TODO: Pass config to parent instead of reading from disk
-        listener_config = config.get("listener") or {}
-        self.use_wake_word = listener_config.get('wake_word_enabled', True)
         self.in_speech = False
         self.audio_consumers = AudioTransformersService(self.loop.bus,
-                                                        config=config)
-        # TODO auto generated yaml returned a string '10.0,'
-        if not isinstance(self.recording_timeout, int):
-            self.recording_timeout = 10.0
+                                                        config=self.config)
+
+    @property
+    def use_wake_word(self):
+        """
+        Property to query configuration for wake word state
+        """
+        return self.config["listener"].get('wake_word_enabled', True)
+
+    @use_wake_word.setter
+    def use_wake_word(self, new_val: bool):
+        if not isinstance(new_val, bool):
+            raise ValueError(f"Expected bool, got: {new_val}")
+        self.config["listener"]["wake_word_enabled"] = new_val
+        # TODO: Write config changes to disk?
 
     def __enter__(self):
         pass
@@ -75,10 +80,11 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
         Check if told programmatically to skip the wake word.
         For example when we are in a dialog with the user.
         """
-        if self.use_wake_word:
-            return super()._skip_wake_word()
-        else:
+        if not self.use_wake_word:
             return True
+        elif self._listen_triggered:
+            return True
+        return False
 
     def check_for_hotwords(self, audio_data):
         found = False
@@ -108,8 +114,8 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
         assert isinstance(source, AudioSource), "Source must be an AudioSource"
 
         # If skipping wake words, just pass audio to our streaming STT
-        # TODO: Check config updates?
         if self.loop.stt.can_stream and not self.use_wake_word:
+            LOG.debug("skipping wake words")
             lang = self.loop.stt.lang
             self.loop.emit("recognizer_loop:record_begin")
             self.loop.stt.stream.stream_start()
