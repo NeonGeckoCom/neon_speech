@@ -3,7 +3,7 @@ audio_parsers:
   - gender
 stt:
   module: deepspeech_stream_local
-  module_spec: neon-stt-plugin-deepspeech_stream_local
+  package_spec: neon-stt-plugin-deepspeech_stream_local>=1.0.1a0
   fallback_module: neon-stt-plugin-coqui
   ovos-stt-plugin-server:
     url: https://stt.openvoiceos.com/stt

@@ -44,7 +44,7 @@ from neon_utils.user_utils import apply_local_user_profile_updates
 from ovos_utils.json_helper import merge_dict
 from mycroft_bus_client import Message
 
-from mycroft.client.speech.service import SpeechClient
+from mycroft.client.speech.service import SpeechService
 from ovos_config.config import Configuration
 from neon_speech.listener import NeonRecognizerLoop
 from neon_speech.stt import STTFactory
@@ -70,7 +70,7 @@ def on_started():
     LOG.debug("Speech client started")
 
 
-class NeonSpeechClient(SpeechClient):
+class NeonSpeechClient(SpeechService):
     def __init__(self, ready_hook=on_ready, error_hook=on_error,
                  stopping_hook=on_stopping, alive_hook=on_alive,
                  started_hook=on_started, watchdog=lambda: None,
