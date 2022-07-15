@@ -187,11 +187,13 @@ class TestAPIMethods(unittest.TestCase):
         self.assertEqual(message.context["destination"], ["skills"])
 
     def test_wake_words_state(self):
-        self.bus.emit(Message("neon.wake_words_state", {"enabled": True}))
+        self.bus.wait_for_response(Message("neon.wake_words_state",
+                                           {"enabled": True}))
         resp = self.bus.wait_for_response(Message(
             "neon.query_wake_words_state"))
         self.assertTrue(resp.data['enabled'])
-        self.bus.emit(Message("neon.wake_words_state", {"enabled": False}))
+        self.bus.wait_for_response(Message("neon.wake_words_state",
+                                           {"enabled": False}))
         resp = self.bus.wait_for_response(Message(
             "neon.query_wake_words_state"))
         self.assertFalse(resp.data['enabled'])

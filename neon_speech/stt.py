@@ -45,8 +45,6 @@ class StreamingSTT(_Streaming, ABC):
             config = kwargs['config']
             self.config = config.get(config['module']) or self.config
         if results_event:
-            # TODO: Deprecate this
-            self.results_event = results_event
             self.transcript_ready = results_event
 
     def stream_stop(self):
@@ -54,7 +52,10 @@ class StreamingSTT(_Streaming, ABC):
             self.queue.put(None)
             text = self.stream.finalize()
             to_return = [text]
-            self.stream.join()
+            try:
+                self.stream.join()
+            except RuntimeError:
+                pass
             if hasattr(self.stream, 'transcriptions'):
                 to_return = self.stream.transcriptions
             self.stream = None
@@ -74,12 +75,14 @@ class WrappedSTT:
                 kwargs.pop(k)
         stt = clazz(*args, **kwargs)
         stt.keys = config_core.get("keys", {})
+        stt.transcript_ready = kwargs['results_event']
         return stt
 
 
 class STTFactory(OVOSSTTFactory):
     @staticmethod
     def create(config=None, results_event: Event = None):
+        results_event = results_event or Event()
         if config and not config.get("module"):
             # No module, try getting stt config from passed config
             config = config.get("stt")

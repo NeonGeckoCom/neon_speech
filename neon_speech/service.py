@@ -183,6 +183,7 @@ class NeonSpeechClient(SpeechService):
         """
         enabled = message.data.get("enabled", True)
         self.loop.responsive_recognizer.use_wake_word = enabled
+        self.bus.emit(message.response(message.data))
 
     def handle_query_wake_words_state(self, message):
         """

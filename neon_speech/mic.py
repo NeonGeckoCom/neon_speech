@@ -26,9 +26,10 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from time import time
 from mycroft.audio import is_speaking
 from mycroft.client.speech.mic import get_silence, ResponsiveRecognizer
-from neon_utils import LOG
+from neon_utils.logger import LOG
 from speech_recognition import AudioSource, AudioData
 
 from neon_transformers.audio_transformers import AudioTransformersService
@@ -53,8 +54,12 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
     def use_wake_word(self, new_val: bool):
         if not isinstance(new_val, bool):
             raise ValueError(f"Expected bool, got: {new_val}")
-        self.config["listener"]["wake_word_enabled"] = new_val
-        # TODO: Write config changes to disk?
+        LOG.info(f"Setting WW state to: {new_val}")
+        listener_config = dict(self.config["listener"])
+        listener_config["wake_word_enabled"] = new_val
+        self.config.update({"listener": listener_config})
+        from neon_speech.utils import patch_config
+        patch_config({"listener": listener_config})
 
     def __enter__(self):
         pass
@@ -118,17 +123,22 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
             LOG.debug("skipping wake words")
             lang = self.loop.stt.lang
             self.loop.emit("recognizer_loop:record_begin")
-            self.loop.stt.stream.stream_start()
+            self.loop.stt.stream_start()
             frame_data = get_silence(source.SAMPLE_WIDTH)
             LOG.debug("Stream starting!")
             # event set in OPM
-            while not self.loop.stt.transcript_ready.is_set():
+            start_time = time()
+            while not self.loop.stt.transcript_ready.is_set() and \
+                    time() - start_time < float(self.recording_timeout):
                 # Pass audio until STT tells us to stop
                 # (this is called again immediately)
                 chunk = self.record_sound_chunk(source)
                 if not is_speaking():
                     # Filter out Neon speech
-                    self.loop.stt.stream.stream_chunk(chunk)
+                    try:
+                        self.loop.stt.stream_data(chunk)
+                    except Exception as e:
+                        raise e
                     frame_data += chunk
             LOG.debug("stream ended!")
             audio_data = self._create_audio_data(frame_data, source)
