@@ -17,6 +17,8 @@ RUN apt-get update && \
     flac \
     gcc \
     ffmpeg \
+    wget \
+    unzip \
     git
 
 ADD . /neon_speech
@@ -24,6 +26,15 @@ WORKDIR /neon_speech
 
 RUN pip install wheel && \
   pip install .[docker]
+
+# Get vosk model for WW detection
+RUN mkdir -p /root/.local/share/neon && \
+    cd /root/.local/share/neon && \
+    wget -O vosk-model-small-en-us-0.15.zip https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip && \
+    unzip vosk-model-small-en-us-0.15.zip && \
+    rm vosk-model-small-en-us-0.15.zip
+
+
 
 COPY docker_overlay/ /
 RUN chmod ugo+x /root/run.sh

@@ -46,13 +46,23 @@ hotwords:
   hey mycroft:
     active: false
   hey neon:
-    module: ovos-ww-plugin-pocketsphinx
-    phonemes: HH EY . N IY AA N .
-    threshold: 1e-20
-    lang: en-us
-    sample_rate: 16000
+    module: ovos-ww-plugin-vosk
     listen: true
     sound: snd/start_listening.wav
+    debug: false
+    model_folder: /root/.local/share/neon/vosk-model-small-en-us-0.15
+    samples:
+      - hey neon
+      - hey neil
+      - hey near
+      - hey now
+      - hey india
+      - hey me or
+      - hey moron
+      - kenya
+      - the neon
+      - a neon
+      - the indian
 sounds:
   start_listening: snd/start_listening.wav
   end_listening: snd/end_listening.wav

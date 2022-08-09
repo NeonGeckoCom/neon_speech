@@ -1,2 +1,6 @@
-chatterbox-wake-word-plugin-dummy~=0.1
 neon-stt-plugin-coqui>=0.0.2a9
+
+# Load alternative WW plugins so they are available
+ovos-ww-plugin-pocketsphinx~=0.1.1
+ovos-ww-plugin-precise-lite~=0.1.0
+ovos-ww-plugin-precise~=0.1.0
