@@ -1,4 +1,6 @@
-ovos-core[stt]~=0.0.4a33
+ovos-core~=0.0.4a33
+SpeechRecognition~=3.8
+PyAudio~=0.2
 mycroft-messagebus-client~=0.9,>=0.9.5
 ovos_utils~=0.0,>=0.0.23a6
 ovos_plugin_manager~=0.0.16
