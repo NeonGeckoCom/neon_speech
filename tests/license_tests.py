@@ -19,7 +19,8 @@ license_overrides = {
     'sonopy': 'Apache-2.0',
     "python-dateutil": "Apache-2.0",
     "pyparsing": "MIT",
-    "exceptiongroup": "MIT"
+    "exceptiongroup": "MIT",
+    'vosk': 'Apache-2.0'
 }
 # explicitly allow these packages that would fail otherwise
 whitelist = ["neon-api-proxy"]
