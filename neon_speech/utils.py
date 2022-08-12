@@ -85,7 +85,10 @@ def init_stt_plugin(plugin: str):
     plug = load_stt_plugin(plugin)
     if plug:
         LOG.info(f"Initializing plugin: {plugin}")
-        plug()
+        try:
+            plug()
+        except TypeError:
+            plug(results_event=None)
     else:
         LOG.warning(f"Could not find plugin: {plugin}")
 
