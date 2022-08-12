@@ -84,6 +84,7 @@ jobs:
           push: true
           tags: ${{ steps.base_meta.outputs.tags }}
           labels: ${{ steps.base_meta.outputs.labels }}
+          target: base
 
       - name: Extract metadata for default_model Docker
         id: default_model_meta
@@ -100,3 +101,4 @@ jobs:
           push: true
           tags: ${{ steps.default_model_meta.outputs.tags }}
           labels: ${{ steps.default_model_meta.outputs.labels }}
+          target: default_model
