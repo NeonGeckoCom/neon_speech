@@ -69,8 +69,8 @@ jobs:
         env:
           image_name: ${{ env.IMAGE_NAME }}
 
-      - name: Extract metadata for Docker
-        id: meta
+      - name: Extract metadata for base Docker
+        id: base_meta
         uses: docker/metadata-action@v2
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
@@ -82,5 +82,21 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.base_meta.outputs.tags }}
+          labels: ${{ steps.base_meta.outputs.labels }}
+
+      - name: Extract metadata for default_model Docker
+        id: default_model_meta
+        uses: docker/metadata-action@v2
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-default_model
+          tags: |
+            type=semver,pattern={{version}},value=${{ steps.version.outputs.version }}
+            type=ref,event=branch
+      - name: Build and push default_meta Docker image
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.default_model_meta.outputs.tags }}
+          labels: ${{ steps.default_model_meta.outputs.labels }}

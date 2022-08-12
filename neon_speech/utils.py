@@ -76,6 +76,20 @@ def install_stt_plugin(plugin: str) -> bool:
     return returned == 0
 
 
+def init_stt_plugin(plugin: str):
+    """
+    Initialize a specified plugin. Useful for doing one-time initialization
+    before deployment
+    """
+    from ovos_plugin_manager.stt import load_stt_plugin
+    plug = load_stt_plugin(plugin)
+    if plug:
+        LOG.info(f"Initializing plugin: {plugin}")
+        plug()
+    else:
+        LOG.warning(f"Could not find plugin: {plugin}")
+
+
 def use_neon_speech(func):
     """
     Wrapper to ensure call originates from neon_speech for stack checks.
