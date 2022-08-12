@@ -93,3 +93,13 @@ def install_plugin(module, package, force_install):
         install_stt_plugin(package or module)
         if not module:
             click.echo("Plugin specified without module")
+
+
+@neon_speech_cli.command(help="Install a STT Plugin")
+@click.option("--plugin", "-p", default=None,
+              help="STT module to init")
+def init_plugin(plugin):
+    from neon_speech.utils import init_stt_plugin
+    from ovos_config.config import Configuration
+    plugin = plugin or Configuration().get("stt", {}).get("module")
+    init_stt_plugin(plugin)
