@@ -1,4 +1,4 @@
-neon-stt-plugin-deepspeech_stream_local>=1.0.1a0
+neon-stt-plugin-deepspeech_stream_local~=1.1
 pytest
 mock~=4.0
-neon-messagebus>=0.1.2a1
+neon-messagebus~=0.2

@@ -1,5 +1,4 @@
-neon-stt-plugin-deepspeech_stream_local>=1.0.1a0
-neon-stt-plugin-coqui>=0.0.2a9
+neon-stt-plugin-deepspeech_stream_local~=1.1
 
 # Load alternative WW plugins so they are available
 ovos-ww-plugin-pocketsphinx~=0.1.1
