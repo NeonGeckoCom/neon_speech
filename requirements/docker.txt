@@ -1,4 +1,6 @@
-chatterbox-wake-word-plugin-dummy~=0.1
-ovos-ww-plugin-pocketsphinx~=0.1
-ovos-ww-plugin-precise~=0.1
-ovos-core[bus,stt]~=0.0.3
+neon-stt-plugin-deepspeech_stream_local~=1.1
+
+# Load alternative WW plugins so they are available
+ovos-ww-plugin-pocketsphinx~=0.1.1
+ovos-ww-plugin-precise-lite~=0.1.0
+ovos-ww-plugin-precise~=0.1.0

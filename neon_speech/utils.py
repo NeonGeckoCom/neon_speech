@@ -26,30 +26,9 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import json
-import os.path
-
-from os.path import join
 from tempfile import mkstemp
-from ovos_utils.configuration import get_ovos_config
-from ovos_utils.xdg_utils import xdg_config_home
-from neon_utils.configuration_utils import get_neon_speech_config
 from neon_utils.logger import LOG
 from neon_utils.packaging_utils import get_package_dependencies
-
-
-def get_speech_module_config() -> dict:
-    """
-    Get a dict config with all values required for the speech module read from
-    Neon YML config
-    :returns: dict Mycroft config with Neon YML values where defined
-    """
-    ovos = get_ovos_config()
-    if "hotwords" in ovos:
-        conf = ovos.pop("hotwords")
-        LOG.debug(f"removed hostwords config: {conf}")
-    neon = get_neon_speech_config()
-    return {**ovos, **neon}
 
 
 def patch_config(config: dict = None):
@@ -57,14 +36,12 @@ def patch_config(config: dict = None):
     Write the specified speech configuration to the global config file
     :param config: Mycroft-compatible configuration override
     """
+    from ovos_config import USER_CONFIG, LocalConf
+
     config = config or dict()
-    updated_config = {**get_speech_module_config(), **config}
-    config_file = join(xdg_config_home(), "neon", "neon.conf")
-    if not os.path.isdir(os.path.dirname(config_file)):
-        os.makedirs(os.path.dirname(config_file))
-    with open(config_file, "w+") as f:
-        json.dump(updated_config, f)
-    LOG.info(f"Updated config file: {config_file}")
+    local_config = LocalConf(USER_CONFIG)
+    local_config.update(config)
+    local_config.store()
 
 
 def _plugin_to_package(plugin: str) -> str:
@@ -89,9 +66,40 @@ def install_stt_plugin(plugin: str) -> bool:
     """
     import pip
     _, tmp_file = mkstemp()
+    LOG.info(f"deps={get_package_dependencies('neon-speech')}")
     with open(tmp_file, 'w') as f:
         f.write('\n'.join(get_package_dependencies("neon-speech")))
     LOG.info(f"Requested installation of plugin: {plugin}")
-    returned = pip.main(['install', _plugin_to_package(plugin), "-c", tmp_file])
+    returned = pip.main(['install', _plugin_to_package(plugin), "-c",
+                         tmp_file])
     LOG.info(f"pip status: {returned}")
     return returned == 0
+
+
+def init_stt_plugin(plugin: str):
+    """
+    Initialize a specified plugin. Useful for doing one-time initialization
+    before deployment
+    """
+    from ovos_plugin_manager.stt import load_stt_plugin
+    plug = load_stt_plugin(plugin)
+    if plug:
+        LOG.info(f"Initializing plugin: {plugin}")
+        try:
+            plug()
+        except TypeError:
+            plug(results_event=None)
+    else:
+        LOG.warning(f"Could not find plugin: {plugin}")
+
+
+def use_neon_speech(func):
+    """
+    Wrapper to ensure call originates from neon_speech for stack checks.
+    This is used for ovos-utils config platform detection which uses the stack
+    to determine which module config to return.
+    """
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+    return wrapper
+
