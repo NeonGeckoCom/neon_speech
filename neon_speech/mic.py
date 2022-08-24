@@ -83,6 +83,7 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
         if not self.use_wake_word:
             return True
         elif self._listen_triggered:
+            self._listen_triggered = False
             return True
         return False
 
