@@ -49,19 +49,10 @@ hotwords:
     listen: true
     sound: snd/start_listening.wav
     debug: false
+    rule: fuzzy
     model_folder: /root/.local/share/neon/vosk-model-small-en-us-0.15
     samples:
       - hey neon
-      - hey neil
-      - hey near
-      - hey now
-      - hey india
-      - hey me or
-      - hey moron
-      - kenya
-      - the neon
-      - a neon
-      - the indian
 sounds:
   start_listening: snd/start_listening.wav
   end_listening: snd/end_listening.wav
