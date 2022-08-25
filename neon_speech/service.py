@@ -148,7 +148,7 @@ class NeonSpeechClient(SpeechService):
     def handle_get_languages_stt(self, message):
         try:
             stt_langs = self.loop.stt.available_languages or \
-                        (self.config.get('language', {}).get('user'))
+                        [self.config.get('language', {}).get('user')]
         except Exception as e:
             LOG.exception(e)
             stt_langs = None
