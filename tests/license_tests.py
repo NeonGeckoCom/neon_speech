@@ -20,7 +20,8 @@ license_overrides = {
     "python-dateutil": "Apache-2.0",
     "pyparsing": "MIT",
     "exceptiongroup": "MIT",
-    'vosk': 'Apache-2.0'
+    'vosk': 'Apache-2.0',
+    'ovos-skill-installer': 'MIT'
 }
 # explicitly allow these packages that would fail otherwise
 whitelist = ["neon-api-proxy"]
