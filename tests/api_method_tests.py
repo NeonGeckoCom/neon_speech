@@ -206,7 +206,8 @@ class TestAPIMethods(unittest.TestCase):
         self.assertIsInstance(resp, Message)
         self.assertTrue(resp.context.get('ctx'))
 
-        self.assertEqual(resp.data['stt_langs'], real_stt_property)
+        self.assertEqual(resp.data['stt_langs'],
+                         list(real_stt_property) or ['en-us'])
 
         self.speech_service.loop.stt.available_languages = mock_property
         mock_property.return_value = ('en-us', 'es', 'fr-fr', 'fr-ca')
