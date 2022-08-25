@@ -31,7 +31,7 @@ import sys
 import mock
 import unittest
 
-from time import time
+from time import time, sleep
 from mycroft_bus_client import MessageBusClient, Message
 from neon_utils.configuration_utils import init_config_dir
 from neon_utils.file_utils import encode_file_to_base64_string
@@ -70,15 +70,16 @@ class TestAPIMethods(unittest.TestCase):
         cls.bus.run_in_thread()
         if not cls.bus.connected_event.wait(60):
             raise TimeoutError("Bus not connected after 60 seconds")
-        alive = False
+        ready = False
         timeout = time() + 120
-        while not alive and time() < timeout:
+        while not ready and time() < timeout:
             message = cls.bus.wait_for_response(
                 Message("mycroft.speech.is_ready"))
             if message:
-                alive = message.data.get("status")
-        if not alive:
+                ready = message.data.get("status")
+        if not ready:
             raise TimeoutError("Speech module not ready after 120 seconds")
+        sleep(5)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -195,6 +196,26 @@ class TestAPIMethods(unittest.TestCase):
         resp = self.bus.wait_for_response(Message(
             "neon.query_wake_words_state"))
         self.assertFalse(resp.data['enabled'])
+
+    def test_get_stt_supported_languages(self):
+        real_stt_property = self.speech_service.loop.stt.available_languages
+        mock_property = mock.Mock()
+        resp = self.bus.wait_for_response(Message(
+            "neon.get_languages_stt", {}, {'ctx': True}
+        ))
+        self.assertIsInstance(resp, Message)
+        self.assertTrue(resp.context.get('ctx'))
+
+        self.assertEqual(resp.data['stt_langs'], real_stt_property)
+
+        self.speech_service.loop.stt.available_languages = mock_property
+        mock_property.return_value = ('en-us', 'es', 'fr-fr', 'fr-ca')
+        resp = self.bus.wait_for_response(Message(
+            "neon.get_languages_stt", {}, {'ctx': True}
+        ))
+        self.assertEqual(resp.data['stt_langs'], list(mock_property.return_value))
+
+        self.speech_service.loop.stt.available_languages = real_stt_property
 
 
 if __name__ == '__main__':

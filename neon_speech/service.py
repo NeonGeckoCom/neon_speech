@@ -115,6 +115,7 @@ class NeonSpeechClient(SpeechService):
         self.loop = NeonRecognizerLoop(self.bus, watchdog)
         self.connect_loop_events()
         self.connect_bus_events()
+        LOG.info(f"Creating `api_stt` object for messagebus API calls")
         self.api_stt = STTFactory.create(config=self.config,
                                          results_event=None)
 
@@ -135,11 +136,25 @@ class NeonSpeechClient(SpeechService):
         self.bus.on("neon.get_stt", self.handle_get_stt)
         self.bus.on("neon.audio_input", self.handle_audio_input)
 
+        # Language Support Bus API
+        self.bus.on("neon.get_languages_stt", self.handle_get_languages_stt)
+
         # State Change Notifications
         self.bus.on("neon.wake_words_state", self.handle_wake_words_state)
         self.bus.on("neon.query_wake_words_state",
                     self.handle_query_wake_words_state)
         self.bus.on("neon.profile_update", self.handle_profile_update)
+
+    def handle_get_languages_stt(self, message):
+        try:
+            stt_langs = self.loop.stt.available_languages or \
+                        (self.config.get('language', {}).get('user'))
+        except Exception as e:
+            LOG.exception(e)
+            stt_langs = None
+        LOG.info(f"Got stt_langs: {stt_langs}")
+        stt_langs = stt_langs or ['en-us']
+        self.bus.emit(message.response({'stt_langs': stt_langs}))
 
     def handle_profile_update(self, message):
         """
