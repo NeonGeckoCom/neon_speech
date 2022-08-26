@@ -224,9 +224,9 @@ class TestAPIMethods(unittest.TestCase):
         mock_stt = MockSTT()
         self.speech_service.loop.stt = mock_stt
         resp = self.bus.wait_for_response(Message(
-            "neon.get_languages_stt", {}, {'ctx': True}
+            "ovos.languages.stt", {}, {'ctx': True}
         ))
-        self.assertEqual(resp.data['stt_langs'], list(mock_languages))
+        self.assertEqual(resp.data['langs'], list(mock_languages))
 
         self.speech_service.loop.stt = real_stt
 
