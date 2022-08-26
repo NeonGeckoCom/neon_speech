@@ -204,7 +204,7 @@ class TestAPIMethods(unittest.TestCase):
         self.assertIsInstance(resp, Message)
         self.assertTrue(resp.context.get('ctx'))
 
-        self.assertEqual(resp.data['stt_langs'],
+        self.assertEqual(resp.data['langs'],
                          list(real_stt.available_languages) or ['en-us'])
 
         mock_languages = ('en-us', 'es', 'fr-fr', 'fr-ca')
