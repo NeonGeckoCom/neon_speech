@@ -32,6 +32,7 @@ from tempfile import mkstemp
 from threading import Thread, Lock
 from time import time
 
+from mycroft.listener.mic import ListeningMode
 from ovos_utils.process_utils import StatusCallbackMap, ProcessStatus
 from pydub import AudioSegment
 from speech_recognition import AudioData
@@ -182,14 +183,15 @@ class NeonSpeechClient(SpeechService):
         :param message: Message associated with request
         """
         enabled = message.data.get("enabled", True)
-        self.loop.responsive_recognizer.use_wake_word = enabled
+        mode = ListeningMode.WAKEWORD if enabled else ListeningMode.CONTINUOUS
+        self.loop.listen_mode = mode
 
     def handle_query_wake_words_state(self, message):
         """
         Query the current WW state
         :param message: Message associated with request
         """
-        enabled = self.loop.responsive_recognizer.use_wake_word
+        enabled = self.loop.listen_mode == ListeningMode.WAKEWORD
         self.bus.emit(message.response({"enabled": enabled}))
 
     def handle_get_stt(self, message: Message):
