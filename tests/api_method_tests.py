@@ -199,7 +199,7 @@ class TestAPIMethods(unittest.TestCase):
     def test_get_stt_supported_languages(self):
         real_stt = self.speech_service.loop.stt
         resp = self.bus.wait_for_response(Message(
-            "neon.get_languages_stt", {}, {'ctx': True}
+            "ovos.languages.stt", {}, {'ctx': True}
         ))
         self.assertIsInstance(resp, Message)
         self.assertTrue(resp.context.get('ctx'))
