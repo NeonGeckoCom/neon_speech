@@ -115,7 +115,6 @@ class NeonSpeechClient(SpeechService):
         self.loop = NeonRecognizerLoop(self.bus, watchdog)
         self.connect_loop_events()
         self.connect_bus_events()
-        LOG.info(f"Creating `api_stt` object for messagebus API calls")
         self.api_stt = STTFactory.create(config=self.config,
                                          results_event=None)
 
@@ -141,7 +140,6 @@ class NeonSpeechClient(SpeechService):
         self.bus.on("neon.query_wake_words_state",
                     self.handle_query_wake_words_state)
         self.bus.on("neon.profile_update", self.handle_profile_update)
-
 
     def handle_profile_update(self, message):
         """
