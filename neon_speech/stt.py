@@ -54,10 +54,10 @@ class WrappedSTT(StreamingSTT, ABC):
         if self.stream is not None:
             self.queue.put(None)
             text = self.stream.finalize()
-            to_return = [text]
             self.stream.join()
-            if hasattr(self.stream, 'transcriptions'):
-                to_return = self.stream.transcriptions
+            if not hasattr(self.stream, 'transcriptions'):
+                self.stream.transcriptions = [text]
+            to_return = self.stream.transcriptions
             self.stream = None
             self.queue = None
             self.results_event.set()
