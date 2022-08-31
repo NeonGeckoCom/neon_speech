@@ -58,8 +58,8 @@ class TestAPIMethods(unittest.TestCase):
         use_neon_speech(init_config_dir)()
 
         test_config = Configuration()
-        test_config["stt"]["module"] = "ovos-stt-plugin-vosk-streaming"
-        assert test_config["stt"]["module"] == "ovos-stt-plugin-vosk-streaming"
+        test_config["stt"]["module"] = "deepspeech_stream_local"
+        assert test_config["stt"]["module"] == "deepspeech_stream_local"
 
         cls.messagebus = NeonBusService(debug=True, daemonic=True)
         cls.messagebus.start()
