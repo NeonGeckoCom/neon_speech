@@ -32,22 +32,23 @@ from threading import Event
 
 from neon_utils import LOG
 from ovos_plugin_manager.stt import OVOSSTTFactory
-from ovos_plugin_manager.templates.stt import STT, StreamThread
-from ovos_plugin_manager.templates.stt import StreamingSTT as _Streaming
+from ovos_plugin_manager.templates.stt import STT, StreamThread, StreamingSTT
 
 from ovos_config.config import Configuration
 
 
-class StreamingSTT(_Streaming, ABC):
-    def __init__(self, results_event=None, *_, **kwargs):
-        super(StreamingSTT, self).__init__()
-        if kwargs.get("config"):
-            config = kwargs['config']
-            self.config = config.get(config['module']) or self.config
-        if results_event:
-            # TODO: Deprecate this
-            self.results_event = results_event
-            self.transcript_ready = results_event
+class WrappedSTT(StreamingSTT, ABC):
+    def __new__(cls, base_engine, *args, **kwargs):
+        results_event = kwargs.get("results_event") or Event()
+        # build STT
+        for k in list(kwargs.keys()):
+            if k not in signature(base_engine).parameters:
+                kwargs.pop(k)
+        base_engine.stream_stop = cls.stream_stop
+        stt = base_engine(*args, **kwargs)
+        stt.results_event = results_event
+        stt.keys = Configuration().get("keys", {})
+        return stt
 
     def stream_stop(self):
         if self.stream is not None:
@@ -59,22 +60,9 @@ class StreamingSTT(_Streaming, ABC):
                 to_return = self.stream.transcriptions
             self.stream = None
             self.queue = None
-            self.transcript_ready.set()
+            self.results_event.set()
             return to_return
         return None
-
-
-class WrappedSTT:
-    def __new__(cls, clazz, *args, **kwargs):
-        # read config
-        config_core = {'stt': kwargs.get("config")} or Configuration()
-        # build STT
-        for k in list(kwargs.keys()):
-            if k not in signature(clazz).parameters:
-                kwargs.pop(k)
-        stt = clazz(*args, **kwargs)
-        stt.keys = config_core.get("keys", {})
-        return stt
 
 
 class STTFactory(OVOSSTTFactory):
@@ -98,5 +86,8 @@ class STTFactory(OVOSSTTFactory):
             clazz = OVOSSTTFactory.get_class(config)
             if not clazz:
                 raise ValueError("fallback plugin not found")
-
-        return WrappedSTT(clazz, config=config, results_event=results_event)
+        if issubclass(clazz, StreamingSTT):
+            return WrappedSTT(clazz, config=config.get(config['module']),
+                              results_event=results_event)
+        else:
+            return clazz(config=config.get(config['module']))
