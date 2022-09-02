@@ -338,3 +338,11 @@ class NeonSpeechClient(SpeechService):
             LOG.error(f"Skills didn't handle {ident}!")
             return False
         return True
+
+    def handle_get_languages_stt(self, message):
+        # TODO: Patch applied upstream in https://github.com/OpenVoiceOS/ovos-core/pull/192
+        stt_langs = self.loop.stt.available_languages or \
+                    [self.config.get('lang') or 'en-us']
+        LOG.debug(f"Got stt_langs: {stt_langs}")
+        self.bus.emit(message.response({'langs': stt_langs}))
+        self.bus.emit(message.response({'langs': list(stt_langs)}))
