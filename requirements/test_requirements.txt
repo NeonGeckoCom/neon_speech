@@ -1,4 +1,5 @@
-neon-stt-plugin-deepspeech_stream_local~=1.1,>=1.1.1a1
+# neon-stt-plugin-deepspeech_stream_local~=1.1,>=1.1.1a1
+neon-stt-plugin-deepspeech_stream_local @ git+https://github.com/neongeckocom/neon-stt-plugin-deepspeech-stream-local@FEAT_OvosMycroftCompat
 ovos-stt-plugin-vosk~=0.1
 pytest
 mock~=4.0
