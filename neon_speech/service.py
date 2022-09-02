@@ -185,6 +185,8 @@ class NeonSpeechClient(SpeechService):
         enabled = message.data.get("enabled", True)
         mode = ListeningMode.WAKEWORD if enabled else ListeningMode.CONTINUOUS
         self.loop.listen_mode = mode
+        if mode == ListeningMode.CONTINUOUS:
+            self.loop.responsive_recognizer.trigger_listen()
 
     def handle_query_wake_words_state(self, message):
         """
