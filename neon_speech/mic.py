@@ -87,9 +87,9 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
             return True
         return False
 
-    def check_for_hotwords(self, audio_data):
+    def check_for_hotwords(self, audio_data, source):
         found = False
-        for ww in super().check_for_hotwords(audio_data):
+        for ww in super().check_for_hotwords(audio_data, source):
             found = True
             yield ww
         if not found:
