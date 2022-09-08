@@ -11,7 +11,7 @@ neon-transformers~=0.2
 neon-utils[audio]~=1.0,>=1.0.3a2
 ovos-config~=0.0,>=0.0.3
 
-ovos-vad-plugin-webrtcvad @ git+https://github.com/openvoiceos/ovos-vad-plugin-webrtcvad
+ovos-vad-plugin-webrtcvad~=0.0.1
 ovos-ww-plugin-vosk~=0.0,>=0.0.4
 # TODO: Below patching vosk dependency bug
 ovos-skill-installer~=0.0.5
