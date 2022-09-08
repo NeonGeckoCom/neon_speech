@@ -18,7 +18,6 @@ listener:
   wake_word_upload:
     disable: false
     url: https://training.mycroft.ai/precise/upload
-  wake_word_enabled: true  # TODO: Deprecate and replace with `continuous_listen`
   continuous_listen: false
   VAD:
     silence_method: vad_and_ratio
@@ -28,7 +27,7 @@ listener:
     min_seconds: 1
     max_current_ratio_threshold: 2
     initial_energy_threshold: 1000.0
-    module: ''
+    module: ovos-vad-plugin-webrtcvad
     ovos-vad-plugin-silero:
       threshold: 0.2
     ovos-vad-plugin-webrtcvad:
