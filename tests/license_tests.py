@@ -21,7 +21,8 @@ license_overrides = {
     "pyparsing": "MIT",
     "exceptiongroup": "MIT",
     'vosk': 'Apache-2.0',
-    'ovos-skill-installer': 'MIT'
+    'ovos-skill-installer': 'MIT',
+    'idna': 'BSD3'
 }
 # explicitly allow these packages that would fail otherwise
 whitelist = ["neon-api-proxy"]

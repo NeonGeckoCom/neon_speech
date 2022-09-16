@@ -282,7 +282,7 @@ class NeonSpeechClient(SpeechService):
         Handle notification from core that internet connection is established
         """
         LOG.info(f"Internet Connected, Resetting STT Stream")
-        self.loop.audio_producer.stream_handler.has_result.set()
+        self.loop.stt.results_event.set()
 
     @staticmethod
     def _write_encoded_file(audio_data: str) -> str:
