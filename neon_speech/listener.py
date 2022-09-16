@@ -136,6 +136,14 @@ class NeonRecognizerLoop(RecognizerLoop):
 
         self.microphone = MutableMicrophone(device_index, rate,
                                             mute=self.mute_calls > 0)
+        if self.engines:
+            for e in self.engines.values():
+                try:
+                    LOG.info(f"Deleting engine before reinitializing: {e}")
+                    e.get('engine').stop()
+                    del e['engine']
+                except Exception as e:
+                    LOG.exception(e)
         self.create_hotword_engines()
         self.state = RecognizerLoopState()
         self.responsive_recognizer = NeonResponsiveRecognizer(self)
