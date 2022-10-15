@@ -27,7 +27,7 @@ import unittest
 
 from os.path import dirname, join
 from threading import Thread, Event
-from neon_utils.logger import LOG
+from ovos_utils.log import LOG
 from speech_recognition import AudioData
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))

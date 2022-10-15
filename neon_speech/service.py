@@ -39,7 +39,7 @@ from speech_recognition import AudioData
 
 from neon_utils.file_utils import decode_base64_string_to_file
 from neon_utils.messagebus_utils import get_messagebus
-from neon_utils.logger import LOG
+from ovos_utils.log import LOG
 from neon_utils.configuration_utils import get_neon_user_config
 from neon_utils.user_utils import apply_local_user_profile_updates
 from ovos_utils.json_helper import merge_dict
