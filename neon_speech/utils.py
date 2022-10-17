@@ -27,7 +27,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from tempfile import mkstemp
-from neon_utils.logger import LOG
+from ovos_utils.log import LOG
 from neon_utils.packaging_utils import get_package_dependencies
 
 

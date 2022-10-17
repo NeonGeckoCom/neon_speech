@@ -29,7 +29,7 @@
 from queue import Queue
 
 # from neon_utils.configuration_utils import get_neon_device_type
-from neon_utils.logger import LOG
+from ovos_utils.log import LOG
 from ovos_utils.metrics import Stopwatch
 from ovos_config.config import Configuration
 from mycroft.client.speech.listener import RecognizerLoop, AudioConsumer, \
