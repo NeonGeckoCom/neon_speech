@@ -120,6 +120,7 @@ class NeonSpeechClient(SpeechService):
                                          results_event=None)
 
     def shutdown(self):
+        LOG.info("Shutting Down")
         self.status.set_stopping()
         self.loop.stop()
 
