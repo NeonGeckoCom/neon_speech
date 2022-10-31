@@ -1,4 +1,4 @@
-neon-stt-plugin-deepspeech_stream_local~=1.1,>=1.1.1a2
+neon-stt-plugin-deepspeech_stream_local~=2.0
 ovos-stt-plugin-vosk~=0.1
 pytest
 mock~=4.0
