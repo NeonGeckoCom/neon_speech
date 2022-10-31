@@ -14,3 +14,5 @@ ovos-config~=0.0,>=0.0.3
 ovos-vad-plugin-webrtcvad~=0.0.1
 ovos-ww-plugin-vosk~=0.0,>=0.0.4
 
+# TODO: Below patching dependency of vosk ww plugin
+ovos-skill-installer~=0.0.5
