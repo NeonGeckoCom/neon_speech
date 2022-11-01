@@ -11,6 +11,7 @@ play_mp3_cmdline: "play %1"
 play_ogg_cmdline: "play %1"
 confirm_listening: true
 listener:
+  wake_word: hey_neon
   sample_rate: 16000
   mic_meter_ipc: false
   record_wake_words: false
@@ -41,9 +42,9 @@ listener:
   recording_timeout_with_silence: 3.0
   instant_listen: false
 hotwords:
-  hey mycroft:
+  hey_mycroft:
     active: false
-  hey neon:
+  hey_neon:
     module: ovos-ww-plugin-vosk
     listen: true
     sound: snd/start_listening.wav
