@@ -36,7 +36,7 @@ from mycroft_bus_client import MessageBusClient, Message
 from neon_utils.configuration_utils import init_config_dir
 from neon_utils.file_utils import encode_file_to_base64_string
 from neon_messagebus.service import NeonBusService
-from neon_utils.logger import LOG
+from ovos_utils.log import LOG
 from ovos_config.config import Configuration
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
@@ -70,14 +70,14 @@ class TestAPIMethods(unittest.TestCase):
         cls.bus.run_in_thread()
         if not cls.bus.connected_event.wait(60):
             raise TimeoutError("Bus not connected after 60 seconds")
-        alive = False
+        ready = False
         timeout = time() + 120
-        while not alive and time() < timeout:
+        while not ready and time() < timeout:
             message = cls.bus.wait_for_response(
                 Message("mycroft.speech.is_ready"))
             if message:
-                alive = message.data.get("status")
-        if not alive:
+                ready = message.data.get("status")
+        if not ready:
             raise TimeoutError("Speech module not ready after 120 seconds")
 
     @classmethod
@@ -195,6 +195,40 @@ class TestAPIMethods(unittest.TestCase):
         resp = self.bus.wait_for_response(Message(
             "neon.query_wake_words_state"))
         self.assertFalse(resp.data['enabled'])
+
+    def test_get_stt_supported_languages(self):
+        real_stt = self.speech_service.loop.stt
+        resp = self.bus.wait_for_response(Message(
+            "ovos.languages.stt", {}, {'ctx': True}
+        ))
+        self.assertIsInstance(resp, Message)
+        self.assertTrue(resp.context.get('ctx'))
+
+        self.assertEqual(resp.data['langs'],
+                         list(real_stt.available_languages) or ['en-us'])
+
+        mock_languages = ('en-us', 'es', 'fr-fr', 'fr-ca')
+        from ovos_plugin_manager.templates.stt import STT
+
+        class MockSTT(STT):
+            def __init__(self):
+                super(MockSTT, self).__init__()
+
+            @property
+            def available_languages(self):
+                return mock_languages
+
+            def execute(self, *args, **kwargs):
+                pass
+
+        mock_stt = MockSTT()
+        self.speech_service.loop.stt = mock_stt
+        resp = self.bus.wait_for_response(Message(
+            "ovos.languages.stt", {}, {'ctx': True}
+        ))
+        self.assertEqual(resp.data['langs'], list(mock_languages))
+
+        self.speech_service.loop.stt = real_stt
 
 
 if __name__ == '__main__':

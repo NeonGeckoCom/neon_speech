@@ -26,8 +26,8 @@ import sys
 import unittest
 
 from os.path import dirname, join
-from threading import Thread
-from neon_utils.logger import LOG
+from threading import Thread, Event
+from ovos_utils.log import LOG
 from speech_recognition import AudioData
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
@@ -134,6 +134,26 @@ class UtilTests(unittest.TestCase):
         except Exception as e:
             LOG.error(e)
     # TODO: Test other speech service methods directly
+
+    def test_ovos_plugin_compat(self):
+        from neon_speech.stt import STTFactory
+        ovos_vosk_streaming = STTFactory().create(
+            {'module': 'ovos-stt-plugin-vosk-streaming',
+             'lang': 'en-us'})
+        self.assertIsInstance(ovos_vosk_streaming.results_event, Event)
+        test_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                 "audio_files", "stop.wav")
+        from neon_utils.file_utils import get_audio_file_stream
+        audio_stream = get_audio_file_stream(test_file)
+        ovos_vosk_streaming.stream_start('en-us')
+        while True:
+            try:
+                ovos_vosk_streaming.stream_data(audio_stream.read(1024))
+            except EOFError:
+                break
+        transcriptions = ovos_vosk_streaming.stream_stop()
+        self.assertIsInstance(transcriptions, list)
+        self.assertIsInstance(transcriptions[0], str)
 
 
 if __name__ == '__main__':

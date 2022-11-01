@@ -11,6 +11,7 @@ play_mp3_cmdline: "play %1"
 play_ogg_cmdline: "play %1"
 confirm_listening: true
 listener:
+  wake_word: hey_neon
   sample_rate: 16000
   mic_meter_ipc: false
   record_wake_words: false
@@ -18,7 +19,6 @@ listener:
   wake_word_upload:
     disable: false
     url: https://training.mycroft.ai/precise/upload
-  wake_word_enabled: true  # TODO: Deprecate and replace with `continuous_listen`
   continuous_listen: false
   VAD:
     silence_method: vad_and_ratio
@@ -28,7 +28,7 @@ listener:
     min_seconds: 1
     max_current_ratio_threshold: 2
     initial_energy_threshold: 1000.0
-    module: ''
+    module: ovos-vad-plugin-webrtcvad
     ovos-vad-plugin-silero:
       threshold: 0.2
     ovos-vad-plugin-webrtcvad:
@@ -42,26 +42,17 @@ listener:
   recording_timeout_with_silence: 3.0
   instant_listen: false
 hotwords:
-  hey mycroft:
+  hey_mycroft:
     active: false
-  hey neon:
+  hey_neon:
     module: ovos-ww-plugin-vosk
     listen: true
     sound: snd/start_listening.wav
     debug: false
+    rule: fuzzy
     model_folder: /root/.local/share/neon/vosk-model-small-en-us-0.15
     samples:
       - hey neon
-      - hey neil
-      - hey near
-      - hey now
-      - hey india
-      - hey me or
-      - hey moron
-      - kenya
-      - the neon
-      - a neon
-      - the indian
 sounds:
   start_listening: snd/start_listening.wav
   end_listening: snd/end_listening.wav

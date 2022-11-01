@@ -28,12 +28,14 @@
 
 from ovos_utils import wait_for_exit_signal
 from neon_utils.configuration_utils import init_config_dir
-from neon_utils.logger import LOG
+from neon_utils.log_utils import init_log
+from ovos_utils.log import LOG
 
 
 def main(*args, **kwargs):
     # Initialize configuration
     init_config_dir()
+    init_log(log_name="voice")
     if kwargs.get("config"):
         LOG.warning("Found config kwarg, updating to 'speech_config'")
         kwargs["speech_config"] = kwargs.pop("config")

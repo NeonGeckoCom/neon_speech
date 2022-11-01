@@ -32,13 +32,14 @@ from tempfile import mkstemp
 from threading import Thread, Lock
 from time import time
 
+from mycroft.listener.mic import ListeningMode
 from ovos_utils.process_utils import StatusCallbackMap, ProcessStatus
 from pydub import AudioSegment
 from speech_recognition import AudioData
 
 from neon_utils.file_utils import decode_base64_string_to_file
 from neon_utils.messagebus_utils import get_messagebus
-from neon_utils.logger import LOG
+from ovos_utils.log import LOG
 from neon_utils.configuration_utils import get_neon_user_config
 from neon_utils.user_utils import apply_local_user_profile_updates
 from ovos_utils.json_helper import merge_dict
@@ -119,6 +120,7 @@ class NeonSpeechClient(SpeechService):
                                          results_event=None)
 
     def shutdown(self):
+        LOG.info("Shutting Down")
         self.status.set_stopping()
         self.loop.stop()
 
@@ -182,14 +184,17 @@ class NeonSpeechClient(SpeechService):
         :param message: Message associated with request
         """
         enabled = message.data.get("enabled", True)
-        self.loop.responsive_recognizer.use_wake_word = enabled
+        mode = ListeningMode.WAKEWORD if enabled else ListeningMode.CONTINUOUS
+        self.loop.listen_mode = mode
+        if mode == ListeningMode.CONTINUOUS:
+            self.loop.responsive_recognizer.trigger_listen()
 
     def handle_query_wake_words_state(self, message):
         """
         Query the current WW state
         :param message: Message associated with request
         """
-        enabled = self.loop.responsive_recognizer.use_wake_word
+        enabled = self.loop.listen_mode == ListeningMode.WAKEWORD
         self.bus.emit(message.response({"enabled": enabled}))
 
     def handle_get_stt(self, message: Message):
@@ -278,7 +283,7 @@ class NeonSpeechClient(SpeechService):
         Handle notification from core that internet connection is established
         """
         LOG.info(f"Internet Connected, Resetting STT Stream")
-        self.loop.audio_producer.stream_handler.has_result.set()
+        self.loop.stt.results_event.set()
 
     @staticmethod
     def _write_encoded_file(audio_data: str) -> str:

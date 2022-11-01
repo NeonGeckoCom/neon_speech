@@ -38,23 +38,9 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.in_speech = False
+        self._in_speech = False
         self.audio_consumers = AudioTransformersService(self.loop.bus,
                                                         config=self.config)
-
-    @property
-    def use_wake_word(self):
-        """
-        Property to query configuration for wake word state
-        """
-        return self.config["listener"].get('wake_word_enabled', True)
-
-    @use_wake_word.setter
-    def use_wake_word(self, new_val: bool):
-        if not isinstance(new_val, bool):
-            raise ValueError(f"Expected bool, got: {new_val}")
-        self.config["listener"]["wake_word_enabled"] = new_val
-        # TODO: Write config changes to disk?
 
     def __enter__(self):
         pass
@@ -64,15 +50,15 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
 
     def record_sound_chunk(self, source):
         chunk = super().record_sound_chunk(source)
-        if self.in_speech:
+        if self._in_speech:
             audio_data = self._create_audio_data(chunk, source)
             self.audio_consumers.feed_speech(audio_data)
         return chunk
 
     def _record_phrase(self, *args, **kwargs):
-        self.in_speech = True
+        self._in_speech = True
         byte_data = super()._record_phrase(*args, **kwargs)
-        self.in_speech = False
+        self._in_speech = False
         return byte_data
 
     def _skip_wake_word(self):
@@ -80,15 +66,14 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
         Check if told programmatically to skip the wake word.
         For example when we are in a dialog with the user.
         """
-        if not self.use_wake_word:
-            return True
-        elif self._listen_triggered:
+        if self._listen_triggered:
+            self._listen_triggered = False
             return True
         return False
 
-    def check_for_hotwords(self, audio_data):
+    def check_for_hotwords(self, audio_data, source):
         found = False
-        for ww in super().check_for_hotwords(audio_data):
+        for ww in super().check_for_hotwords(audio_data, source):
             found = True
             yield ww
         if not found:
@@ -111,34 +96,11 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
             (AudioData, lang): audio with the user's utterance (minus the
                                wake-up-word), stt_lang
         """
-        assert isinstance(source, AudioSource), "Source must be an AudioSource"
-
-        # If skipping wake words, just pass audio to our streaming STT
-        if self.loop.stt.can_stream and not self.use_wake_word:
-            LOG.debug("skipping wake words")
-            lang = self.loop.stt.lang
-            self.loop.emit("recognizer_loop:record_begin")
-            self.loop.stt.stream.stream_start()
-            frame_data = get_silence(source.SAMPLE_WIDTH)
-            LOG.debug("Stream starting!")
-            # event set in OPM
-            while not self.loop.stt.transcript_ready.is_set():
-                # Pass audio until STT tells us to stop
-                # (this is called again immediately)
-                chunk = self.record_sound_chunk(source)
-                if not is_speaking():
-                    # Filter out Neon speech
-                    self.loop.stt.stream.stream_chunk(chunk)
-                    frame_data += chunk
-            LOG.debug("stream ended!")
-            audio_data = self._create_audio_data(frame_data, source)
-            self.loop.emit("recognizer_loop:record_end")
-        # If using wake words, wait until the wake_word is detected and
-        # then record the following phrase
-        else:
-            audio_data, lang = super().listen(source, stream)
+        state = self.listen_state.value
+        audio_data, lang = super().listen(source, stream)
         # one of the default plugins saves the speech to file and
         # adds "filename" to context
         audio_data, context = self.audio_consumers.transform(audio_data)
         context["lang"] = lang
+        context["listen_state"] = state
         return audio_data, context

@@ -29,7 +29,7 @@
 from queue import Queue
 
 # from neon_utils.configuration_utils import get_neon_device_type
-from neon_utils.logger import LOG
+from ovos_utils.log import LOG
 from ovos_utils.metrics import Stopwatch
 from ovos_config.config import Configuration
 from mycroft.client.speech.listener import RecognizerLoop, AudioConsumer, \
@@ -136,6 +136,14 @@ class NeonRecognizerLoop(RecognizerLoop):
 
         self.microphone = MutableMicrophone(device_index, rate,
                                             mute=self.mute_calls > 0)
+        if self.engines:
+            for e in self.engines.values():
+                try:
+                    LOG.info(f"Deleting engine before reinitializing: {e}")
+                    e.get('engine').stop()
+                    del e['engine']
+                except Exception as e:
+                    LOG.exception(e)
         self.create_hotword_engines()
         self.state = RecognizerLoopState()
         self.responsive_recognizer = NeonResponsiveRecognizer(self)
@@ -148,10 +156,10 @@ class NeonRecognizerLoop(RecognizerLoop):
             self.stt = STTFactory.create(self.config_core)
         self.queue = Queue()
         self.audio_consumer = NeonAudioConsumer(self)
-        self.audio_consumer.setName("audio_consumer")
+        self.audio_consumer.name = "audio_consumer"
         self.audio_consumer.start()
         self.audio_producer = AudioProducer(self)
-        self.audio_producer.setName("audio_producer")
+        self.audio_producer.name = "audio_producer"
         try:
             # TODO: Patching bug in ovos-core
             self.microphone._start()
@@ -161,3 +169,25 @@ class NeonRecognizerLoop(RecognizerLoop):
         except Exception as e:
             LOG.exception(e)
             LOG.error("Skipping audio_producer init")
+
+    def stop(self):
+        self.state.running = False
+        if self.audio_producer:
+            self.audio_producer.stop()
+        # stop wake word detectors
+        for ww, hotword in self.engines.items():
+            try:
+                hotword["engine"].stop()
+            except:
+                LOG.exception(f"Failed to stop hotword engine: {ww}")
+        # wait for threads to shutdown
+        try:
+            if self.audio_producer and self.audio_producer.is_alive():
+                self.audio_producer.join(1)
+        except RuntimeError as e:
+            LOG.exception(e)
+        try:
+            if self.audio_consumer and self.audio_consumer.is_alive():
+                self.audio_consumer.join(1)
+        except RuntimeError as e:
+            LOG.exception(e)
