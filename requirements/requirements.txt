@@ -1,4 +1,4 @@
-ovos-core==0.0.5a35
+ovos-core~=0.0.5
 SpeechRecognition~=3.8
 PyAudio~=0.2
 mycroft-messagebus-client~=0.10
@@ -8,11 +8,8 @@ pydub~=0.23
 click~=8.0
 click-default-group~=1.2
 neon-transformers~=0.2
-neon-utils[audio]~=1.1
+neon-utils[audio]~=1.1,>=1.1.2
 ovos-config~=0.0,>=0.0.3
 
 ovos-vad-plugin-webrtcvad~=0.0.1
 ovos-ww-plugin-vosk~=0.0,>=0.0.4
-
-# TODO: Below patching dependency of vosk ww plugin
-ovos-skill-installer~=0.0.5
