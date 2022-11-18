@@ -89,7 +89,7 @@ class NeonAudioConsumer(AudioConsumer):
             if isinstance(transcriptions, str):
                 LOG.info("Casting str transcriptions to list")
                 transcriptions = [transcriptions]
-            if transcriptions is not None:
+            if transcriptions:
                 transcriptions = [t.lower().strip() for t in transcriptions]
                 LOG.debug(f"STT: {transcriptions}")
             else:
