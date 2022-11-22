@@ -2,8 +2,8 @@ audio_parsers:
   blacklist:
   - gender
 stt:
-  module: deepspeech_stream_local
-  fallback_module: neon-stt-plugin-coqui
+  module: neon-stt-plugin-nemo
+  fallback_module: deepspeech_stream_local
   ovos-stt-plugin-server:
     url: https://stt.openvoiceos.com/stt
 play_wav_cmdline: "play %1"

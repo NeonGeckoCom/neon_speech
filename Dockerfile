@@ -24,8 +24,9 @@ RUN apt-get update && \
 ADD . /neon_speech
 WORKDIR /neon_speech
 
-RUN pip install wheel && \
-  pip install .[docker]
+# cython included for Nemo package build
+RUN pip install wheel cython && \
+    pip install .[docker]
 
 # Get vosk model for WW detection
 RUN mkdir -p /root/.local/share/neon && \
