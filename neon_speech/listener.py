@@ -79,6 +79,8 @@ class NeonAudioConsumer(AudioConsumer):
             # Invoke the STT engine on the audio clip
             try:
                 transcriptions = self.loop.stt.execute(audio, language=lang)
+                if not transcriptions:
+                    raise RuntimeError("Primary STT returned nothing")
             except Exception as e:
                 if self.loop.fallback_stt:
                     LOG.warning(f"Using fallback STT, main plugin failed: {e}")
