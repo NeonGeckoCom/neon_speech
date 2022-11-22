@@ -1,6 +1,6 @@
 neon-stt-plugin-deepspeech_stream_local~=2.0
-neon-stt-plugin-nemo~=0.0.2a1
-
+# neon-stt-plugin-nemo~=0.0.2a2
+neon-stt-plugin-nemo @ git+https://github.com/neongeckocom/neon-stt-plugin-nemo@FIX_ConfigTypoInInit
 # Load alternative WW plugins so they are available
 ovos-ww-plugin-pocketsphinx~=0.1.1
 ovos-ww-plugin-precise-lite~=0.1.0
