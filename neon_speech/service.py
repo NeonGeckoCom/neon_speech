@@ -307,20 +307,23 @@ class NeonSpeechClient(SpeechService):
         audio_data = AudioData(segment.raw_data, segment.frame_rate,
                                segment.sample_width)
         audio_stream = get_audio_file_stream(wav_file)
-        if self.lock.acquire(True, 30):
-            LOG.info(f"Starting STT processing (lang={lang}): {wav_file}")
-            self.api_stt.stream_start(lang)
-            while True:
-                try:
-                    data = audio_stream.read(1024)
-                    self.api_stt.stream_data(data)
-                except EOFError:
-                    break
-            transcriptions = self.api_stt.stream_stop()
-            self.lock.release()
+        if hasattr(self.api_stt, 'stream_start'):
+            if self.lock.acquire(True, 30):
+                LOG.info(f"Starting STT processing (lang={lang}): {wav_file}")
+                self.api_stt.stream_start(lang)
+                while True:
+                    try:
+                        data = audio_stream.read(1024)
+                        self.api_stt.stream_data(data)
+                    except EOFError:
+                        break
+                transcriptions = self.api_stt.stream_stop()
+                self.lock.release()
+            else:
+                LOG.error(f"Timed out acquiring lock, not processing: {wav_file}")
+                transcriptions = []
         else:
-            LOG.error(f"Timed out acquiring lock, not processing: {wav_file}")
-            transcriptions = []
+            transcriptions = self.api_stt.execute(audio_data, lang)
         if isinstance(transcriptions, str):
             LOG.warning("Transcriptions is a str, no alternatives provided")
             transcriptions = [transcriptions]
