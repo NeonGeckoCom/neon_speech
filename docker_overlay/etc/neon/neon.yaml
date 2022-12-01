@@ -3,7 +3,7 @@ audio_parsers:
   - gender
 stt:
   module: neon-stt-plugin-nemo
-  fallback_module: deepspeech_stream_local
+  fallback_module: ovos-stt-plugin-vosk
   ovos-stt-plugin-server:
     url: https://stt.openvoiceos.com/stt
 play_wav_cmdline: "play %1"

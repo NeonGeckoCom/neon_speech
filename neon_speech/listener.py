@@ -27,6 +27,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from queue import Queue
+from typing import List
 
 # from neon_utils.configuration_utils import get_neon_device_type
 from ovos_utils.log import LOG
@@ -57,9 +58,7 @@ class NeonAudioConsumer(AudioConsumer):
             stopwatch = Stopwatch()
             with stopwatch:
                 transcription = self.transcribe(audio, lang)
-            if transcription:
-                if isinstance(transcription, str):
-                    transcription = [transcription]
+            if any(transcription):
                 ident = str(stopwatch.timestamp) + str(hash(transcription[0]))
                 # STT succeeded, send the transcribed speech on for processing
                 payload = {
@@ -69,8 +68,10 @@ class NeonAudioConsumer(AudioConsumer):
                     'context': context
                 }
                 self.loop.emit("recognizer_loop:utterance", payload)
+            else:
+                LOG.debug(f"Nothing transcribed")
 
-    def transcribe(self, audio, lang):
+    def transcribe(self, audio, lang) -> List[str]:
         def send_unknown_intent():
             """ Send message that nothing was transcribed. """
             self.loop.emit('recognizer_loop:speech.recognition.unknown')
@@ -79,6 +80,10 @@ class NeonAudioConsumer(AudioConsumer):
             # Invoke the STT engine on the audio clip
             try:
                 transcriptions = self.loop.stt.execute(audio, language=lang)
+                LOG.debug(f'transcriptions={transcriptions}')
+                if not transcriptions or (isinstance(transcriptions, list)
+                                          and not any(transcriptions)):
+                    raise RuntimeError("Primary STT returned nothing")
             except Exception as e:
                 if self.loop.fallback_stt:
                     LOG.warning(f"Using fallback STT, main plugin failed: {e}")
@@ -92,6 +97,8 @@ class NeonAudioConsumer(AudioConsumer):
             if transcriptions:
                 transcriptions = [t.lower().strip() for t in transcriptions]
                 LOG.debug(f"STT: {transcriptions}")
+                if not any(transcriptions):
+                    send_unknown_intent()
             else:
                 send_unknown_intent()
                 LOG.info('no words were transcribed')
@@ -154,6 +161,11 @@ class NeonRecognizerLoop(RecognizerLoop):
         self.state.running = True
         if not self.stt:
             self.stt = STTFactory.create(self.config_core)
+        if not self.fallback_stt:
+            clazz = self.get_fallback_stt()
+            if clazz:
+                LOG.debug(f"Initializing fallback STT engine")
+                self.fallback_stt = clazz()
         self.queue = Queue()
         self.audio_consumer = NeonAudioConsumer(self)
         self.audio_consumer.name = "audio_consumer"
