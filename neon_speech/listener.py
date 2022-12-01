@@ -80,8 +80,9 @@ class NeonAudioConsumer(AudioConsumer):
             # Invoke the STT engine on the audio clip
             try:
                 transcriptions = self.loop.stt.execute(audio, language=lang)
-                LOG.info(f'Transcriptions={transcriptions}')
-                if not transcriptions:
+                LOG.debug(f'transcriptions={transcriptions}')
+                if not transcriptions or (isinstance(transcriptions, list)
+                                          and not any(transcriptions)):
                     raise RuntimeError("Primary STT returned nothing")
             except Exception as e:
                 if self.loop.fallback_stt:
@@ -163,6 +164,7 @@ class NeonRecognizerLoop(RecognizerLoop):
         if not self.fallback_stt:
             clazz = self.get_fallback_stt()
             if clazz:
+                LOG.debug(f"Initializing fallback STT engine")
                 self.fallback_stt = clazz()
         self.queue = Queue()
         self.audio_consumer = NeonAudioConsumer(self)
