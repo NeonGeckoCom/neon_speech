@@ -90,6 +90,7 @@ class NeonAudioConsumer(AudioConsumer):
                     transcriptions = \
                         self.loop.fallback_stt.execute(audio, language=lang)
                 else:
+                    LOG.debug("No fallback_stt to try")
                     raise e
             if isinstance(transcriptions, str):
                 LOG.info("Casting str transcriptions to list")
@@ -136,13 +137,16 @@ class NeonRecognizerLoop(RecognizerLoop):
         device_index = self.config.get('device_index') or \
             self.config.get("dev_index")
         device_name = self.config.get('device_name')
+        retry_mic = self.config.get('retry_mic_init', True)
+
         if not device_index and device_name:
             device_index = find_input_device(device_name)
 
         LOG.debug('Using microphone (None = default): ' + str(device_index))
 
         self.microphone = MutableMicrophone(device_index, rate,
-                                            mute=self.mute_calls > 0)
+                                            mute=self.mute_calls > 0,
+                                            retry=retry_mic)
         if self.engines:
             for e in self.engines.values():
                 try:
