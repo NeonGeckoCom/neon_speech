@@ -127,11 +127,10 @@ class NeonSpeechClient(SpeechService):
     def connect_bus_events(self):
         super(NeonSpeechClient, self).connect_bus_events()
         # Register handler for internet (re-)connection
-        # TODO: This should be defined as a single event DM
         self.bus.on("mycroft.internet.connected",
                     self.handle_internet_connected)
-        self.bus.on("ovos.wifi.setup.completed",
-                    self.handle_internet_connected)
+        self.bus.on("ovos.phal.wifi.plugin.fully_offline",
+                    self.handle_offline)
 
         # Register API Handlers
         self.bus.on("neon.get_stt", self.handle_get_stt)
@@ -282,8 +281,22 @@ class NeonSpeechClient(SpeechService):
         """
         Handle notification from core that internet connection is established
         """
-        LOG.info(f"Internet Connected, Resetting STT Stream")
-        self.loop.stt.results_event.set()
+        if self.loop.stt.config["module"] != self.config["stt"]["module"]:
+            LOG.info("Reloading STT module")
+            self.loop.stt = STTFactory.create()
+        else:
+            LOG.info(f"Internet Connected, Resetting STT Stream")
+            self.loop.stt.results_event.set()
+
+    def handle_offline(self, _):
+        """
+        Handle notification to operate in offline mode
+        """
+        LOG.info("Offline mode selected, Reloading STT Plugin")
+        config = dict(self.config)
+        if config['stt'].get('offline_module'):
+            config['stt']['module'] = config['stt'].get('offline_module')
+            self.loop.stt = STTFactory.create(config)
 
     @staticmethod
     def _write_encoded_file(audio_data: str) -> str:
