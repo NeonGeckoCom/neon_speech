@@ -297,6 +297,9 @@ class NeonSpeechClient(SpeechService):
         if config['stt'].get('offline_module'):
             config['stt']['module'] = config['stt'].get('offline_module')
             self.loop.stt = STTFactory.create(config)
+        else:
+            LOG.info(f"Offline Mode, Resetting STT Stream")
+            self.loop.stt.results_event.set()
 
     @staticmethod
     def _write_encoded_file(audio_data: str) -> str:
