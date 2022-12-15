@@ -131,6 +131,7 @@ class NeonSpeechClient(SpeechService):
                     self.handle_internet_connected)
         self.bus.on("ovos.phal.wifi.plugin.fully_offline",
                     self.handle_offline)
+        self.bus.once("mycroft.ready", self.handle_ready)
 
         # Register API Handlers
         self.bus.on("neon.get_stt", self.handle_get_stt)
@@ -300,6 +301,14 @@ class NeonSpeechClient(SpeechService):
         else:
             LOG.info(f"Offline Mode, Resetting STT Stream")
             self.loop.stt.results_event.set()
+
+    def handle_ready(self, message):
+        """
+        Handle ready notification. If offline when ready, handle offline mode.
+        """
+        from neon_utils.net_utils import check_online
+        if not check_online():
+            self.handle_offline(message)
 
     @staticmethod
     def _write_encoded_file(audio_data: str) -> str:
