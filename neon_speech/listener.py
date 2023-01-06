@@ -27,6 +27,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from queue import Queue
+from threading import Event
 from typing import List
 
 # from neon_utils.configuration_utils import get_neon_device_type
@@ -117,10 +118,15 @@ class NeonRecognizerLoop(RecognizerLoop):
     Local wake word recognizer and remote general speech recognition.
     """
     def __init__(self, bus, watchdog=None, stt=None, fallback_stt=None):
+        self.config_loaded = Event()
         super().__init__(bus, watchdog, stt, fallback_stt)
 
     # def bind_transformers(self, parsers_service):
     #     self.responsive_recognizer.bind(parsers_service)
+
+    def reload(self):
+        self.config_loaded.clear()
+        super().reload()
 
     def _load_config(self):
         """
@@ -158,6 +164,7 @@ class NeonRecognizerLoop(RecognizerLoop):
         self.create_hotword_engines()
         self.state = RecognizerLoopState()
         self.responsive_recognizer = NeonResponsiveRecognizer(self)
+        self.config_loaded.set()
         # TODO: Update recognizer to support passed config
 
     def start_async(self):
@@ -191,11 +198,14 @@ class NeonRecognizerLoop(RecognizerLoop):
         if self.audio_producer:
             self.audio_producer.stop()
         # stop wake word detectors
-        for ww, hotword in self.engines.items():
+
+        engines = list(self.engines.keys())
+        for hotword in engines:
             try:
-                hotword["engine"].stop()
+                self.engines[hotword]["engine"].stop()
             except:
-                LOG.exception(f"Failed to stop hotword engine: {ww}")
+                LOG.exception(f"Failed to stop hotword engine: {hotword}")
+            self.engines.pop(hotword)
         # wait for threads to shutdown
         try:
             if self.audio_producer and self.audio_producer.is_alive():
