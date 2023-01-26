@@ -79,7 +79,7 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
         if not found:
             self.audio_consumers.feed_audio(audio_data)
 
-    def listen(self, source, stream):
+    def listen(self, source, stream) -> (AudioData, str):
         """Listens for chunks of audio that Mycroft should perform STT on.
 
         This will listen continuously for a wake-up-word, then return the

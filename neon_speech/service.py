@@ -127,11 +127,11 @@ class NeonSpeechClient(SpeechService):
     def connect_bus_events(self):
         super(NeonSpeechClient, self).connect_bus_events()
         # Register handler for internet (re-)connection
-        # TODO: This should be defined as a single event DM
         self.bus.on("mycroft.internet.connected",
                     self.handle_internet_connected)
-        self.bus.on("ovos.wifi.setup.completed",
-                    self.handle_internet_connected)
+        self.bus.on("ovos.phal.wifi.plugin.fully_offline",
+                    self.handle_offline)
+        self.bus.once("mycroft.ready", self.handle_ready)
 
         # Register API Handlers
         self.bus.on("neon.get_stt", self.handle_get_stt)
@@ -282,8 +282,33 @@ class NeonSpeechClient(SpeechService):
         """
         Handle notification from core that internet connection is established
         """
-        LOG.info(f"Internet Connected, Resetting STT Stream")
-        self.loop.stt.results_event.set()
+        if self.loop.stt.config["module"] != self.config["stt"]["module"]:
+            LOG.info("Reloading STT module")
+            self.loop.stt = STTFactory.create()
+        else:
+            LOG.info(f"Internet Connected, Resetting STT Stream")
+            self.loop.stt.results_event.set()
+
+    def handle_offline(self, _):
+        """
+        Handle notification to operate in offline mode
+        """
+        LOG.info("Offline mode selected, Reloading STT Plugin")
+        config = dict(self.config)
+        if config['stt'].get('offline_module'):
+            config['stt']['module'] = config['stt'].get('offline_module')
+            self.loop.stt = STTFactory.create(config)
+        else:
+            LOG.info(f"Offline Mode, Resetting STT Stream")
+            self.loop.stt.results_event.set()
+
+    def handle_ready(self, message):
+        """
+        Handle ready notification. If offline when ready, handle offline mode.
+        """
+        from neon_utils.net_utils import check_online
+        if not check_online():
+            self.handle_offline(message)
 
     @staticmethod
     def _write_encoded_file(audio_data: str) -> str:
@@ -307,20 +332,23 @@ class NeonSpeechClient(SpeechService):
         audio_data = AudioData(segment.raw_data, segment.frame_rate,
                                segment.sample_width)
         audio_stream = get_audio_file_stream(wav_file)
-        if self.lock.acquire(True, 30):
-            LOG.info(f"Starting STT processing (lang={lang}): {wav_file}")
-            self.api_stt.stream_start(lang)
-            while True:
-                try:
-                    data = audio_stream.read(1024)
-                    self.api_stt.stream_data(data)
-                except EOFError:
-                    break
-            transcriptions = self.api_stt.stream_stop()
-            self.lock.release()
+        if hasattr(self.api_stt, 'stream_start'):
+            if self.lock.acquire(True, 30):
+                LOG.info(f"Starting STT processing (lang={lang}): {wav_file}")
+                self.api_stt.stream_start(lang)
+                while True:
+                    try:
+                        data = audio_stream.read(1024)
+                        self.api_stt.stream_data(data)
+                    except EOFError:
+                        break
+                transcriptions = self.api_stt.stream_stop()
+                self.lock.release()
+            else:
+                LOG.error(f"Timed out acquiring lock, not processing: {wav_file}")
+                transcriptions = []
         else:
-            LOG.error(f"Timed out acquiring lock, not processing: {wav_file}")
-            transcriptions = []
+            transcriptions = self.api_stt.execute(audio_data, lang)
         if isinstance(transcriptions, str):
             LOG.warning("Transcriptions is a str, no alternatives provided")
             transcriptions = [transcriptions]

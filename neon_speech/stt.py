@@ -31,7 +31,7 @@ from inspect import signature
 from threading import Event
 
 from neon_utils import LOG
-from ovos_plugin_manager.stt import OVOSSTTFactory
+from ovos_plugin_manager.stt import OVOSSTTFactory, get_stt_config
 from ovos_plugin_manager.templates.stt import STT, StreamThread, StreamingSTT
 
 from ovos_config.config import Configuration
@@ -68,6 +68,7 @@ class WrappedSTT(StreamingSTT, ABC):
 class STTFactory(OVOSSTTFactory):
     @staticmethod
     def create(config=None, results_event: Event = None):
+        get_stt_config(config)
         if config and not config.get("module"):
             # No module, try getting stt config from passed config
             config = config.get("stt")
