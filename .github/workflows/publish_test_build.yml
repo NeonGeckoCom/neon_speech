@@ -8,10 +8,6 @@ on:
     paths-ignore:
       - 'version.py'
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 jobs:
   build_and_publish_pypi:
     uses: neongeckocom/.github/.github/workflows/publish_alpha_release.yml@FEAT_CommonWorkflows

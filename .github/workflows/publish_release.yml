@@ -6,10 +6,6 @@ on:
     branches:
       - master
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 jobs:
   build_and_publish_pypi_and_release:
     uses: neongeckocom/.github/.github/workflows/publish_stable_release.yml@FEAT_CommonWorkflows
