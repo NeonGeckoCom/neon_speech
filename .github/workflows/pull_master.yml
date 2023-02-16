@@ -9,9 +9,7 @@ on:
 
 jobs:
   pull_changes:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: neongeckocom/.github/.github/workflows/pull_master.yml@FEAT_CommonWorkflows
-        with:
-          pr_reviewer: neonreviewers
-          pr_assignee: neondaniel
+    uses: neongeckocom/.github/.github/workflows/pull_master.yml@FEAT_CommonWorkflows
+    with:
+      pr_reviewer: neonreviewers
+      pr_assignee: neondaniel
