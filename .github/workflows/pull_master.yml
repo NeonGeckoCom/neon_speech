@@ -8,7 +8,7 @@ on:
 
 jobs:
   pull_changes:
-    uses: neongeckocom/.github/.github/workflows/pull_master.yml@FEAT_CommonWorkflows
+    uses: neongeckocom/.github/.github/workflows/pull_master.yml@master
     with:
       pr_reviewer: neonreviewers
       pr_assignee: neondaniel
