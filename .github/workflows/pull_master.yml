@@ -11,11 +11,7 @@ jobs:
   pull_changes:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: pull-request-action
-        uses: repo-sync/pull-request@v2
+      - uses: neongeckocom/.github/.github/workflows/pull_master.yml@FEAT_CommonWorkflows
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          pr_reviewer: 'neonreviewers'
-          pr_assignee: 'neondaniel'
-          pr_draft: true
+          pr_reviewer: neonreviewers
+          pr_assignee: neondaniel
