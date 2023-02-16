@@ -10,11 +10,11 @@ on:
 
 jobs:
   build_and_publish_pypi:
-    uses: neongeckocom/.github/.github/workflows/publish_alpha_release.yml@FEAT_CommonWorkflows
+    uses: neongeckocom/.github/.github/workflows/publish_alpha_release.yml@master
     secrets: inherit
   build_and_publish_docker:
     needs: build_and_publish_pypi
-    uses: neongeckocom/.github/.github/workflows/publish_docker.yml@FEAT_CommonWorkflows
+    uses: neongeckocom/.github/.github/workflows/publish_docker.yml@master
     secrets: inherit
     with:
       base_tag: base
