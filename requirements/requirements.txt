@@ -12,7 +12,4 @@ neon-utils[audio]~=1.2,>=1.2.2a5
 ovos-config~=0.0,>=0.0.3
 
 ovos-vad-plugin-webrtcvad~=0.0.1
-ovos-ww-plugin-vosk~=0.0,>=0.0.4
-
-# TODO: Patching vosk dependency bug
-ovos-skill-installer~=0.0
+ovos-ww-plugin-vosk~=0.1
