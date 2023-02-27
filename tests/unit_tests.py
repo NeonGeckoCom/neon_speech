@@ -178,6 +178,7 @@ class ServiceTests(unittest.TestCase):
             "hey_mycroft": {
                 "active": False,
                 "module": "ovos-ww-plugin-vosk",
+                "model": None,  # TODO: Patching default config merge
                 "rule": "fuzzy",
                 "listen": True
             },
@@ -232,9 +233,14 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual({"hey_neon", "hey_mycroft"}, set(resp.data.keys()))
 
     def test_disable_wake_word(self):
-        self.service.config['hotwords']['hey_mycroft']['active'] = True
-        self.service.config['hotwords']['hey_neon']['active'] = True
-        self.service.config['hotwords']['wake_up']['active'] = False
+        hotword_config = self.service.config['hotwords']
+        hotword_config['hey_mycroft']['active'] = True
+        hotword_config['hey_neon']['active'] = True
+        hotword_config['wake_up']['active'] = False
+        self.service.config['hotwords'] = hotword_config
+        self.assertTrue(self.service.config['hotwords']['hey_mycroft']['active'])
+        self.assertTrue(self.service.config['hotwords']['hey_neon']['active'])
+        self.assertFalse(self.service.config['hotwords']['wake_up']['active'])
         self.service.loop.reload()
         self.service.loop.config_loaded.wait(60)
         self.assertEqual(set(self.service.loop.engines.keys()),
@@ -281,24 +287,30 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(set(self.service.loop.engines.keys()), {'hey_neon'})
 
     def test_enable_wake_word(self):
-        self.service.config['hotwords']['hey_mycroft']['active'] = False
-        self.service.config['hotwords']['hey_neon']['active'] = True
-        self.service.config['hotwords']['wake_up']['active'] = False
+        hotword_config = self.service.config['hotwords']
+        hotword_config['hey_mycroft']['active'] = False
+        hotword_config['hey_neon']['active'] = True
+        hotword_config['wake_up']['active'] = False
+        self.service.config['hotwords'] = hotword_config
+        self.assertFalse(self.service.config['hotwords']['hey_mycroft']['active'])
+        self.assertTrue(self.service.config['hotwords']['hey_neon']['active'])
+        self.assertFalse(self.service.config['hotwords']['wake_up']['active'])
+
         self.service.loop.reload()
         self.service.loop.config_loaded.wait(60)
         self.assertEqual(set(self.service.loop.engines.keys()),
-                         {'hey_neon'})
+                         {'hey_neon'}, self.service.config['hotwords'])
         # Test Enable valid
         resp = self.bus.wait_for_response(Message("neon.enable_wake_word",
-                                                  {"wake_word": "hey_mycroft"}),
-                                          self.service.config['hotwords'])
+                                                  {"wake_word": "hey_mycroft"}))
         self.assertIsInstance(resp, Message)
         self.assertEqual(resp.data, {"error": False,
                                      "active": True,
                                      "wake_word": "hey_mycroft"})
         self.assertTrue(self.service.loop.config_loaded.isSet())
         self.assertEqual(set(self.service.loop.engines.keys()),
-                         {'hey_neon', 'hey_mycroft'})
+                         {'hey_neon', 'hey_mycroft'},
+                         self.service.config['hotwords'])
 
         # Test Enable already enabled
         resp = self.bus.wait_for_response(Message("neon.enable_wake_word",
@@ -309,7 +321,8 @@ class ServiceTests(unittest.TestCase):
                                      "wake_word": "hey_mycroft"})
         self.assertTrue(self.service.loop.config_loaded.isSet())
         self.assertEqual(set(self.service.loop.engines.keys()),
-                         {'hey_neon', 'hey_mycroft'})
+                         {'hey_neon', 'hey_mycroft'},
+                         self.service.config['hotwords'])
 
         # Test Enable invalid word
         resp = self.bus.wait_for_response(Message("neon.enable_wake_word",
@@ -320,7 +333,8 @@ class ServiceTests(unittest.TestCase):
                                      "wake_word": "wake_up"})
         self.assertTrue(self.service.loop.config_loaded.isSet())
         self.assertEqual(set(self.service.loop.engines.keys()),
-                         {'hey_neon', 'hey_mycroft'})
+                         {'hey_neon', 'hey_mycroft'},
+                         self.service.config['hotwords'])
 
 
 if __name__ == '__main__':
