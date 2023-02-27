@@ -26,6 +26,7 @@ WORKDIR /neon_speech
 
 # cython included for Nemo package build
 RUN pip install wheel cython && \
+    pip install torch --extra-index-url https://download.pytorch.org/whl/cpu && \
     pip install .[docker]
 
 # Get vosk model for WW detection
