@@ -75,7 +75,7 @@ class NeonSpeechClient(SpeechService):
     def __init__(self, ready_hook=on_ready, error_hook=on_error,
                  stopping_hook=on_stopping, alive_hook=on_alive,
                  started_hook=on_started, watchdog=lambda: None,
-                 speech_config=None, daemonic=False):
+                 speech_config=None, daemonic=False, bus=None):
         """
         Creates a Speech service thread
         :param ready_hook: function callback when service is ready
@@ -85,6 +85,7 @@ class NeonSpeechClient(SpeechService):
         :param started_hook: function callback when service is started
         :param speech_config: DEPRECATED global core configuration override
         :param daemonic: if True, run this thread as a daemon
+        :param bus: Messagebus client
         """
         if speech_config:
             LOG.info("Updating global config with passed config")
@@ -94,7 +95,7 @@ class NeonSpeechClient(SpeechService):
         Thread.__init__(self)
         self.setDaemon(daemonic)
         # Init messagebus and handlers
-        self.bus = get_messagebus()
+        self.bus = bus or get_messagebus()
         from neon_utils.signal_utils import init_signal_handlers, \
             init_signal_bus
         init_signal_bus(self.bus)
@@ -142,6 +143,83 @@ class NeonSpeechClient(SpeechService):
         self.bus.on("neon.query_wake_words_state",
                     self.handle_query_wake_words_state)
         self.bus.on("neon.profile_update", self.handle_profile_update)
+
+        # Wake Word API
+        self.bus.on("neon.get_wake_words", self.handle_get_wake_words)
+        self.bus.on("neon.enable_wake_word", self.handle_enable_wake_word)
+        self.bus.on("neon.disable_wake_word", self.handle_disable_wake_word)
+
+    def handle_disable_wake_word(self, message: Message):
+        """
+        Disable a wake word. If the requested wake word is the only one enabled,
+        it will not be disabled. Emits a response indicating whether the wake word
+        was disabled and any errors.
+        """
+        requested_ww = message.data.get('wake_word')
+
+        active_ww = {ww: config for ww, config in
+                     self.config.get('hotwords').items()
+                     if config.get('listen') and config.get('active', True)}
+        if requested_ww not in active_ww:
+            LOG.warning(f"Requested disabling inactive ww: {requested_ww}")
+            resp = message.response({"error": "ww already disabled",
+                                     "active": False,
+                                     "wake_word": requested_ww})
+        elif len(active_ww) <= 1:
+            LOG.warning("Not disabling only active ww")
+            resp = message.response({"error": "only one active ww",
+                                     "active": True,
+                                     "wake_word": requested_ww})
+        else:
+            LOG.info(f"Disabling wake word: {requested_ww}")
+            self.config['hotwords'][requested_ww]['active'] = False
+            self.loop.reload()
+            resp = message.response({"error": False,
+                                     "active": False,
+                                     "wake_word": requested_ww})
+
+        self.bus.emit(resp)
+
+    def handle_enable_wake_word(self, message: Message):
+        """
+        Enable a wake word. Emits a response indicating whether the wake word
+        was enabled and any errors.
+        """
+        requested_ww = message.data.get('wake_word')
+
+        valid_ww = {ww: config for ww, config in
+                    self.config.get('hotwords').items()
+                    if config.get('listen')}
+        if requested_ww not in valid_ww:
+            LOG.error(f"Requested WW is not configured: {requested_ww}")
+            resp = message.response({"error": "ww not configured",
+                                     "active": False,
+                                     "wake_word": requested_ww})
+        elif valid_ww[requested_ww].get("active", True):
+            LOG.warning(f"Requested enabling active ww: {requested_ww}")
+            resp = message.response({"error": "ww already enabled",
+                                     "active": True,
+                                     "wake_word": requested_ww})
+        else:
+            LOG.info(f"Enabling wake word: {requested_ww}")
+            self.config['hotwords'][requested_ww]['active'] = True
+            self.loop.reload()
+            resp = message.response({"error": False,
+                                     "active": True,
+                                     "wake_word": requested_ww})
+
+        self.bus.emit(resp)
+
+    def handle_get_wake_words(self, message: Message):
+        """
+        Handle a request to get configured wake words and their current config.
+        This includes enabled and disabled wake words but excludes hotwords that
+        do not specify 'listen'
+        """
+        hotwords = self.config.get('hotwords')
+        wake_words = {ww: config for ww, config in hotwords.items()
+                      if config.get('listen')}
+        self.bus.emit(message.reply("neon.wake_words", data=wake_words))
 
     def handle_profile_update(self, message):
         """
