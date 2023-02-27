@@ -229,7 +229,7 @@ class ServiceTests(unittest.TestCase):
         resp = self.bus.wait_for_response(Message("neon.get_wake_words"),
                                           "neon.wake_words")
         self.assertIsInstance(resp, Message)
-        self.assertEqual(["hey_neon", "hey_mycroft"], list(resp.data.keys()))
+        self.assertEqual({"hey_neon", "hey_mycroft"}, set(resp.data.keys()))
 
     def test_disable_wake_word(self):
         self.service.config['hotwords']['hey_mycroft']['active'] = True
