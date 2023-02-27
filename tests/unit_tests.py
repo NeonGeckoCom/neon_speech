@@ -238,7 +238,8 @@ class ServiceTests(unittest.TestCase):
         self.service.loop.reload()
         self.service.loop.config_loaded.wait(60)
         self.assertEqual(set(self.service.loop.engines.keys()),
-                         {'hey_neon', "hey_mycroft"})
+                         {'hey_neon', "hey_mycroft"},
+                         self.service.config['hotwords'])
 
         # Test Disable Valid
         resp = self.bus.wait_for_response(Message("neon.disable_wake_word",
@@ -289,7 +290,8 @@ class ServiceTests(unittest.TestCase):
                          {'hey_neon'})
         # Test Enable valid
         resp = self.bus.wait_for_response(Message("neon.enable_wake_word",
-                                                  {"wake_word": "hey_mycroft"}))
+                                                  {"wake_word": "hey_mycroft"}),
+                                          self.service.config['hotwords'])
         self.assertIsInstance(resp, Message)
         self.assertEqual(resp.data, {"error": False,
                                      "active": True,

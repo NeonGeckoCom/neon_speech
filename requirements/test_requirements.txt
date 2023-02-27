@@ -4,4 +4,4 @@ ovos-stt-plugin-vosk~=0.1
 pytest
 mock~=4.0
 neon-messagebus~=0.2
-ovos-ww-plugin-precise-lite~=0.1
+ovos-ww-plugin-precise~=0.1
