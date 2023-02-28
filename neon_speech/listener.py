@@ -119,6 +119,7 @@ class NeonRecognizerLoop(RecognizerLoop):
     """
     def __init__(self, bus, watchdog=None, stt=None, fallback_stt=None):
         self.config_loaded = Event()
+        self.microphone = None
         super().__init__(bus, watchdog, stt, fallback_stt)
 
     def _load_config(self):
@@ -143,6 +144,13 @@ class NeonRecognizerLoop(RecognizerLoop):
 
         LOG.debug('Using microphone (None = default): ' + str(device_index))
 
+        if self.microphone:
+            try:
+                assert self.microphone.stream is None
+            except AssertionError:
+                LOG.error("Microphone still active!!")
+            LOG.info(f"Deleting old MutableMicrophone Instance")
+            del self.microphone
         self.microphone = MutableMicrophone(device_index, rate,
                                             mute=self.mute_calls > 0,
                                             retry=retry_mic)
