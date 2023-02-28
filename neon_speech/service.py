@@ -46,7 +46,8 @@ from ovos_utils.json_helper import merge_dict
 from mycroft_bus_client import Message
 
 from mycroft.client.speech.service import SpeechService
-from ovos_config.config import Configuration
+from ovos_config.config import Configuration, update_mycroft_config
+
 from neon_speech.listener import NeonRecognizerLoop
 from neon_speech.stt import STTFactory
 
@@ -173,6 +174,8 @@ class NeonSpeechClient(SpeechService):
         else:
             LOG.info(f"Disabling wake word: {requested_ww}")
             self.config['hotwords'][requested_ww]['active'] = False
+            config_patch = {"hotwords": {requested_ww: {"active": False}}}
+            update_mycroft_config(config_patch)
             self.loop.reload()
             resp = message.response({"error": False,
                                      "active": False,
@@ -203,6 +206,8 @@ class NeonSpeechClient(SpeechService):
         else:
             LOG.info(f"Enabling wake word: {requested_ww}")
             self.config['hotwords'][requested_ww]['active'] = True
+            config_patch = {"hotwords": {requested_ww: {"active": True}}}
+            update_mycroft_config(config_patch)
             self.loop.reload()
             resp = message.response({"error": False,
                                      "active": True,
