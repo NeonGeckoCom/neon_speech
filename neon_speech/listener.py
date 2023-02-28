@@ -204,17 +204,21 @@ class NeonRecognizerLoop(RecognizerLoop):
         for hotword in engines:
             try:
                 self.engines[hotword]["engine"].stop()
+                LOG.debug(f"stopped {hotword}")
             except:
                 LOG.exception(f"Failed to stop hotword engine: {hotword}")
-            self.engines.pop(hotword)
+            config = self.engines.pop(hotword)
+            del config['engine']  # Make sure engine is removed
         # wait for threads to shutdown
         try:
             if self.audio_producer and self.audio_producer.is_alive():
                 self.audio_producer.join(1)
+                LOG.info(f"Producer state: {self.audio_producer.is_alive()}")
         except RuntimeError as e:
             LOG.exception(e)
         try:
             if self.audio_consumer and self.audio_consumer.is_alive():
                 self.audio_consumer.join(1)
+                LOG.info(f"Consumer state: {self.audio_consumer.is_alive()}")
         except RuntimeError as e:
             LOG.exception(e)
