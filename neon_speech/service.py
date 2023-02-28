@@ -175,8 +175,9 @@ class NeonSpeechClient(SpeechService):
             LOG.info(f"Disabling wake word: {requested_ww}")
             self.config['hotwords'][requested_ww]['active'] = False
             config_patch = {"hotwords": {requested_ww: {"active": False}}}
+            self.loop.config_loaded.clear()
             update_mycroft_config(config_patch)
-            self.loop.reload()
+            self.loop.config_loaded.wait()
             resp = message.response({"error": False,
                                      "active": False,
                                      "wake_word": requested_ww})
@@ -207,8 +208,9 @@ class NeonSpeechClient(SpeechService):
             LOG.info(f"Enabling wake word: {requested_ww}")
             self.config['hotwords'][requested_ww]['active'] = True
             config_patch = {"hotwords": {requested_ww: {"active": True}}}
+            self.loop.config_loaded.clear()
             update_mycroft_config(config_patch)
-            self.loop.reload()
+            self.loop.config_loaded.wait()
             resp = message.response({"error": False,
                                      "active": True,
                                      "wake_word": requested_ww})

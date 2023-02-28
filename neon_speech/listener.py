@@ -121,13 +121,6 @@ class NeonRecognizerLoop(RecognizerLoop):
         self.config_loaded = Event()
         super().__init__(bus, watchdog, stt, fallback_stt)
 
-    # def bind_transformers(self, parsers_service):
-    #     self.responsive_recognizer.bind(parsers_service)
-
-    def reload(self):
-        self.config_loaded.clear()
-        super().reload()
-
     def _load_config(self):
         """
         Load configuration parameters from configuration and initialize
