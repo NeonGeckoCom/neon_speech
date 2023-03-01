@@ -36,19 +36,19 @@ from speech_recognition import AudioData
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
+CONFIG_PATH = os.path.join(dirname(__file__), "config")
+os.environ["NEON_CONFIG_PATH"] = CONFIG_PATH
+
 
 class UtilTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        config_path = os.path.join(dirname(__file__), "config")
-        os.environ["NEON_CONFIG_PATH"] = config_path
-        os.makedirs(join(config_path, "neon"), exist_ok=True)
+        os.makedirs(join(CONFIG_PATH, "neon"), exist_ok=True)
 
     @classmethod
     def tearDownClass(cls) -> None:
-        config_path = os.environ.pop("NEON_CONFIG_PATH")
-        if os.path.exists(config_path):
-            shutil.rmtree(config_path)
+        if os.path.exists(CONFIG_PATH):
+            shutil.rmtree(CONFIG_PATH)
 
     def test_use_neon_speech(self):
         from neon_speech.utils import use_neon_speech
@@ -189,10 +189,13 @@ class ServiceTests(unittest.TestCase):
                 "rule": "fuzzy"
             }
         }
+        os.makedirs(join(CONFIG_PATH, "neon"), exist_ok=True)
 
     @classmethod
     def tearDownClass(cls) -> None:
         cls.service.shutdown()
+        if os.path.exists(CONFIG_PATH):
+            shutil.rmtree(CONFIG_PATH)
 
     def test_loop_events(self):
         from mycroft.listener import RecognizerLoop
