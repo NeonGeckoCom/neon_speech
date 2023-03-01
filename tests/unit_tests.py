@@ -42,6 +42,7 @@ class UtilTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         config_path = os.path.join(dirname(__file__), "config")
         os.environ["NEON_CONFIG_PATH"] = config_path
+        os.makedirs(join(config_path, "neon"), exist_ok=True)
 
     @classmethod
     def tearDownClass(cls) -> None:
