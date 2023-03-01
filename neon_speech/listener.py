@@ -119,14 +119,8 @@ class NeonRecognizerLoop(RecognizerLoop):
     """
     def __init__(self, bus, watchdog=None, stt=None, fallback_stt=None):
         self.config_loaded = Event()
+        self.microphone = None
         super().__init__(bus, watchdog, stt, fallback_stt)
-
-    # def bind_transformers(self, parsers_service):
-    #     self.responsive_recognizer.bind(parsers_service)
-
-    def reload(self):
-        self.config_loaded.clear()
-        super().reload()
 
     def _load_config(self):
         """
@@ -150,6 +144,13 @@ class NeonRecognizerLoop(RecognizerLoop):
 
         LOG.debug('Using microphone (None = default): ' + str(device_index))
 
+        if self.microphone:
+            try:
+                assert self.microphone.stream is None
+            except AssertionError:
+                LOG.error("Microphone still active!!")
+            LOG.info(f"Deleting old MutableMicrophone Instance")
+            del self.microphone
         self.microphone = MutableMicrophone(device_index, rate,
                                             mute=self.mute_calls > 0,
                                             retry=retry_mic)
@@ -197,23 +198,30 @@ class NeonRecognizerLoop(RecognizerLoop):
         self.state.running = False
         if self.audio_producer:
             self.audio_producer.stop()
-        # stop wake word detectors
 
+        # stop wake word detectors
         engines = list(self.engines.keys())
         for hotword in engines:
             try:
                 self.engines[hotword]["engine"].stop()
+                LOG.debug(f"stopped {hotword}")
             except:
                 LOG.exception(f"Failed to stop hotword engine: {hotword}")
-            self.engines.pop(hotword)
+            config = self.engines.pop(hotword)
+            if config.get('engine'):
+                del config['engine']  # Make sure engine is removed
         # wait for threads to shutdown
         try:
             if self.audio_producer and self.audio_producer.is_alive():
                 self.audio_producer.join(1)
+                if self.audio_producer.is_alive():
+                    LOG.error(f"Audio Producer still alive!")
         except RuntimeError as e:
             LOG.exception(e)
         try:
             if self.audio_consumer and self.audio_consumer.is_alive():
                 self.audio_consumer.join(1)
+                if self.audio_consumer.is_alive():
+                    LOG.error(f"Audio Consumer still alive!")
         except RuntimeError as e:
             LOG.exception(e)
