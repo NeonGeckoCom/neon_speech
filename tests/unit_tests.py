@@ -206,6 +206,7 @@ class ServiceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.service.start()
+        cls.service.loop.config_loaded.wait(30)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -260,9 +261,12 @@ class ServiceTests(unittest.TestCase):
         self.service.loop.config_loaded.clear()
         update_mycroft_config({"hotwords": hotword_config}, bus=self.bus)
         self.service.loop.config_loaded.wait(60)
-        self.assertTrue(self.service.loop.config_core['hotwords']['hey_mycroft']['active'])
-        self.assertTrue(self.service.loop.config_core['hotwords']['hey_neon']['active'])
-        self.assertFalse(self.service.loop.config_core['hotwords']['wake_up']['active'])
+        self.assertTrue(self.service.loop.config_core
+                        ['hotwords']['hey_mycroft']['active'])
+        self.assertTrue(self.service.loop.config_core
+                        ['hotwords']['hey_neon']['active'])
+        self.assertFalse(self.service.loop.config_core
+                         ['hotwords']['wake_up']['active'])
         self.assertEqual(set(self.service.loop.engines.keys()),
                          {'hey_neon', "hey_mycroft"},
                          self.service.config['hotwords'])
@@ -314,12 +318,13 @@ class ServiceTests(unittest.TestCase):
         self.service.loop.config_loaded.clear()
         update_mycroft_config({"hotwords": hotword_config}, bus=self.bus)
         self.service.loop.config_loaded.wait(60)
-        self.assertFalse(self.service.loop.config_core['hotwords']['hey_mycroft']['active'])
-        self.assertTrue(self.service.loop.config_core['hotwords']['hey_neon']['active'])
-        self.assertFalse(self.service.loop.config_core['hotwords']['wake_up']['active'])
+        self.assertFalse(self.service.loop.config_core
+                         ['hotwords']['hey_mycroft']['active'])
+        self.assertTrue(self.service.loop.config_core
+                        ['hotwords']['hey_neon']['active'])
+        self.assertFalse(self.service.loop.config_core
+                         ['hotwords']['wake_up']['active'])
 
-        # self.service.loop.reload()
-        # self.service.loop.config_loaded.wait(60)
         self.assertEqual(set(self.service.loop.engines.keys()),
                          {'hey_neon'}, self.service.config['hotwords'])
         # Test Enable valid
