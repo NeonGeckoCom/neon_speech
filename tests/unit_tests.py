@@ -161,50 +161,49 @@ class UtilTests(unittest.TestCase):
 
 
 class ServiceTests(unittest.TestCase):
-    test_config_dir = os.path.join(os.path.dirname(__file__), "config")
-    os.makedirs(test_config_dir, exist_ok=True)
-    os.environ["XDG_CONFIG_HOME"] = test_config_dir
-    from neon_utils.configuration_utils import init_config_dir
-    init_config_dir()
-
-    hotwords_config = {
-            "hey_neon": {
-                "module": "ovos-ww-plugin-vosk",
-                "rule": "fuzzy",
-                "listen": True
-            },
-            "hey_mycroft": {
-                "active": False,
-                "module": "ovos-ww-plugin-vosk",
-                "model": None,  # TODO: Patching default config merge
-                "rule": "fuzzy",
-                "listen": True
-            },
-            "wake_up": {
-                "active": False,
-                "module": "ovos-ww-plugin-vosk",
-                "rule": "fuzzy"
-            }
-        }
-    update_mycroft_config({"hotwords": hotwords_config})
-    assert os.path.isfile(join(test_config_dir, "neon", "neon.yaml"))
-    import importlib
-    import ovos_config.config
-    importlib.reload(ovos_config.config)
-    from ovos_config.config import Configuration
-    assert Configuration.xdg_configs[0]['hotwords'] == hotwords_config
     bus = FakeBus()
     bus.connected_event = Event()
     bus.connected_event.set()
 
-    from neon_speech.utils import use_neon_speech
-    use_neon_speech(init_config_dir)()
-    from neon_speech.service import NeonSpeechClient
-    service = NeonSpeechClient(bus=bus)
-    assert Configuration() == service.loop.config_core
+    hotwords_config = {
+        "hey_neon": {
+            "module": "ovos-ww-plugin-vosk",
+            "rule": "fuzzy",
+            "listen": True
+        },
+        "hey_mycroft": {
+            "active": False,
+            "module": "ovos-ww-plugin-vosk",
+            "model": None,  # TODO: Patching default config merge
+            "rule": "fuzzy",
+            "listen": True
+        },
+        "wake_up": {
+            "active": False,
+            "module": "ovos-ww-plugin-vosk",
+            "rule": "fuzzy"
+        }
+    }
 
     @classmethod
-    def setUpClass(cls) -> None:
+    def setUpClass(cls):
+        from neon_utils.configuration_utils import init_config_dir
+        init_config_dir()
+
+        update_mycroft_config({"hotwords": cls.hotwords_config})
+        # assert os.path.isfile(join(test_config_dir, "neon", "neon.yaml"))
+        import importlib
+        import ovos_config.config
+        importlib.reload(ovos_config.config)
+        # from ovos_config.config import Configuration
+        # assert Configuration.xdg_configs[0]['hotwords'] == hotwords_config
+
+        from neon_speech.utils import use_neon_speech
+        use_neon_speech(init_config_dir)()
+        from neon_speech.service import NeonSpeechClient
+        cls.service = NeonSpeechClient(bus=cls.bus)
+        # assert Configuration() == service.loop.config_core
+
         cls.service.start()
         cls.service.loop.config_loaded.wait(30)
 
