@@ -161,6 +161,12 @@ class UtilTests(unittest.TestCase):
 
 
 class ServiceTests(unittest.TestCase):
+    test_config_dir = os.path.join(os.path.dirname(__file__), "config")
+    os.makedirs(test_config_dir, exist_ok=True)
+    os.environ["XDG_CONFIG_HOME"] = test_config_dir
+    from neon_utils.configuration_utils import init_config_dir
+    init_config_dir()
+
     hotwords_config = {
             "hey_neon": {
                 "module": "ovos-ww-plugin-vosk",
@@ -190,6 +196,8 @@ class ServiceTests(unittest.TestCase):
     bus.connected_event = Event()
     bus.connected_event.set()
 
+    from neon_speech.utils import use_neon_speech
+    use_neon_speech(init_config_dir)()
     from neon_speech.service import NeonSpeechClient
     service = NeonSpeechClient(bus=bus)
     assert Configuration() == service.loop.config_core
