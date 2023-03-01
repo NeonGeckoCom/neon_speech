@@ -187,6 +187,7 @@ class ServiceTests(unittest.TestCase):
             }
         }
     update_mycroft_config({"hotwords": hotwords_config})
+    assert os.path.isfile(join(test_config_dir, "neon", "neon.yaml"))
     import importlib
     import ovos_config.config
     importlib.reload(ovos_config.config)
@@ -201,6 +202,10 @@ class ServiceTests(unittest.TestCase):
     from neon_speech.service import NeonSpeechClient
     service = NeonSpeechClient(bus=bus)
     assert Configuration() == service.loop.config_core
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.service.start()
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -248,17 +253,16 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual({"hey_neon", "hey_mycroft"}, set(resp.data.keys()))
 
     def test_disable_wake_word(self):
-        hotword_config = self.service.loop.config_core['hotwords']
+        hotword_config = dict(self.hotwords_config)
         hotword_config['hey_mycroft']['active'] = True
         hotword_config['hey_neon']['active'] = True
         hotword_config['wake_up']['active'] = False
-        update_mycroft_config({"hotwords": hotword_config})
-        self.service.loop.reload()
+        self.service.loop.config_loaded.clear()
+        update_mycroft_config({"hotwords": hotword_config}, bus=self.bus)
+        self.service.loop.config_loaded.wait(60)
         self.assertTrue(self.service.loop.config_core['hotwords']['hey_mycroft']['active'])
         self.assertTrue(self.service.loop.config_core['hotwords']['hey_neon']['active'])
         self.assertFalse(self.service.loop.config_core['hotwords']['wake_up']['active'])
-        # self.service.loop.reload()
-        # self.service.loop.config_loaded.wait(60)
         self.assertEqual(set(self.service.loop.engines.keys()),
                          {'hey_neon', "hey_mycroft"},
                          self.service.config['hotwords'])
@@ -303,12 +307,13 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(set(self.service.loop.engines.keys()), {'hey_neon'})
 
     def test_enable_wake_word(self):
-        hotword_config = self.service.loop.config_core['hotwords']
+        hotword_config = dict(self.hotwords_config)
         hotword_config['hey_mycroft']['active'] = False
         hotword_config['hey_neon']['active'] = True
         hotword_config['wake_up']['active'] = False
-        update_mycroft_config({"hotwords": hotword_config})
-        self.service.loop.reload()
+        self.service.loop.config_loaded.clear()
+        update_mycroft_config({"hotwords": hotword_config}, bus=self.bus)
+        self.service.loop.config_loaded.wait(60)
         self.assertFalse(self.service.loop.config_core['hotwords']['hey_mycroft']['active'])
         self.assertTrue(self.service.loop.config_core['hotwords']['hey_neon']['active'])
         self.assertFalse(self.service.loop.config_core['hotwords']['wake_up']['active'])

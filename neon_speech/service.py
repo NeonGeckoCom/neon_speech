@@ -210,6 +210,7 @@ class NeonSpeechClient(SpeechService):
             config_patch = {"hotwords": {requested_ww: {"active": True}}}
             self.loop.config_loaded.clear()
             update_mycroft_config(config_patch)
+            self.loop.needs_reload = True
             self.loop.config_loaded.wait()
             resp = message.response({"error": False,
                                      "active": True,
