@@ -100,7 +100,11 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
         audio_data, lang = super().listen(source, stream)
         # one of the default plugins saves the speech to file and
         # adds "filename" to context
-        audio_data, context = self.audio_consumers.transform(audio_data)
-        context["lang"] = lang
-        context["listen_state"] = state
+        if audio_data:
+            audio_data, context = self.audio_consumers.transform(audio_data)
+            context["lang"] = lang
+            context["listen_state"] = state
+        else:
+            LOG.info("No audio_data to parse")
+            context = {}
         return audio_data, context

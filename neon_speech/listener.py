@@ -212,9 +212,6 @@ class NeonRecognizerLoop(RecognizerLoop):
         # wait for threads to shutdown
         try:
             if self.audio_producer and self.audio_producer.is_alive():
-                rr = self.audio_producer.loop.responsive_recognizer
-                LOG.info(f"recording={rr._stop_recording}|"
-                         f"signaled={rr._stop_signaled}")
                 self.audio_producer.join(1)
                 LOG.info(f"Producer state: {self.audio_producer.is_alive()}")
         except RuntimeError as e:
