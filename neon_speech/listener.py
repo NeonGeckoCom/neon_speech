@@ -214,12 +214,14 @@ class NeonRecognizerLoop(RecognizerLoop):
         try:
             if self.audio_producer and self.audio_producer.is_alive():
                 self.audio_producer.join(1)
-                LOG.info(f"Producer state: {self.audio_producer.is_alive()}")
+                if self.audio_producer.is_alive():
+                    LOG.error(f"Audio Producer still alive!")
         except RuntimeError as e:
             LOG.exception(e)
         try:
             if self.audio_consumer and self.audio_consumer.is_alive():
                 self.audio_consumer.join(1)
-                LOG.info(f"Consumer state: {self.audio_consumer.is_alive()}")
+                if self.audio_consumer.is_alive():
+                    LOG.error(f"Audio Consumer still alive!")
         except RuntimeError as e:
             LOG.exception(e)
