@@ -253,8 +253,13 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual({"hey_neon", "hey_mycroft"}, set(resp.data.keys()))
 
         # Test Main WW is active
-        config_patch = {"listener": {"wake_word": "hey_neon"},
-                        "hotwords": {"hey_neon": {"active": None}}}
+        hotwords = dict(self.hotwords_config)
+        hotwords['hey_neon']['active'] = None
+        config_patch = {
+            "listener": {"wake_word": "hey_neon"},
+            "hotwords": hotwords
+        }
+        os.remove(join(CONFIG_PATH, "neon", "neon.yaml"))
         update_mycroft_config(config_patch, bus=self.bus)
         self.service.loop.config_loaded.wait(60)
         self.assertIsNone(self.service.loop.config_core
@@ -273,12 +278,14 @@ class ServiceTests(unittest.TestCase):
         # hotword_config['hey_neon']['active'] = None
         hotword_config['wake_up']['active'] = False
         self.service.loop.config_loaded.clear()
-        update_mycroft_config({"hotwords": hotword_config}, bus=self.bus)
+        update_mycroft_config({"hotwords": hotword_config,
+                               "listener": {"wake_word": "hey_neon"}},
+                              bus=self.bus)
         self.service.loop.config_loaded.wait(60)
         self.assertTrue(self.service.loop.config_core
                         ['hotwords']['hey_mycroft']['active'])
-        self.assertTrue(self.service.loop.config_core
-                        ['hotwords']['hey_neon']['active'])
+        self.assertIsNone(self.service.loop.config_core
+                        ['hotwords']['hey_neon'].get('active'))
         self.assertFalse(self.service.loop.config_core
                          ['hotwords']['wake_up']['active'])
         self.assertEqual(set(self.service.loop.engines.keys()),
