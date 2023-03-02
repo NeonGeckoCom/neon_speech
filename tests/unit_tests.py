@@ -137,6 +137,7 @@ class UtilTests(unittest.TestCase):
             bus.shutdown()
         except Exception as e:
             LOG.error(e)
+
     # TODO: Test other speech service methods directly
 
     def test_ovos_plugin_compat(self):
@@ -252,18 +253,40 @@ class ServiceTests(unittest.TestCase):
         self.assertIsInstance(resp, Message)
         self.assertEqual({"hey_neon", "hey_mycroft"}, set(resp.data.keys()))
 
+        # Test Main WW is active
+        config_patch = {
+            "listener": {"wake_word": "test_ww"},
+            "hotwords": {"test_ww": {"module": "ovos-ww-plugin-vosk",
+                                     "rule": "fuzzy",
+                                     "listen": True}}}
+        self.service.loop.config_loaded.clear()
+        update_mycroft_config(config_patch, bus=self.bus)
+        self.service.loop.config_loaded.wait(60)
+        self.assertIsNone(self.service.loop.config_core
+                          ['hotwords']['test_ww'].get('active'))
+        self.assertEqual(self.service.loop.config_core['listener']['wake_word'],
+                         "test_ww")
+        resp = self.bus.wait_for_response(Message("neon.get_wake_words"),
+                                          "neon.wake_words")
+        self.assertIsInstance(resp, Message)
+        self.assertEqual({"hey_neon", "hey_mycroft", "test_ww"},
+                         set(resp.data.keys()))
+        self.assertTrue(resp.data['test_ww']['active'])
+
     def test_disable_wake_word(self):
         hotword_config = dict(self.hotwords_config)
         hotword_config['hey_mycroft']['active'] = True
-        hotword_config['hey_neon']['active'] = True
+        # hotword_config['hey_neon']['active'] = None
         hotword_config['wake_up']['active'] = False
         self.service.loop.config_loaded.clear()
-        update_mycroft_config({"hotwords": hotword_config}, bus=self.bus)
+        update_mycroft_config({"hotwords": hotword_config,
+                               "listener": {"wake_word": "hey_neon"}},
+                              bus=self.bus)
         self.service.loop.config_loaded.wait(60)
         self.assertTrue(self.service.loop.config_core
                         ['hotwords']['hey_mycroft']['active'])
-        self.assertTrue(self.service.loop.config_core
-                        ['hotwords']['hey_neon']['active'])
+        self.assertIsNone(self.service.loop.config_core
+                          ['hotwords']['hey_neon'].get('active'))
         self.assertFalse(self.service.loop.config_core
                          ['hotwords']['wake_up']['active'])
         self.assertEqual(set(self.service.loop.engines.keys()),
