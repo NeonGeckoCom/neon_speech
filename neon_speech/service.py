@@ -160,7 +160,8 @@ class NeonSpeechClient(SpeechService):
 
         active_ww = {ww: config for ww, config in
                      self.config.get('hotwords').items()
-                     if config.get('listen') and config.get('active', True)}
+                     if (config.get('listen') and config.get('active', True)) or
+                     ww == self.config['listener'].get('wake_word')}
         if requested_ww not in active_ww:
             LOG.warning(f"Requested disabling inactive ww: {requested_ww}")
             resp = message.response({"error": "ww already disabled",
@@ -227,6 +228,9 @@ class NeonSpeechClient(SpeechService):
         hotwords = self.config.get('hotwords')
         wake_words = {ww: config for ww, config in hotwords.items()
                       if config.get('listen')}
+        main_ww = self.config['listener'].get('wake_word')
+        if wake_words.get(main_ww):
+            wake_words[main_ww]['active'] = True
         self.bus.emit(message.reply("neon.wake_words", data=wake_words))
 
     def handle_profile_update(self, message):

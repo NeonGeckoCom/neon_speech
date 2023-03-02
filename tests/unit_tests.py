@@ -252,10 +252,25 @@ class ServiceTests(unittest.TestCase):
         self.assertIsInstance(resp, Message)
         self.assertEqual({"hey_neon", "hey_mycroft"}, set(resp.data.keys()))
 
+        # Test Main WW is active
+        config_patch = {"listener": {"wake_word": "hey_neon"},
+                        "hotwords": {"hey_neon": {"active": None}}}
+        update_mycroft_config(config_patch, bus=self.bus)
+        self.service.loop.config_loaded.wait(60)
+        self.assertIsNone(self.service.loop.config_core
+                          ['hotwords']['hey_neon']['active'])
+        self.assertEqual(self.service.loop.config_core['listener']['wake_word'],
+                         "hey_neon")
+        resp = self.bus.wait_for_response(Message("neon.get_wake_words"),
+                                          "neon.wake_words")
+        self.assertIsInstance(resp, Message)
+        self.assertEqual({"hey_neon", "hey_mycroft"}, set(resp.data.keys()))
+        self.assertTrue(resp.data['hey_neon']['active'])
+
     def test_disable_wake_word(self):
         hotword_config = dict(self.hotwords_config)
         hotword_config['hey_mycroft']['active'] = True
-        hotword_config['hey_neon']['active'] = True
+        # hotword_config['hey_neon']['active'] = None
         hotword_config['wake_up']['active'] = False
         self.service.loop.config_loaded.clear()
         update_mycroft_config({"hotwords": hotword_config}, bus=self.bus)
