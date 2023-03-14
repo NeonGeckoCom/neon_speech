@@ -31,7 +31,7 @@ RUN pip install wheel cython && \
 # Get vosk model for WW detection
 RUN mkdir -p /root/.local/share/neon && \
     cd /root/.local/share/neon && \
-    wget -O vosk-model-small-en-us-0.15.zip https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip && \
+    wget -q -O vosk-model-small-en-us-0.15.zip https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip && \
     unzip vosk-model-small-en-us-0.15.zip && \
     rm vosk-model-small-en-us-0.15.zip
 
