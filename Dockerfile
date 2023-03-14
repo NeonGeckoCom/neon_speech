@@ -40,6 +40,8 @@ RUN mkdir -p /root/.local/share/neon && \
 COPY docker_overlay/ /
 RUN chmod ugo+x /root/run.sh
 
+RUN pip list
+
 RUN neon-speech install-plugin -f
 
 CMD ["/root/run.sh"]
