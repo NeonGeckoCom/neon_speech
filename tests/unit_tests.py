@@ -192,6 +192,7 @@ class ServiceTests(unittest.TestCase):
         init_config_dir()
 
         update_mycroft_config({"hotwords": cls.hotwords_config})
+        update_mycroft_config({"stt": {"module": "neon-stt-plugin-nemo"}})
         # assert os.path.isfile(join(test_config_dir, "neon", "neon.yaml"))
         import importlib
         import ovos_config.config
