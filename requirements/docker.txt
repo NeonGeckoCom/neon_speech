@@ -1,6 +1,7 @@
 ovos-stt-plugin-vosk~=0.1
 # neon-stt-plugin-nemo~=0.0
 neon-stt-plugin-nemo==0.0.2a6
+streaming-stt-nemo==0.1.0
 # TODO: Troubleshooting docker build failures
 # Load alternative WW plugins so they are available
 ovos-ww-plugin-pocketsphinx~=0.1
