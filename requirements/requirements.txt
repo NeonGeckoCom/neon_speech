@@ -1,15 +1,15 @@
-ovos-core~=0.0.5,>=0.0.7a9
+ovos-core~=0.0.7
 SpeechRecognition~=3.8
 PyAudio~=0.2
 mycroft-messagebus-client~=0.10
-ovos-utils~=0.0,>=0.0.23
+ovos-utils~=0.0.30
 ovos-plugin-manager~=0.0.19
 pydub~=0.23
 click~=8.0
 click-default-group~=1.2
 neon-transformers~=0.2
-neon-utils[audio]~=1.2,>=1.2.2
-ovos-config~=0.0,>=0.0.6a1
+neon-utils[audio]~=1.2,>=1.2.4
+ovos-config~=0.0.7
 
 ovos-vad-plugin-webrtcvad~=0.0.1
 ovos-ww-plugin-vosk~=0.1

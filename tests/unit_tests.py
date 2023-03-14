@@ -183,6 +183,19 @@ class ServiceTests(unittest.TestCase):
             "active": False,
             "module": "ovos-ww-plugin-vosk",
             "rule": "fuzzy"
+        },
+        # Patching default hotwords config
+        "hey_mycroft_vosk": {
+            "listen": False,
+            "active": False
+        },
+        "hey_mycroft_precise": {
+            "listen": False,
+            "active": False
+        },
+        "hey_mycroft_pocketsphinx": {
+            "listen": False,
+            "active": False
         }
     }
 
@@ -191,8 +204,8 @@ class ServiceTests(unittest.TestCase):
         from neon_utils.configuration_utils import init_config_dir
         init_config_dir()
 
-        update_mycroft_config({"hotwords": cls.hotwords_config})
-        # assert os.path.isfile(join(test_config_dir, "neon", "neon.yaml"))
+        update_mycroft_config({"hotwords": cls.hotwords_config,
+                               "stt": {"module": "neon-stt-plugin-nemo"}})
         import importlib
         import ovos_config.config
         importlib.reload(ovos_config.config)
