@@ -189,7 +189,7 @@ class ServiceTests(unittest.TestCase):
             "listen": False,
             "active": False
         },
-        "hes_mycroft_precise": {
+        "hey_mycroft_precise": {
             "listen": False,
             "active": False
         },
