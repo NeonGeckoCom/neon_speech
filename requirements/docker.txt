@@ -1,5 +1,6 @@
 ovos-stt-plugin-vosk~=0.1
 neon-stt-plugin-nemo~=0.0.2a5
+# TODO: Update above to stable release
 # Load alternative WW plugins so they are available
 ovos-ww-plugin-pocketsphinx~=0.1.1
 ovos-ww-plugin-precise-lite~=0.1.0
