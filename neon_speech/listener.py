@@ -27,6 +27,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from queue import Queue
+from threading import Event
 from typing import List
 
 # from neon_utils.configuration_utils import get_neon_device_type
@@ -117,10 +118,9 @@ class NeonRecognizerLoop(RecognizerLoop):
     Local wake word recognizer and remote general speech recognition.
     """
     def __init__(self, bus, watchdog=None, stt=None, fallback_stt=None):
+        self.config_loaded = Event()
+        self.microphone = None
         super().__init__(bus, watchdog, stt, fallback_stt)
-
-    # def bind_transformers(self, parsers_service):
-    #     self.responsive_recognizer.bind(parsers_service)
 
     def _load_config(self):
         """
@@ -144,6 +144,13 @@ class NeonRecognizerLoop(RecognizerLoop):
 
         LOG.debug('Using microphone (None = default): ' + str(device_index))
 
+        if self.microphone:
+            try:
+                assert self.microphone.stream is None
+            except AssertionError:
+                LOG.error("Microphone still active!!")
+            LOG.info(f"Deleting old MutableMicrophone Instance")
+            del self.microphone
         self.microphone = MutableMicrophone(device_index, rate,
                                             mute=self.mute_calls > 0,
                                             retry=retry_mic)
@@ -158,6 +165,7 @@ class NeonRecognizerLoop(RecognizerLoop):
         self.create_hotword_engines()
         self.state = RecognizerLoopState()
         self.responsive_recognizer = NeonResponsiveRecognizer(self)
+        self.config_loaded.set()
         # TODO: Update recognizer to support passed config
 
     def start_async(self):
@@ -190,20 +198,31 @@ class NeonRecognizerLoop(RecognizerLoop):
         self.state.running = False
         if self.audio_producer:
             self.audio_producer.stop()
+
         # stop wake word detectors
-        for ww, hotword in self.engines.items():
+        engines = list(self.engines.keys())
+        for hotword in engines:
             try:
-                hotword["engine"].stop()
+                self.engines[hotword]["engine"].stop()
+                LOG.debug(f"stopped {hotword}")
+                config = self.engines.pop(hotword)
+                if config.get('engine'):
+                    del config['engine']  # Make sure engine is removed
             except:
-                LOG.exception(f"Failed to stop hotword engine: {ww}")
+                LOG.exception(f"Failed to stop hotword engine: {hotword}")
+
         # wait for threads to shutdown
         try:
             if self.audio_producer and self.audio_producer.is_alive():
                 self.audio_producer.join(1)
+                if self.audio_producer.is_alive():
+                    LOG.error(f"Audio Producer still alive!")
         except RuntimeError as e:
             LOG.exception(e)
         try:
             if self.audio_consumer and self.audio_consumer.is_alive():
                 self.audio_consumer.join(1)
+                if self.audio_consumer.is_alive():
+                    LOG.error(f"Audio Consumer still alive!")
         except RuntimeError as e:
             LOG.exception(e)
