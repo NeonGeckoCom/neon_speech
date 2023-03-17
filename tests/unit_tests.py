@@ -286,6 +286,17 @@ class ServiceTests(unittest.TestCase):
                          set(resp.data.keys()))
         self.assertTrue(resp.data['test_ww']['active'])
 
+        # Test Main WW disabled
+        resp = self.bus.wait_for_response(Message("neon.disable_wake_word",
+                                                  {"wake_word": "test_ww"}))
+        self.assertIsInstance(resp, Message)
+        self.assertFalse(resp.data['active'])
+        self.assertEqual(resp.data['wake_word'], 'test_ww')
+        resp = self.bus.wait_for_response(Message("neon.get_wake_words"),
+                                          "neon.wake_words")
+        self.assertIsInstance(resp, Message)
+        self.assertFalse(resp.data['test_ww']['active'])
+
     def test_disable_wake_word(self):
         hotword_config = dict(self.hotwords_config)
         hotword_config['hey_mycroft']['active'] = True

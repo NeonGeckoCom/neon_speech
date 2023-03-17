@@ -245,7 +245,8 @@ class NeonSpeechClient(SpeechService):
                       if config.get('listen')}
         main_ww = self.config['listener'].get('wake_word')
         if wake_words.get(main_ww):
-            wake_words[main_ww]['active'] = True
+            LOG.debug(f"main_ww={main_ww}")
+            wake_words[main_ww].setdefault('active', True)
         self.bus.emit(message.reply("neon.wake_words", data=wake_words))
 
     def handle_profile_update(self, message):
