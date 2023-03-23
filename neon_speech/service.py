@@ -173,16 +173,23 @@ class NeonSpeechClient(SpeechService):
                                      "active": True,
                                      "wake_word": requested_ww})
         else:
-            LOG.info(f"Disabling wake word: {requested_ww}")
-            self.config['hotwords'][requested_ww]['active'] = False
-            config_patch = {"hotwords": {requested_ww: {"active": False}}}
-            self.loop.config_loaded.clear()
-            update_mycroft_config(config_patch)
-            self.loop.config_loaded.wait()
-            resp = message.response({"error": False,
-                                     "active": False,
-                                     "wake_word": requested_ww})
-
+            try:
+                LOG.info(f"Disabling wake word: {requested_ww}")
+                self.config['hotwords'][requested_ww]['active'] = False
+                config_patch = {"hotwords": {requested_ww: {"active": False}}}
+                self.loop.config_loaded.clear()
+                update_mycroft_config(config_patch)
+                self.loop.config_loaded.wait()
+                resp = message.response({"error": False,
+                                         "active": False,
+                                         "wake_word": requested_ww})
+            except Exception as e:
+                LOG.exception(e)
+                config_patch = {"hotwords": {requested_ww: {"active": True}}}
+                update_mycroft_config(config_patch)
+                resp = message.response({"error": repr(e),
+                                         "active": False,
+                                         "wake_word": requested_ww})
         self.bus.emit(resp)
 
     def handle_enable_wake_word(self, message: Message):
@@ -206,16 +213,24 @@ class NeonSpeechClient(SpeechService):
                                      "active": True,
                                      "wake_word": requested_ww})
         else:
-            LOG.info(f"Enabling wake word: {requested_ww}")
-            self.config['hotwords'][requested_ww]['active'] = True
-            config_patch = {"hotwords": {requested_ww: {"active": True}}}
-            self.loop.config_loaded.clear()
-            update_mycroft_config(config_patch)
-            self.loop.needs_reload = True
-            self.loop.config_loaded.wait()
-            resp = message.response({"error": False,
-                                     "active": True,
-                                     "wake_word": requested_ww})
+            try:
+                LOG.info(f"Enabling wake word: {requested_ww}")
+                self.config['hotwords'][requested_ww]['active'] = True
+                config_patch = {"hotwords": {requested_ww: {"active": True}}}
+                self.loop.config_loaded.clear()
+                update_mycroft_config(config_patch)
+                self.loop.needs_reload = True
+                self.loop.config_loaded.wait()
+                resp = message.response({"error": False,
+                                         "active": True,
+                                         "wake_word": requested_ww})
+            except Exception as e:
+                LOG.exception(e)
+                config_patch = {"hotwords": {requested_ww: {"active": False}}}
+                update_mycroft_config(config_patch)
+                resp = message.response({"error": repr(e),
+                                         "active": False,
+                                         "wake_word": requested_ww})
 
         self.bus.emit(resp)
 
@@ -230,7 +245,8 @@ class NeonSpeechClient(SpeechService):
                       if config.get('listen')}
         main_ww = self.config['listener'].get('wake_word')
         if wake_words.get(main_ww):
-            wake_words[main_ww]['active'] = True
+            LOG.debug(f"main_ww={main_ww}")
+            wake_words[main_ww].setdefault('active', True)
         self.bus.emit(message.reply("neon.wake_words", data=wake_words))
 
     def handle_profile_update(self, message):
