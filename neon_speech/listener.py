@@ -86,6 +86,7 @@ class NeonAudioConsumer(AudioConsumer):
                                           and not any(transcriptions)):
                     raise RuntimeError("Primary STT returned nothing")
             except Exception as e:
+                self.loop.init_fallback_stt()
                 if self.loop.fallback_stt:
                     LOG.warning(f"Using fallback STT, main plugin failed: {e}")
                     transcriptions = \
@@ -168,16 +169,18 @@ class NeonRecognizerLoop(RecognizerLoop):
         self.config_loaded.set()
         # TODO: Update recognizer to support passed config
 
-    def start_async(self):
-        """Start consumer and producer threads."""
-        self.state.running = True
-        if not self.stt:
-            self.stt = STTFactory.create(self.config_core)
+    def init_fallback_stt(self):
         if not self.fallback_stt:
             clazz = self.get_fallback_stt()
             if clazz:
                 LOG.debug(f"Initializing fallback STT engine")
                 self.fallback_stt = clazz()
+
+    def start_async(self):
+        """Start consumer and producer threads."""
+        self.state.running = True
+        if not self.stt:
+            self.stt = STTFactory.create(self.config_core)
         self.queue = Queue()
         self.audio_consumer = NeonAudioConsumer(self)
         self.audio_consumer.name = "audio_consumer"
