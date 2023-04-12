@@ -118,7 +118,6 @@ class NeonSpeechClient(SpeechService):
         self.loop = NeonRecognizerLoop(self.bus, watchdog)
         self.connect_loop_events()
         self.connect_bus_events()
-        # TODO: Allow skipping api_stt init to reduce memory usage
         if self.config.get('listener', {}).get('enable_stt_api', True):
             self.api_stt = STTFactory.create(config=self.config,
                                              results_event=None)
