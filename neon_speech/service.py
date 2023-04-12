@@ -123,6 +123,7 @@ class NeonSpeechClient(SpeechService):
             self.api_stt = STTFactory.create(config=self.config,
                                              results_event=None)
         else:
+            LOG.info("Skipping api_stt init")
             self.api_stt = None
 
     def shutdown(self):
