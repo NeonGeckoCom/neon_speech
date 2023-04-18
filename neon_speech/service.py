@@ -395,7 +395,7 @@ class NeonSpeechClient(SpeechService):
         if self.loop.stt.config["module"] != self.config["stt"]["module"]:
             LOG.info("Reloading STT module")
             self.loop.stt = STTFactory.create()
-        else:
+        elif hasattr(self.loop.stt, "results_event"):
             LOG.info(f"Internet Connected, Resetting STT Stream")
             self.loop.stt.results_event.set()
 
