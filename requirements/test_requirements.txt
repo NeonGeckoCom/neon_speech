@@ -3,4 +3,3 @@ neon-stt-plugin-nemo~=0.0
 ovos-stt-plugin-vosk~=0.1
 pytest
 mock~=4.0
-neon-messagebus~=0.2

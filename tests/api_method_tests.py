@@ -31,11 +31,12 @@ import sys
 import mock
 import unittest
 
+from threading import Event
 from time import time
 from mycroft_bus_client import MessageBusClient, Message
 from neon_utils.configuration_utils import init_config_dir
 from neon_utils.file_utils import encode_file_to_base64_string
-from neon_messagebus.service import NeonBusService
+from ovos_utils.messagebus import FakeBus
 from ovos_utils.log import LOG
 from ovos_config.config import Configuration
 
@@ -49,6 +50,9 @@ AUDIO_FILE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)),
 
 class TestAPIMethodsStreaming(unittest.TestCase):
     speech_thread = None
+    bus = FakeBus()
+    bus.connected_event = Event()
+    bus.connected_event.set()
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -61,15 +65,9 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         test_config["stt"]["module"] = "deepspeech_stream_local"
         assert test_config["stt"]["module"] == "deepspeech_stream_local"
 
-        cls.messagebus = NeonBusService(debug=True, daemonic=True)
-        cls.messagebus.start()
         cls.speech_service = NeonSpeechClient(speech_config=test_config,
-                                              daemonic=False)
+                                              daemonic=False, bus=cls.bus)
         cls.speech_service.start()
-        cls.bus = MessageBusClient()
-        cls.bus.run_in_thread()
-        if not cls.bus.connected_event.wait(60):
-            raise TimeoutError("Bus not connected after 60 seconds")
         ready = False
         timeout = time() + 120
         while not ready and time() < timeout:
@@ -83,10 +81,6 @@ class TestAPIMethodsStreaming(unittest.TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         super(TestAPIMethodsStreaming, cls).tearDownClass()
-        try:
-            cls.messagebus.shutdown()
-        except Exception as e:
-            LOG.error(e)
         try:
             cls.speech_service.shutdown()
         except Exception as e:
@@ -233,6 +227,9 @@ class TestAPIMethodsStreaming(unittest.TestCase):
 
 class TestAPIMethodsNonStreaming(unittest.TestCase):
     speech_thread = None
+    bus = FakeBus()
+    bus.connected_event = Event()
+    bus.connected_event.set()
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -245,15 +242,9 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
         test_config["stt"]["module"] = "neon-stt-plugin-nemo"
         assert test_config["stt"]["module"] == "neon-stt-plugin-nemo"
 
-        cls.messagebus = NeonBusService(debug=True, daemonic=True)
-        cls.messagebus.start()
         cls.speech_service = NeonSpeechClient(speech_config=test_config,
-                                              daemonic=False)
+                                              daemonic=False, bus=cls.bus)
         cls.speech_service.start()
-        cls.bus = MessageBusClient()
-        cls.bus.run_in_thread()
-        if not cls.bus.connected_event.wait(60):
-            raise TimeoutError("Bus not connected after 60 seconds")
         ready = False
         timeout = time() + 120
         while not ready and time() < timeout:
@@ -267,10 +258,6 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         super(TestAPIMethodsNonStreaming, cls).tearDownClass()
-        try:
-            cls.messagebus.shutdown()
-        except Exception as e:
-            LOG.error(e)
         try:
             cls.speech_service.shutdown()
         except Exception as e:
