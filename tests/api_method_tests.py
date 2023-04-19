@@ -31,6 +31,7 @@ import sys
 import mock
 import unittest
 
+from threading import Event
 from time import time
 from mycroft_bus_client import MessageBusClient, Message
 from neon_utils.configuration_utils import init_config_dir
@@ -50,6 +51,8 @@ AUDIO_FILE_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)),
 class TestAPIMethodsStreaming(unittest.TestCase):
     speech_thread = None
     bus = FakeBus()
+    bus.connected_event = Event()
+    bus.connected_event.set()
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -229,6 +232,8 @@ class TestAPIMethodsStreaming(unittest.TestCase):
 class TestAPIMethodsNonStreaming(unittest.TestCase):
     speech_thread = None
     bus = FakeBus()
+    bus.connected_event = Event()
+    bus.connected_event.set()
 
     @classmethod
     def setUpClass(cls) -> None:
