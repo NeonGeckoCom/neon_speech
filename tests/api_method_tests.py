@@ -68,10 +68,6 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         cls.speech_service = NeonSpeechClient(speech_config=test_config,
                                               daemonic=False, bus=cls.bus)
         cls.speech_service.start()
-        cls.bus = MessageBusClient()
-        cls.bus.run_in_thread()
-        if not cls.bus.connected_event.wait(60):
-            raise TimeoutError("Bus not connected after 60 seconds")
         ready = False
         timeout = time() + 120
         while not ready and time() < timeout:
@@ -249,10 +245,6 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
         cls.speech_service = NeonSpeechClient(speech_config=test_config,
                                               daemonic=False, bus=cls.bus)
         cls.speech_service.start()
-        cls.bus = MessageBusClient()
-        cls.bus.run_in_thread()
-        if not cls.bus.connected_event.wait(60):
-            raise TimeoutError("Bus not connected after 60 seconds")
         ready = False
         timeout = time() + 120
         while not ready and time() < timeout:
