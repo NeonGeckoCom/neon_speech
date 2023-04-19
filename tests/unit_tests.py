@@ -106,8 +106,11 @@ class UtilTests(unittest.TestCase):
             os.path.realpath(__file__)), "audio_files")
         TEST_CONFIG = use_neon_speech(Configuration)()
         TEST_CONFIG["stt"]["module"] = "deepspeech_stream_local"
+        bus = FakeBus()
+        bus.connected_event = Event()
+        bus.connected_event.set()
         client = NeonSpeechClient(speech_config=TEST_CONFIG, daemonic=True,
-                                  bus=FakeBus())
+                                  bus=bus)
         audio, context, transcripts = \
             client._get_stt_from_file(join(AUDIO_FILE_PATH, "stop.wav"))
         self.assertIsInstance(audio, AudioData)
