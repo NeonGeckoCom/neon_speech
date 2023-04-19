@@ -12,7 +12,7 @@ jobs:
     secrets: inherit
 
   build_and_publish_docker:
-    needs: publish_alpha_release
+    needs: build_and_publish_pypi_and_release
     uses: neongeckocom/.github/.github/workflows/publish_docker.yml@master
     secrets: inherit
     with:
