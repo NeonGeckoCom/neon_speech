@@ -118,8 +118,12 @@ class NeonSpeechClient(SpeechService):
         self.loop = NeonRecognizerLoop(self.bus, watchdog)
         self.connect_loop_events()
         self.connect_bus_events()
-        self.api_stt = STTFactory.create(config=self.config,
-                                         results_event=None)
+        if self.config.get('listener', {}).get('enable_stt_api', True):
+            self.api_stt = STTFactory.create(config=self.config,
+                                             results_event=None)
+        else:
+            LOG.info("Skipping api_stt init")
+            self.api_stt = None
 
     def shutdown(self):
         LOG.info("Shutting Down")
@@ -391,7 +395,7 @@ class NeonSpeechClient(SpeechService):
         if self.loop.stt.config["module"] != self.config["stt"]["module"]:
             LOG.info("Reloading STT module")
             self.loop.stt = STTFactory.create()
-        else:
+        elif hasattr(self.loop.stt, "results_event"):
             LOG.info(f"Internet Connected, Resetting STT Stream")
             self.loop.stt.results_event.set()
 
@@ -438,6 +442,9 @@ class NeonSpeechClient(SpeechService):
         audio_data = AudioData(segment.raw_data, segment.frame_rate,
                                segment.sample_width)
         audio_stream = get_audio_file_stream(wav_file)
+        if not self.api_stt:
+            raise RuntimeError("api_stt not initialized."
+                               " is `listener['enable_stt_api'] set to False?")
         if hasattr(self.api_stt, 'stream_start'):
             if self.lock.acquire(True, 30):
                 LOG.info(f"Starting STT processing (lang={lang}): {wav_file}")
