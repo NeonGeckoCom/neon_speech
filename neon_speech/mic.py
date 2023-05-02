@@ -82,8 +82,10 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
                 raise RuntimeWarning("No hotword engines configured!")
             ResponsiveRecognizer.feed_hotwords(self, chunk)
         except Exception as e:
-            # TODO: Handle reloading
             LOG.exception(e)
+            self.stop()
+            # TODO: Handle config change
+            self.loop.needs_reload = True
 
     def check_for_hotwords(self, audio_data, source):
         found = False
