@@ -25,9 +25,14 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+from collections import deque
 
 from mycroft.audio import is_speaking
 from mycroft.client.speech.mic import get_silence, ResponsiveRecognizer
+from mycroft.listener.data_structures import CyclicAudioBuffer
+from mycroft.listener.mic import WakeWordData
+from mycroft.listener.silence import SilenceDetector
+
 from neon_utils import LOG
 from speech_recognition import AudioSource, AudioData
 
@@ -70,6 +75,13 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
             self._listen_triggered = False
             return True
         return False
+
+    def feed_hotwords(self, chunk):
+        try:
+            ResponsiveRecognizer.feed_hotwords(self, chunk)
+        except Exception as e:
+            # TODO: Handle reloading
+            LOG.exception(e)
 
     def check_for_hotwords(self, audio_data, source):
         found = False
