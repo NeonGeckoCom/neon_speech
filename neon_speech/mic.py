@@ -78,6 +78,8 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
 
     def feed_hotwords(self, chunk):
         try:
+            if len(self.loop.hot_words) < 1:
+                raise RuntimeWarning("No hotword engines configured!")
             ResponsiveRecognizer.feed_hotwords(self, chunk)
         except Exception as e:
             # TODO: Handle reloading
