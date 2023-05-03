@@ -15,7 +15,7 @@ jobs:
   docker_build_tests:
     uses: neongeckocom/.github/.github/workflows/docker_build_tests.yml@FEAT_SupportDockerAptExtras
     with:
-      apt_extras: haveged
+      apt_extras: haveged libc-dev
     # TODO: Update ref
   unit_tests:
     timeout-minutes: 15
