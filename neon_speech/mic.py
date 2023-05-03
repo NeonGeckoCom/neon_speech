@@ -26,12 +26,11 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from mycroft.audio import is_speaking
-from mycroft.client.speech.mic import get_silence, ResponsiveRecognizer
-from neon_utils import LOG
+from ovos_utils.log import LOG
 from speech_recognition import AudioSource, AudioData
-
 from neon_transformers.audio_transformers import AudioTransformersService
+
+from mycroft.client.speech.mic import ResponsiveRecognizer
 
 
 class NeonResponsiveRecognizer(ResponsiveRecognizer):
@@ -70,6 +69,16 @@ class NeonResponsiveRecognizer(ResponsiveRecognizer):
             self._listen_triggered = False
             return True
         return False
+
+    def feed_hotwords(self, chunk):
+        try:
+            if len(self.loop.hot_words) < 1:
+                raise RuntimeWarning("No hotword engines configured!")
+            ResponsiveRecognizer.feed_hotwords(self, chunk)
+        except Exception as e:
+            LOG.exception(e)
+            self.stop()
+            self.loop.needs_reload = True
 
     def check_for_hotwords(self, audio_data, source):
         found = False
