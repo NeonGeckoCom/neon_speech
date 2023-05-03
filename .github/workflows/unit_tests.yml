@@ -14,6 +14,8 @@ jobs:
       python_version: "3.8"
   docker_build_tests:
     uses: neongeckocom/.github/.github/workflows/docker_build_tests.yml@FEAT_SupportDockerAptExtras
+    with:
+      apt_extras: haveged
     # TODO: Update ref
   unit_tests:
     timeout-minutes: 15
