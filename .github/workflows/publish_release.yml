@@ -18,4 +18,4 @@ jobs:
     with:
       base_tag: base
       extra_tag: default_model
-      runner: self-hosted
+      runner: diana
