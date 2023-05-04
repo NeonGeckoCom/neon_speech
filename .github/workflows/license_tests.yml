@@ -8,5 +8,3 @@ on:
 jobs:
   license_tests:
     uses: neongeckocom/.github/.github/workflows/license_tests.yml@FEAT_ConfigurableRunners
-    with:
-      runner: self-hosted
