@@ -7,4 +7,4 @@ on:
       - master
 jobs:
   license_tests:
-    uses: neongeckocom/.github/.github/workflows/license_tests.yml@FEAT_ConfigurableRunners
+    uses: neongeckocom/.github/.github/workflows/license_tests.yml@master
