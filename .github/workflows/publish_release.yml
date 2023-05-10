@@ -18,3 +18,4 @@ jobs:
     with:
       base_tag: base
       extra_tag: default_model
+      runner: diana

@@ -14,6 +14,8 @@ jobs:
       python_version: "3.8"
   docker_build_tests:
     uses: neongeckocom/.github/.github/workflows/docker_build_tests.yml@master
+    with:
+      runner: self-hosted
   unit_tests:
     timeout-minutes: 15
     strategy:

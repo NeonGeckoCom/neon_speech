@@ -27,14 +27,15 @@ import unittest
 
 from os.path import dirname, join
 from threading import Thread, Event
+from time import sleep
+
+from mycroft_bus_client import Message
+from ovos_utils.messagebus import FakeBus
+from speech_recognition import AudioData
 
 CONFIG_PATH = os.path.join(dirname(__file__), "config")
 os.environ["XDG_CONFIG_HOME"] = CONFIG_PATH
-from ovos_config.config import update_mycroft_config
-from mycroft_bus_client import Message
-from ovos_utils.log import LOG
-from ovos_utils.messagebus import FakeBus
-from speech_recognition import AudioData
+
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
@@ -198,6 +199,7 @@ class ServiceTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        from ovos_config.config import update_mycroft_config
         from neon_utils.configuration_utils import init_config_dir
         init_config_dir()
 
@@ -258,6 +260,8 @@ class ServiceTests(unittest.TestCase):
             self.assertEqual(len(self.bus.ee.listeners(event)), 1)
 
     def test_get_wake_words(self):
+        from ovos_config.config import update_mycroft_config
+
         resp = self.bus.wait_for_response(Message("neon.get_wake_words"),
                                           "neon.wake_words")
         self.assertIsInstance(resp, Message)
@@ -295,6 +299,8 @@ class ServiceTests(unittest.TestCase):
         self.assertFalse(resp.data['test_ww']['active'])
 
     def test_disable_wake_word(self):
+        from ovos_config.config import update_mycroft_config
+
         hotword_config = dict(self.hotwords_config)
         hotword_config['hey_mycroft']['active'] = True
         # hotword_config['hey_neon']['active'] = None
@@ -354,6 +360,8 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(set(self.service.loop.engines.keys()), {'hey_neon'})
 
     def test_enable_wake_word(self):
+        from ovos_config.config import update_mycroft_config
+
         hotword_config = dict(self.hotwords_config)
         hotword_config['hey_mycroft']['active'] = False
         hotword_config['hey_neon']['active'] = True
@@ -405,6 +413,21 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(set(self.service.loop.engines.keys()),
                          {'hey_neon', 'hey_mycroft'},
                          self.service.config['hotwords'])
+
+    def test_reload_hotwords(self):
+        hotwords = self.service.loop.hot_words
+        self.assertIsNotNone(hotwords)
+        for spec in hotwords.keys():
+            engine = self.service.loop.engines[spec].pop('engine')
+            self.assertIsNotNone(engine)
+            self.assertIsNone(self.service.loop.engines[spec].get('engine'))
+            break
+        mock_chunk = b'\xff' * 1024
+        self.service.loop.responsive_recognizer.feed_hotwords(mock_chunk)
+        while self.service.loop.needs_reload:
+            sleep(0.5)
+        for spec in hotwords.keys():
+            self.assertIsNotNone(self.service.loop.engines[spec].get('engine'))
 
 
 if __name__ == '__main__':

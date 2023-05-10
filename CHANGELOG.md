@@ -1,24 +1,28 @@
 # Changelog
 
-## [3.2.2a5](https://github.com/NeonGeckoCom/neon_speech/tree/3.2.2a5) (2023-04-20)
+## [3.3.1a3](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.1a3) (2023-05-04)
 
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.2.2a4...3.2.2a5)
-
-**Merged pull requests:**
-
-- Update to use GH action to propose release [\#146](https://github.com/NeonGeckoCom/neon_speech/pull/146) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [3.2.2a4](https://github.com/NeonGeckoCom/neon_speech/tree/3.2.2a4) (2023-04-20)
-
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.2.1...3.2.2a4)
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.1a2...3.3.1a3)
 
 **Merged pull requests:**
 
-- Fix alpha release automation change [\#145](https://github.com/NeonGeckoCom/neon_speech/pull/145) ([NeonDaniel](https://github.com/NeonDaniel))
-- Update automation to prep release [\#144](https://github.com/NeonGeckoCom/neon_speech/pull/144) ([NeonDaniel](https://github.com/NeonDaniel))
-- Refactor tests to remove messagebus module dependency [\#143](https://github.com/NeonGeckoCom/neon_speech/pull/143) ([NeonDaniel](https://github.com/NeonDaniel))
-- Add check for results\_event before trying to set it [\#142](https://github.com/NeonGeckoCom/neon_speech/pull/142) ([NeonDaniel](https://github.com/NeonDaniel))
-- Refactor STT init to reduce memory footprint [\#140](https://github.com/NeonGeckoCom/neon_speech/pull/140) ([NeonDaniel](https://github.com/NeonDaniel))
+- Specify Docker actions to use `diana` action runners [\#151](https://github.com/NeonGeckoCom/neon_speech/pull/151) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [3.3.1a2](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.1a2) (2023-05-04)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.1a1...3.3.1a2)
+
+**Merged pull requests:**
+
+- Troubleshoot Docker build failures [\#149](https://github.com/NeonGeckoCom/neon_speech/pull/149) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [3.3.1a1](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.1a1) (2023-05-03)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.0...3.3.1a1)
+
+**Merged pull requests:**
+
+- Handle hotword engine exception handling with unit tests [\#148](https://github.com/NeonGeckoCom/neon_speech/pull/148) ([NeonDaniel](https://github.com/NeonDaniel))
 
 
 
