@@ -392,6 +392,9 @@ class NeonSpeechClient(SpeechService):
         """
         Handle notification from core that internet connection is established
         """
+        if not self.loop.stt:
+            LOG.debug("Internet connected before STT init")
+            return
         if self.loop.stt.config["module"] != self.config["stt"]["module"]:
             LOG.info("Reloading STT module")
             self.loop.stt = STTFactory.create()

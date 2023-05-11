@@ -91,4 +91,4 @@ class STTFactory(OVOSSTTFactory):
             return WrappedSTT(clazz, config=config.get(config['module']),
                               results_event=results_event)
         else:
-            return clazz(config=config.get(config['module']))
+            return clazz(config=config)
