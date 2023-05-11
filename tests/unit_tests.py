@@ -139,7 +139,7 @@ class UtilTests(unittest.TestCase):
     # TODO: Test other speech service methods directly
 
     def test_ovos_plugin_compat(self):
-        from neon_speech.stt import STTFactory
+        from neon_speech.stt import STTFactory, STT
         ovos_vosk_streaming = STTFactory().create(
             {'module': 'ovos-stt-plugin-vosk-streaming',
              'lang': 'en-us'})
@@ -157,6 +157,13 @@ class UtilTests(unittest.TestCase):
         transcriptions = ovos_vosk_streaming.stream_stop()
         self.assertIsInstance(transcriptions, list)
         self.assertIsInstance(transcriptions[0], str)
+
+        non_streaming = STTFactory().create(
+            {"module": "ovos-stt-plugin-server",
+             "ovos-stt-plugin-server": {"url": "https://0.0.0.0:8080/stt"}}
+        )
+        self.assertIsInstance(non_streaming, STT)
+        self.assertEqual(non_streaming.url, "https://0.0.0.0:8080/stt")
 
 
 class ServiceTests(unittest.TestCase):
