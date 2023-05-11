@@ -41,6 +41,7 @@ from mycroft.client.speech.mic import MutableMicrophone
 
 from neon_speech.mic import NeonResponsiveRecognizer
 from neon_speech.stt import STTFactory
+from neon_utils.parse_utils import clean_quotes
 
 
 class NeonAudioConsumer(AudioConsumer):
@@ -96,7 +97,7 @@ class NeonAudioConsumer(AudioConsumer):
                     raise e
             if isinstance(transcriptions, str):
                 LOG.info("Casting str transcriptions to list")
-                transcriptions = [transcriptions]
+                transcriptions = [clean_quotes(transcriptions)]
             if transcriptions:
                 transcriptions = [t.lower().strip() for t in transcriptions]
                 LOG.debug(f"STT: {transcriptions}")
