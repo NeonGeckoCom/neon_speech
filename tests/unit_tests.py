@@ -234,7 +234,7 @@ class ServiceTests(unittest.TestCase):
             shutil.rmtree(CONFIG_PATH)
 
     def test_loop_events(self):
-        from mycroft.listener import RecognizerLoop
+        from ovos_listener.listener import RecognizerLoop
         self.assertIsInstance(self.service.loop, RecognizerLoop)
         for event in ["recognizer_loop:utterance",
                       "recognizer_loop:speech.recognition.unknown",

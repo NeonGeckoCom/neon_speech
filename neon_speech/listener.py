@@ -29,19 +29,16 @@
 from queue import Queue
 from threading import Event
 from typing import List
-
-# from neon_utils.configuration_utils import get_neon_device_type
 from ovos_utils.log import LOG
 from ovos_utils.metrics import Stopwatch
 from ovos_config.config import Configuration
-from mycroft.client.speech.listener import RecognizerLoop, AudioConsumer, \
-    AudioProducer, recognizer_conf_hash, \
-    find_input_device, RecognizerLoopState
-from mycroft.client.speech.mic import MutableMicrophone
+from ovos_listener.listener import RecognizerLoop, AudioConsumer, \
+    AudioProducer, recognizer_conf_hash, find_input_device, RecognizerLoopState
+from ovos_listener.mic import MutableMicrophone
+from neon_utils.parse_utils import clean_quotes
 
 from neon_speech.mic import NeonResponsiveRecognizer
 from neon_speech.stt import STTFactory
-from neon_utils.parse_utils import clean_quotes
 
 
 class NeonAudioConsumer(AudioConsumer):
