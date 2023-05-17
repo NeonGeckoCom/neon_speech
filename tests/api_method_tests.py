@@ -27,6 +27,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import shutil
 import sys
 import mock
 import unittest
@@ -34,6 +35,8 @@ import unittest
 from threading import Event
 from time import time
 from ovos_bus_client import Message
+from ovos_config import get_xdg_config_locations
+
 from neon_utils.configuration_utils import init_config_dir
 from neon_utils.file_utils import encode_file_to_base64_string
 from ovos_utils.messagebus import FakeBus
@@ -60,9 +63,9 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         os.makedirs(test_config_dir, exist_ok=True)
         os.environ["XDG_CONFIG_HOME"] = test_config_dir
         use_neon_speech(init_config_dir)()
-        init_config_dir()
-        update_mycroft_config({"stt": {"module": "deepspeech_stream_local"}})
-        test_config = Configuration()
+
+        test_config = dict(Configuration())
+        test_config["stt"]["module"] = "deepspeech_stream_local"
         assert test_config["stt"]["module"] == "deepspeech_stream_local"
 
         cls.speech_service = NeonSpeechClient(speech_config=test_config,
@@ -85,6 +88,10 @@ class TestAPIMethodsStreaming(unittest.TestCase):
             cls.speech_service.shutdown()
         except Exception as e:
             LOG.error(e)
+
+        config_dir = os.environ.pop("XDG_CONFIG_HOME")
+        if os.path.isdir(config_dir):
+            shutil.rmtree(config_dir)
 
     def test_get_stt_no_file(self):
         context = {"client": "tester",
@@ -237,13 +244,14 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
         os.makedirs(test_config_dir, exist_ok=True)
         os.environ["XDG_CONFIG_HOME"] = test_config_dir
         use_neon_speech(init_config_dir)()
-        init_config_dir()
-        update_mycroft_config({"stt": {"module": "neon-stt-plugin-nemo"}})
-        test_config = Configuration()
+
+        test_config = dict(Configuration())
+        test_config["stt"]["module"] = "neon-stt-plugin-nemo"
         assert test_config["stt"]["module"] == "neon-stt-plugin-nemo"
 
         cls.speech_service = NeonSpeechClient(speech_config=test_config,
                                               daemonic=False, bus=cls.bus)
+        assert cls.speech_service.config["stt"]["module"] == "neon-stt-plugin-nemo"
         cls.speech_service.start()
         ready = False
         timeout = time() + 120
@@ -262,6 +270,10 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
             cls.speech_service.shutdown()
         except Exception as e:
             LOG.error(e)
+
+        config_dir = os.environ.pop("XDG_CONFIG_HOME")
+        if os.path.isdir(config_dir):
+            shutil.rmtree(config_dir)
 
     def test_get_stt_no_file(self):
         context = {"client": "tester",
