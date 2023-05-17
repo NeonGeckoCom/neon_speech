@@ -368,7 +368,10 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
         self.assertFalse(resp.data['enabled'])
 
     def test_get_stt_supported_languages(self):
+        from ovos_plugin_manager.templates.stt import STT
+
         real_stt = self.speech_service.loop.stt
+        self.assertIsInstance(real_stt, STT)
         resp = self.bus.wait_for_response(Message(
             "ovos.languages.stt", {}, {'ctx': True}
         ))
@@ -379,7 +382,6 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
                          list(real_stt.available_languages) or ['en-us'])
 
         mock_languages = ('en-us', 'es', 'fr-fr', 'fr-ca')
-        from ovos_plugin_manager.templates.stt import STT
 
         class MockSTT(STT):
             def __init__(self):

@@ -191,9 +191,12 @@ class NeonRecognizerLoop(RecognizerLoop):
             self.microphone._stop()
             LOG.info("Microphone valid")
             self.audio_producer.start()
+        except OSError as e:
+            LOG.error(e)
+            LOG.warning("Skipping audio_producer init")
         except Exception as e:
             LOG.exception(e)
-            LOG.error("Skipping audio_producer init")
+            LOG.warning("Skipping audio_producer init")
 
     def stop(self):
         self.state.running = False
