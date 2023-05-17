@@ -60,7 +60,8 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         os.makedirs(test_config_dir, exist_ok=True)
         os.environ["XDG_CONFIG_HOME"] = test_config_dir
         use_neon_speech(init_config_dir)()
-        update_mycroft_config({"stt": {"module": "deepspeech_stream_local"}})
+        use_neon_speech(update_mycroft_config)(
+            {"stt": {"module": "deepspeech_stream_local"}})
         test_config = Configuration()
         assert test_config["stt"]["module"] == "deepspeech_stream_local"
 
