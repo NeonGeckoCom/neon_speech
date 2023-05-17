@@ -29,7 +29,7 @@ from os.path import dirname, join
 from threading import Thread, Event
 from time import sleep
 
-from mycroft_bus_client import Message
+from ovos_bus_client import Message
 from ovos_utils.messagebus import FakeBus
 from speech_recognition import AudioData
 

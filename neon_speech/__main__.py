@@ -30,6 +30,7 @@ from ovos_utils import wait_for_exit_signal
 from neon_utils.configuration_utils import init_config_dir
 from neon_utils.log_utils import init_log
 from ovos_utils.log import LOG
+from ovos_utils.process_utils import PIDLock as Lock
 
 
 def main(*args, **kwargs):
@@ -40,8 +41,7 @@ def main(*args, **kwargs):
         LOG.warning("Found config kwarg, updating to 'speech_config'")
         kwargs["speech_config"] = kwargs.pop("config")
 
-    from mycroft.lock import Lock
-    from mycroft.util.process_utils import reset_sigint_handler
+    from ovos_utils.process_utils import reset_sigint_handler
     from neon_speech.service import NeonSpeechClient
     reset_sigint_handler()
     Lock("speech")

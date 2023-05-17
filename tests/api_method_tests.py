@@ -33,7 +33,7 @@ import unittest
 
 from threading import Event
 from time import time
-from mycroft_bus_client import MessageBusClient, Message
+from ovos_bus_client import Message
 from neon_utils.configuration_utils import init_config_dir
 from neon_utils.file_utils import encode_file_to_base64_string
 from ovos_utils.messagebus import FakeBus
