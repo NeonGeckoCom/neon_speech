@@ -38,7 +38,7 @@ from neon_utils.configuration_utils import init_config_dir
 from neon_utils.file_utils import encode_file_to_base64_string
 from ovos_utils.messagebus import FakeBus
 from ovos_utils.log import LOG
-from ovos_config.config import Configuration
+from ovos_config.config import Configuration, update_mycroft_config
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from neon_speech.service import NeonSpeechClient
@@ -60,9 +60,8 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         os.makedirs(test_config_dir, exist_ok=True)
         os.environ["XDG_CONFIG_HOME"] = test_config_dir
         use_neon_speech(init_config_dir)()
-
+        update_mycroft_config({"stt": {"module": "deepspeech_stream_local"}})
         test_config = Configuration()
-        test_config["stt"]["module"] = "deepspeech_stream_local"
         assert test_config["stt"]["module"] == "deepspeech_stream_local"
 
         cls.speech_service = NeonSpeechClient(speech_config=test_config,
