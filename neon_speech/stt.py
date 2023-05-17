@@ -72,7 +72,7 @@ class STTFactory(OVOSSTTFactory):
         if config and not config.get("module"):
             # No module, try getting stt config from passed config
             config = config.get("stt")
-            LOG.info("Using passed config")
+            LOG.debug("Using passed config")
         if not config:  # No config, go get it
             config = Configuration().get("stt", {})
             from ovos_config.locations import USER_CONFIG

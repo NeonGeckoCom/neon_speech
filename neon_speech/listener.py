@@ -167,6 +167,10 @@ class NeonRecognizerLoop(RecognizerLoop):
         self.config_loaded.set()
         # TODO: Update recognizer to support passed config
 
+    def run(self):
+        LOG.debug("Running RecognizerLoop")
+        RecognizerLoop.run(self)
+
     def init_fallback_stt(self):
         if not self.fallback_stt:
             clazz = self.get_fallback_stt()
