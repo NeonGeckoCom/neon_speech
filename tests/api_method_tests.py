@@ -81,6 +81,8 @@ class TestAPIMethodsStreaming(unittest.TestCase):
                 ready = message.data.get("status")
         if not ready:
             raise TimeoutError("Speech module not ready after 120 seconds")
+        from ovos_plugin_manager.templates import STT
+        assert isinstance(cls.speech_service.loop.stt, STT)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -263,6 +265,8 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
                 ready = message.data.get("status")
         if not ready:
             raise TimeoutError("Speech module not ready after 120 seconds")
+        from ovos_plugin_manager.templates import STT
+        assert isinstance(cls.speech_service.loop.stt, STT)
 
     @classmethod
     def tearDownClass(cls) -> None:
