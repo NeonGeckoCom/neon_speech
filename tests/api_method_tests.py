@@ -70,6 +70,7 @@ class TestAPIMethodsStreaming(unittest.TestCase):
 
         cls.speech_service = NeonSpeechClient(speech_config=test_config,
                                               daemonic=False, bus=cls.bus)
+        assert cls.speech_service.config["stt"]["module"] == "deepspeech_stream_local"
         cls.speech_service.start()
         ready = False
         timeout = time() + 120
