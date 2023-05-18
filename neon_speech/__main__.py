@@ -46,7 +46,7 @@ def main(*args, **kwargs):
     from neon_speech.service import NeonSpeechClient
     reset_sigint_handler()
     Lock("speech")
-    malloc_running = start_malloc(config, stack_depth=4)
+    malloc_running = start_malloc(stack_depth=4)
     service = NeonSpeechClient(*args, **kwargs)
     service.start()
     wait_for_exit_signal()
