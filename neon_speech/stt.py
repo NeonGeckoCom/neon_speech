@@ -88,7 +88,9 @@ class STTFactory(OVOSSTTFactory):
             if not clazz:
                 raise ValueError("fallback plugin not found")
         if issubclass(clazz, StreamingSTT):
+            LOG.debug(f"Returning WrappedSTT {clazz}")
             return WrappedSTT(clazz, config=config.get(config['module']),
                               results_event=results_event)
         else:
+            LOG.debug(f"Returning STT {clazz}")
             return clazz(config=config)
