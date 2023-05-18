@@ -119,6 +119,7 @@ class NeonRecognizerLoop(RecognizerLoop):
     def __init__(self, bus, watchdog=None, stt=None, fallback_stt=None):
         self.config_loaded = Event()
         self.microphone = None
+        stt = stt or STTFactory.create(Configuration())
         RecognizerLoop.__init__(self, bus, watchdog, stt, fallback_stt)
 
     def _load_config(self):
