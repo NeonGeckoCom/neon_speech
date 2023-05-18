@@ -189,18 +189,8 @@ class NeonRecognizerLoop(RecognizerLoop):
         self.audio_consumer.start()
         self.audio_producer = AudioProducer(self)
         self.audio_producer.name = "audio_producer"
-        # try:
-        #     # TODO: Patching bug in ovos-core
-        #     self.microphone._start()
-        #     self.microphone._stop()
-        #     LOG.info("Microphone valid")
-        #     self.audio_producer.start()
-        # except OSError as e:
-        #     LOG.error(e)
-        #     LOG.warning("Skipping audio_producer init")
-        # except Exception as e:
-        #     LOG.exception(e)
-        #     LOG.warning("Skipping audio_producer init")
+        self.audio_producer.start()
+
 
     def stop(self):
         self.state.running = False
