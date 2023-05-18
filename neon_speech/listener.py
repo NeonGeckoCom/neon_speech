@@ -29,19 +29,16 @@
 from queue import Queue
 from threading import Event
 from typing import List
-
-# from neon_utils.configuration_utils import get_neon_device_type
 from ovos_utils.log import LOG
 from ovos_utils.metrics import Stopwatch
 from ovos_config.config import Configuration
-from mycroft.client.speech.listener import RecognizerLoop, AudioConsumer, \
-    AudioProducer, recognizer_conf_hash, \
-    find_input_device, RecognizerLoopState
-from mycroft.client.speech.mic import MutableMicrophone
+from ovos_listener.listener import RecognizerLoop, AudioConsumer, \
+    AudioProducer, recognizer_conf_hash, find_input_device, RecognizerLoopState
+from ovos_listener.mic import MutableMicrophone
+from neon_utils.parse_utils import clean_quotes
 
 from neon_speech.mic import NeonResponsiveRecognizer
 from neon_speech.stt import STTFactory
-from neon_utils.parse_utils import clean_quotes
 
 
 class NeonAudioConsumer(AudioConsumer):
@@ -122,7 +119,8 @@ class NeonRecognizerLoop(RecognizerLoop):
     def __init__(self, bus, watchdog=None, stt=None, fallback_stt=None):
         self.config_loaded = Event()
         self.microphone = None
-        super().__init__(bus, watchdog, stt, fallback_stt)
+        stt = stt or STTFactory.create(Configuration())
+        RecognizerLoop.__init__(self, bus, watchdog, stt, fallback_stt)
 
     def _load_config(self):
         """
@@ -170,6 +168,10 @@ class NeonRecognizerLoop(RecognizerLoop):
         self.config_loaded.set()
         # TODO: Update recognizer to support passed config
 
+    def run(self):
+        LOG.debug("Running RecognizerLoop")
+        RecognizerLoop.run(self)
+
     def init_fallback_stt(self):
         if not self.fallback_stt:
             clazz = self.get_fallback_stt()
@@ -189,14 +191,9 @@ class NeonRecognizerLoop(RecognizerLoop):
         self.audio_producer = AudioProducer(self)
         self.audio_producer.name = "audio_producer"
         try:
-            # TODO: Patching bug in ovos-core
-            self.microphone._start()
-            self.microphone._stop()
-            LOG.info("Microphone valid")
             self.audio_producer.start()
         except Exception as e:
             LOG.exception(e)
-            LOG.error("Skipping audio_producer init")
 
     def stop(self):
         self.state.running = False

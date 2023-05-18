@@ -30,7 +30,7 @@ from ovos_utils.log import LOG
 from speech_recognition import AudioSource, AudioData
 from neon_transformers.audio_transformers import AudioTransformersService
 
-from mycroft.client.speech.mic import ResponsiveRecognizer
+from ovos_listener.mic import ResponsiveRecognizer
 
 
 class NeonResponsiveRecognizer(ResponsiveRecognizer):

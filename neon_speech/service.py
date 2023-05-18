@@ -32,7 +32,7 @@ from tempfile import mkstemp
 from threading import Thread, Lock
 from time import time
 
-from mycroft.listener.mic import ListeningMode
+from ovos_listener.mic import ListeningMode
 from ovos_utils.process_utils import StatusCallbackMap, ProcessStatus
 from pydub import AudioSegment
 from speech_recognition import AudioData
@@ -43,9 +43,9 @@ from ovos_utils.log import LOG
 from neon_utils.configuration_utils import get_neon_user_config
 from neon_utils.user_utils import apply_local_user_profile_updates
 from ovos_utils.json_helper import merge_dict
-from mycroft_bus_client import Message
+from ovos_bus_client import Message
 
-from mycroft.client.speech.service import SpeechService
+from ovos_listener.service import SpeechService
 from ovos_config.config import Configuration, update_mycroft_config
 
 from neon_speech.listener import NeonRecognizerLoop
@@ -94,7 +94,7 @@ class NeonSpeechClient(SpeechService):
             patch_config(speech_config)
         # Don't init SpeechClient, because we're overriding self.loop
         Thread.__init__(self)
-        self.setDaemon(daemonic)
+        self.daemon = daemonic
         # Init messagebus and handlers
         self.bus = bus or get_messagebus()
         from neon_utils.signal_utils import init_signal_handlers, \
@@ -131,7 +131,7 @@ class NeonSpeechClient(SpeechService):
         self.loop.stop()
 
     def connect_bus_events(self):
-        super(NeonSpeechClient, self).connect_bus_events()
+        SpeechService.connect_bus_events(self)
         # Register handler for internet (re-)connection
         self.bus.on("mycroft.internet.connected",
                     self.handle_internet_connected)

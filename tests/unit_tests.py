@@ -29,7 +29,7 @@ from os.path import dirname, join
 from threading import Thread, Event
 from time import sleep
 
-from mycroft_bus_client import Message
+from ovos_bus_client import Message
 from ovos_utils.messagebus import FakeBus
 from speech_recognition import AudioData
 
@@ -234,7 +234,7 @@ class ServiceTests(unittest.TestCase):
             shutil.rmtree(CONFIG_PATH)
 
     def test_loop_events(self):
-        from mycroft.listener import RecognizerLoop
+        from ovos_listener.listener import RecognizerLoop
         self.assertIsInstance(self.service.loop, RecognizerLoop)
         for event in ["recognizer_loop:utterance",
                       "recognizer_loop:speech.recognition.unknown",
