@@ -189,8 +189,10 @@ class NeonRecognizerLoop(RecognizerLoop):
         self.audio_consumer.start()
         self.audio_producer = AudioProducer(self)
         self.audio_producer.name = "audio_producer"
-        self.audio_producer.start()
-
+        try:
+            self.audio_producer.start()
+        except Exception as e:
+            LOG.exception(e)
 
     def stop(self):
         self.state.running = False
