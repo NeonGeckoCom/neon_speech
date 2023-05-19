@@ -1,4 +1,4 @@
-ovos-listener~=0.0.1,>=0.0.2a11
+ovos-dinkum-listener~=0.0.1,>=0.0.2a11
 SpeechRecognition~=3.8
 PyAudio~=0.2
 ovos-bus-client~=0.0.3
