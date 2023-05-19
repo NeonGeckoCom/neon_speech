@@ -32,7 +32,7 @@ from tempfile import mkstemp
 from threading import Thread, Lock
 from time import time
 
-from ovos_listener.mic import ListeningMode
+from ovos_dinkum_listener.voice_loop.voice_loop import ListeningMode
 from pydub import AudioSegment
 from speech_recognition import AudioData
 
