@@ -47,6 +47,7 @@ from ovos_config.config import update_mycroft_config
 import ovos_dinkum_listener.plugins
 from ovos_dinkum_listener.service import OVOSDinkumVoiceService
 from neon_speech.stt import STTFactory
+
 ovos_dinkum_listener.plugins.OVOSSTTFactory = STTFactory
 
 
