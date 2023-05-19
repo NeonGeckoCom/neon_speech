@@ -32,7 +32,7 @@ from threading import Event
 
 from neon_utils import LOG
 from ovos_plugin_manager.stt import OVOSSTTFactory, get_stt_config
-from ovos_plugin_manager.templates.stt import STT, StreamThread, StreamingSTT
+from ovos_plugin_manager.templates.stt import StreamingSTT
 
 from ovos_config.config import Configuration
 

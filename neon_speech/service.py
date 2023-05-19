@@ -44,8 +44,10 @@ from ovos_utils.json_helper import merge_dict
 from ovos_bus_client import Message
 from ovos_config.config import update_mycroft_config
 
-from neon_speech.stt import STTFactory
+import ovos_dinkum_listener.plugins
 from ovos_dinkum_listener.service import OVOSDinkumVoiceService
+from neon_speech.stt import STTFactory
+ovos_dinkum_listener.plugins.OVOSSTTFactory = STTFactory
 
 
 def on_ready():
