@@ -25,7 +25,6 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-import importlib
 
 from tempfile import mkstemp
 from ovos_utils.log import LOG
@@ -37,11 +36,13 @@ def patch_config(config: dict = None):
     Write the specified speech configuration to the global config file
     :param config: Mycroft-compatible configuration override
     """
-    import ovos_config.config
-
+    from ovos_config.config import LocalConf
+    from ovos_config.locations import USER_CONFIG
+    LOG.warning(f"Patching configuration with: {config}")
     config = config or dict()
-    ovos_config.config.update_mycroft_config(config)
-    importlib.reload(ovos_config.config)
+    local_config = LocalConf(USER_CONFIG)
+    local_config.update(config)
+    local_config.store()
 
 
 def _plugin_to_package(plugin: str) -> str:

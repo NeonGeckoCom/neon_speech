@@ -27,7 +27,6 @@ import unittest
 
 from os.path import dirname, join
 from threading import Thread, Event
-from time import sleep
 
 from ovos_bus_client import Message
 from ovos_utils.messagebus import FakeBus
@@ -112,6 +111,7 @@ class UtilTests(unittest.TestCase):
         bus.connected_event.set()
         client = NeonSpeechClient(speech_config=TEST_CONFIG, daemonic=True,
                                   bus=bus)
+        self.assertIsInstance(client, NeonSpeechClient)
         audio, context, transcripts = \
             client._get_stt_from_file(join(AUDIO_FILE_PATH, "stop.wav"))
         self.assertIsInstance(audio, AudioData)
