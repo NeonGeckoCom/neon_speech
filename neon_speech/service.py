@@ -97,6 +97,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                                         on_stopping=stopping_hook,
                                         on_alive=alive_hook,
                                         on_started=started_hook,
+                                        bus=bus,
                                         watchdog=watchdog)
         self.daemon = daemonic
 
