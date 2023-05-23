@@ -66,6 +66,7 @@ class TestAPIMethodsStreaming(unittest.TestCase):
 
         test_config = dict(Configuration())
         test_config["stt"]["module"] = "deepspeech_stream_local"
+        test_config["VAD"]["module"] = "dummy"
         assert test_config["stt"]["module"] == "deepspeech_stream_local"
 
         cls.speech_service = NeonSpeechClient(speech_config=test_config,
@@ -82,7 +83,7 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         if not ready:
             raise TimeoutError("Speech module not ready after 120 seconds")
         from ovos_plugin_manager.templates import STT
-        assert isinstance(cls.speech_service.loop.stt, STT)
+        assert isinstance(cls.speech_service.stt, STT)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -201,7 +202,7 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         self.assertFalse(resp.data['enabled'])
 
     def test_get_stt_supported_languages(self):
-        real_stt = self.speech_service.loop.stt
+        real_stt = self.speech_service.stt
         resp = self.bus.wait_for_response(Message(
             "ovos.languages.stt", {}, {'ctx': True}
         ))
@@ -226,13 +227,13 @@ class TestAPIMethodsStreaming(unittest.TestCase):
                 pass
 
         mock_stt = MockSTT()
-        self.speech_service.loop.stt = mock_stt
+        self.speech_service.stt = mock_stt
         resp = self.bus.wait_for_response(Message(
             "ovos.languages.stt", {}, {'ctx': True}
         ))
         self.assertEqual(resp.data['langs'], list(mock_languages))
 
-        self.speech_service.loop.stt = real_stt
+        self.speech_service.stt = real_stt
 
 
 class TestAPIMethodsNonStreaming(unittest.TestCase):
@@ -266,7 +267,7 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
         if not ready:
             raise TimeoutError("Speech module not ready after 120 seconds")
         from ovos_plugin_manager.templates import STT
-        assert isinstance(cls.speech_service.loop.stt, STT)
+        assert isinstance(cls.speech_service.stt, STT)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -387,7 +388,7 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
     def test_get_stt_supported_languages(self):
         from ovos_plugin_manager.templates.stt import STT
 
-        real_stt = self.speech_service.loop.stt
+        real_stt = self.speech_service.stt
         self.assertIsInstance(real_stt, STT)
         resp = self.bus.wait_for_response(Message(
             "ovos.languages.stt", {}, {'ctx': True}
@@ -412,13 +413,13 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
                 pass
 
         mock_stt = MockSTT()
-        self.speech_service.loop.stt = mock_stt
+        self.speech_service.stt = mock_stt
         resp = self.bus.wait_for_response(Message(
             "ovos.languages.stt", {}, {'ctx': True}
         ))
         self.assertEqual(resp.data['langs'], list(mock_languages))
 
-        self.speech_service.loop.stt = real_stt
+        self.speech_service.stt = real_stt
 
 
 if __name__ == '__main__':

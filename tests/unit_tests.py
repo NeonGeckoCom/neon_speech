@@ -27,8 +27,6 @@ import unittest
 
 from os.path import dirname, join
 from threading import Thread, Event
-from unittest.mock import Mock
-
 from ovos_bus_client import Message
 from ovos_utils.messagebus import FakeBus
 from speech_recognition import AudioData
@@ -267,7 +265,12 @@ class ServiceTests(unittest.TestCase):
                       "neon.wake_words_state", "neon.query_wake_words_state",
                       "neon.profile_update", "neon.get_wake_words",
                       "neon.enable_wake_word", "neon.disable_wake_word"]:
-            self.assertEqual(len(self.bus.ee.listeners(event)), 1, event)
+            num_listeners = 1
+            if event == "mycroft.internet.connected":
+                # Configuration registers this too
+                num_listeners = 2
+            self.assertEqual(len(self.bus.ee.listeners(event)), num_listeners,
+                             f"{event}: {self.bus.ee.listeners(event)}")
 
     def test_get_wake_words(self):
         from ovos_config.config import update_mycroft_config
