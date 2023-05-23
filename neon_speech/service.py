@@ -27,15 +27,13 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import ovos_dinkum_listener.plugins
+
 from tempfile import mkstemp
-
-from threading import Thread, Lock
+from threading import Lock, Event
 from time import time
-
-from ovos_dinkum_listener.voice_loop.voice_loop import ListeningMode
 from pydub import AudioSegment
 from speech_recognition import AudioData
-
 from neon_utils.file_utils import decode_base64_string_to_file
 from ovos_utils.log import LOG
 from neon_utils.configuration_utils import get_neon_user_config
@@ -43,16 +41,26 @@ from neon_utils.user_utils import apply_local_user_profile_updates
 from ovos_utils.json_helper import merge_dict
 from ovos_bus_client import Message
 from ovos_config.config import update_mycroft_config
-
-import ovos_dinkum_listener.plugins
 from ovos_dinkum_listener.service import OVOSDinkumVoiceService
+from ovos_dinkum_listener.voice_loop.voice_loop import ListeningMode
+
 from neon_speech.stt import STTFactory
 
 ovos_dinkum_listener.plugins.OVOSSTTFactory = STTFactory
 
+_SERVICE_READY = Event()
+
 
 def on_ready():
     LOG.info('Speech client is ready.')
+
+
+def wrapped_ready_hook(ready_hook: callable):
+    def wrapper():
+        _SERVICE_READY.set()
+        LOG.info(f"Set Ready event")
+        ready_hook()
+    return wrapper
 
 
 def on_stopping():
@@ -92,7 +100,8 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             from neon_speech.utils import patch_config
             patch_config(speech_config)
         # Don't init SpeechClient, because we're overriding self.loop
-        OVOSDinkumVoiceService.__init__(self, on_ready=ready_hook,
+        OVOSDinkumVoiceService.__init__(self,
+                                        on_ready=wrapped_ready_hook(ready_hook),
                                         on_error=error_hook,
                                         on_stopping=stopping_hook,
                                         on_alive=alive_hook,
@@ -100,7 +109,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                                         bus=bus,
                                         watchdog=watchdog)
         self.daemon = daemonic
-
+        self.config.bus = self.bus
         from neon_utils.signal_utils import init_signal_handlers, \
             init_signal_bus
         init_signal_bus(self.bus)
@@ -171,17 +180,19 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         else:
             try:
                 LOG.info(f"Disabling wake word: {requested_ww}")
-                self.config['hotwords'][requested_ww]['active'] = False
                 config_patch = {"hotwords": {requested_ww: {"active": False}}}
-                update_mycroft_config(config_patch)
-                self.hotwords.load_hotword_engines()
+                _SERVICE_READY.clear()
+                update_mycroft_config(config_patch, bus=self.bus)
+                self.reload_configuration()  # Not auto-reloading?
+                if not _SERVICE_READY.wait(15):
+                    raise TimeoutError("Timed out waiting for config reload")
                 resp = message.response({"error": False,
                                          "active": False,
                                          "wake_word": requested_ww})
             except Exception as e:
                 LOG.exception(e)
                 config_patch = {"hotwords": {requested_ww: {"active": True}}}
-                update_mycroft_config(config_patch)
+                update_mycroft_config(config_patch, bus=self.bus)
                 resp = message.response({"error": repr(e),
                                          "active": False,
                                          "wake_word": requested_ww})
@@ -210,17 +221,19 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         else:
             try:
                 LOG.info(f"Enabling wake word: {requested_ww}")
-                self.config['hotwords'][requested_ww]['active'] = True
                 config_patch = {"hotwords": {requested_ww: {"active": True}}}
-                update_mycroft_config(config_patch)
-                self.hotwords.load_hotword_engines()
+                _SERVICE_READY.clear()
+                update_mycroft_config(config_patch, bus=self.bus)
+                self.reload_configuration()  # Not auto-reloading?
+                if not _SERVICE_READY.wait(30):
+                    raise TimeoutError("Timed out waiting for config reload")
                 resp = message.response({"error": False,
                                          "active": True,
                                          "wake_word": requested_ww})
             except Exception as e:
                 LOG.exception(e)
                 config_patch = {"hotwords": {requested_ww: {"active": False}}}
-                update_mycroft_config(config_patch)
+                update_mycroft_config(config_patch, bus=self.bus)
                 resp = message.response({"error": repr(e),
                                          "active": False,
                                          "wake_word": requested_ww})

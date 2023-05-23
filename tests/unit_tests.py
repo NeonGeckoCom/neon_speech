@@ -27,6 +27,7 @@ import unittest
 
 from os.path import dirname, join
 from threading import Thread, Event
+from unittest.mock import Mock
 
 from ovos_bus_client import Message
 from ovos_utils.messagebus import FakeBus
@@ -172,6 +173,12 @@ class ServiceTests(unittest.TestCase):
     bus.connected_event = Event()
     bus.connected_event.set()
 
+    ready_event = Event()
+
+    @classmethod
+    def on_ready(cls):
+        cls.ready_event.set()
+
     hotwords_config = {
         "hey_neon": {
             "module": "ovos-ww-plugin-vosk",
@@ -212,7 +219,8 @@ class ServiceTests(unittest.TestCase):
         init_config_dir()
 
         update_mycroft_config({"hotwords": cls.hotwords_config,
-                               "stt": {"module": "neon-stt-plugin-nemo"}})
+                               "stt": {"module": "neon-stt-plugin-nemo"},
+                               "VAD": {"module": "dummy"}})
         import importlib
         import ovos_config.config
         importlib.reload(ovos_config.config)
@@ -222,10 +230,17 @@ class ServiceTests(unittest.TestCase):
         from neon_speech.utils import use_neon_speech
         use_neon_speech(init_config_dir)()
         from neon_speech.service import NeonSpeechClient
-        cls.service = NeonSpeechClient(bus=cls.bus)
+        cls.service = NeonSpeechClient(bus=cls.bus, ready_hook=cls.on_ready)
         # assert Configuration() == service.loop.config_core
 
+        def _mocked_run():
+            stopping_event = Event()
+            while cls.service.voice_loop._is_running:
+                stopping_event.wait(1)
+
+        cls.service.voice_loop.run = _mocked_run
         cls.service.start()
+        cls.ready_event.wait(60)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -235,12 +250,13 @@ class ServiceTests(unittest.TestCase):
 
     def test_bus_events(self):
         self.assertEqual(self.service.bus, self.bus)
-        for event in ["open", "recognizer_loop:sleep",
+        for event in ["recognizer_loop:sleep",
                       "recognizer_loop:wake_up", "recognizer_loop:record_stop",
                       "recognizer_loop:state.set", "recognizer_loop:state.get",
                       "mycroft.mic.mute", "mycroft.mic.unmute",
                       "mycroft.mic.get_status", "mycroft.mic.listen",
-                      "mycroft.paired", "recognizer_loop:audio_output_start",
+                      "recognizer_loop:audio_output_start",
+                      "recognizer_loop:audio_output_end",
                       "mycroft.stop", "ovos.languages.stt",
                       "intent.service.skills.activated", "opm.stt.query",
                       "opm.ww.query", "opm.vad.query",
@@ -251,7 +267,7 @@ class ServiceTests(unittest.TestCase):
                       "neon.wake_words_state", "neon.query_wake_words_state",
                       "neon.profile_update", "neon.get_wake_words",
                       "neon.enable_wake_word", "neon.disable_wake_word"]:
-            self.assertEqual(len(self.bus.ee.listeners(event)), 1)
+            self.assertEqual(len(self.bus.ee.listeners(event)), 1, event)
 
     def test_get_wake_words(self):
         from ovos_config.config import update_mycroft_config
@@ -267,8 +283,9 @@ class ServiceTests(unittest.TestCase):
             "hotwords": {"test_ww": {"module": "ovos-ww-plugin-vosk",
                                      "rule": "fuzzy",
                                      "listen": True}}}
+        self.ready_event.clear()
         update_mycroft_config(config_patch, bus=self.bus)
-        
+        self.ready_event.wait(10)
         self.assertIsNone(self.service.config
                           ['hotwords']['test_ww'].get('active'))
         self.assertEqual(self.service.config['listener']['wake_word'],
@@ -298,9 +315,13 @@ class ServiceTests(unittest.TestCase):
         hotword_config['hey_mycroft']['active'] = True
         # hotword_config['hey_neon']['active'] = None
         hotword_config['wake_up']['active'] = False
+
+        self.ready_event.clear()
         update_mycroft_config({"hotwords": hotword_config,
                                "listener": {"wake_word": "hey_neon"}},
                               bus=self.bus)
+        self.ready_event.wait(30)
+
         self.assertTrue(self.service.config
                         ['hotwords']['hey_mycroft']['active'])
         self.assertIsNone(self.service.config
@@ -353,17 +374,18 @@ class ServiceTests(unittest.TestCase):
         hotword_config['hey_mycroft']['active'] = False
         hotword_config['hey_neon']['active'] = True
         hotword_config['wake_up']['active'] = False
+        self.ready_event.clear()
         update_mycroft_config({"hotwords": hotword_config}, bus=self.bus)
-        # TODO: Trigger hotwords reload
+        self.ready_event.wait(30)
         self.assertFalse(self.service.config
                          ['hotwords']['hey_mycroft']['active'])
         self.assertTrue(self.service.config
                         ['hotwords']['hey_neon']['active'])
         self.assertFalse(self.service.config
                          ['hotwords']['wake_up']['active'])
-
         self.assertEqual(set(self.service.hotwords.ww_names),
                          {'hey_neon'}, self.service.config['hotwords'])
+
         # Test Enable valid
         resp = self.bus.wait_for_response(Message("neon.enable_wake_word",
                                                   {"wake_word": "hey_mycroft"}))
