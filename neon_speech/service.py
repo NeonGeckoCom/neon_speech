@@ -183,7 +183,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                 config_patch = {"hotwords": {requested_ww: {"active": False}}}
                 _SERVICE_READY.clear()
                 update_mycroft_config(config_patch, bus=self.bus)
-                self.reload_configuration()  # Not auto-reloading?
+                self.reload_configuration()  # TODO Not auto-reloading?
                 if not _SERVICE_READY.wait(15):
                     raise TimeoutError("Timed out waiting for config reload")
                 resp = message.response({"error": False,
@@ -224,7 +224,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                 config_patch = {"hotwords": {requested_ww: {"active": True}}}
                 _SERVICE_READY.clear()
                 update_mycroft_config(config_patch, bus=self.bus)
-                self.reload_configuration()  # Not auto-reloading?
+                self.reload_configuration()  # TODO Not auto-reloading?
                 if not _SERVICE_READY.wait(30):
                     raise TimeoutError("Timed out waiting for config reload")
                 resp = message.response({"error": False,
@@ -269,34 +269,12 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             apply_local_user_profile_updates(updated_profile,
                                              self._default_user)
 
-    def handle_utterance(self, event: dict):
-        """
-        Handle an utterance event on the Recognizer Loop
-        :param event: Utterance event
-        """
-        LOG.info("Utterance: " + str(event['utterances']))
-        context = event["context"]  # from audio transformers
-        context.update({'client_name': 'mycroft_listener',
-                        'source': 'audio',
-                        'ident': event.pop('ident', str(round(time()))),
-                        'raw_audio': event.pop('raw_audio', None),
-                        'destination': ["skills"],
-                        "timing": event.pop("timing", {}),
-                        'username': self._default_user["user"]["username"],
-                        'user_profiles': [self._default_user.content]
-                        })
-        if "data" in event:
-            data = event.pop("data")
-            context = merge_dict(context, data)
-
-        self._emit_utterance_to_skills(Message('recognizer_loop:utterance',
-                                               event, context))
-
     def handle_wake_words_state(self, message):
         """
         Handle a change of WW state
         :param message: Message associated with request
         """
+        # TODO: recognizer_loop:state.set
         enabled = message.data.get("enabled", True)
         mode = ListeningMode.WAKEWORD if enabled else ListeningMode.CONTINUOUS
         self.voice_loop.listen_mode = mode
@@ -307,6 +285,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         Query the current WW state
         :param message: Message associated with request
         """
+        # TODO: recognizer_loop:state.get
         enabled = self.voice_loop.listen_mode == ListeningMode.WAKEWORD
         self.voice_loop.reset_state()
         self.bus.emit(message.response({"enabled": enabled}))
