@@ -38,7 +38,6 @@ from neon_utils.file_utils import decode_base64_string_to_file
 from ovos_utils.log import LOG
 from neon_utils.configuration_utils import get_neon_user_config
 from neon_utils.user_utils import apply_local_user_profile_updates
-from ovos_utils.json_helper import merge_dict
 from ovos_bus_client import Message
 from ovos_config.config import update_mycroft_config
 from ovos_dinkum_listener.service import OVOSDinkumVoiceService
