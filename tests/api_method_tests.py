@@ -76,7 +76,7 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         timeout = time() + 120
         while not ready and time() < timeout:
             message = cls.bus.wait_for_response(
-                Message("mycroft.speech.is_ready"))
+                Message("mycroft.voice.is_ready"))
             if message:
                 ready = message.data.get("status")
         if not ready:
@@ -260,7 +260,7 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
         timeout = time() + 120
         while not ready and time() < timeout:
             message = cls.bus.wait_for_response(
-                Message("mycroft.speech.is_ready"))
+                Message("mycroft.voice.is_ready"))
             if message:
                 ready = message.data.get("status")
         if not ready:
