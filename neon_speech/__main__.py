@@ -45,7 +45,7 @@ def main(*args, **kwargs):
     from ovos_utils.process_utils import reset_sigint_handler
     from neon_speech.service import NeonSpeechClient
     reset_sigint_handler()
-    Lock("speech")
+    Lock("voice")
     malloc_running = start_malloc(stack_depth=4)
     service = NeonSpeechClient(*args, **kwargs)
     service.start()

@@ -112,7 +112,7 @@ class NeonSpeechClient(SpeechService):
                                       on_stopping=stopping_hook,
                                       on_alive=alive_hook,
                                       on_started=started_hook)
-        self.status = ProcessStatus('speech', self.bus, callbacks)
+        self.status = ProcessStatus('voice', self.bus, callbacks)
         self.status.set_started()
         self.status.bind(self.bus)
         self.loop = NeonRecognizerLoop(self.bus, watchdog)
