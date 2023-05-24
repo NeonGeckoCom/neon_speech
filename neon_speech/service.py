@@ -243,11 +243,19 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
     def handle_get_wake_words(self, message: Message):
         """
         Handle a request to get configured wake words and their current config.
-        This includes enabled and disabled wake words but excludes hotwords that
-        do not specify 'listen'
+        This includes enabled AND disabled wake words but excludes hotwords that
+        do not specify 'listen'.
         """
-        self.bus.emit(message.reply("neon.wake_words",
-                                    data=self.hotwords.listen_words))
+        hotwords = self.config.get('hotwords')
+        wake_words = {ww: config for ww, config in hotwords.items()
+                      if config.get('listen')}
+        main_ww = self.config['listener'].get('wake_word')
+        if wake_words.get(main_ww):
+            LOG.debug(f"main_ww={main_ww}")
+            wake_words[main_ww].setdefault('active', True)
+        else:
+            LOG.warning(f"Configured wake_word is not valid: {main_ww}")
+        self.bus.emit(message.reply("neon.wake_words", data=wake_words))
 
     def handle_profile_update(self, message):
         """
