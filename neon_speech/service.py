@@ -27,33 +27,39 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import ovos_dinkum_listener.plugins
+
 from tempfile import mkstemp
-
-from threading import Thread, Lock
+from threading import Lock, Event
 from time import time
-
-from ovos_listener.mic import ListeningMode
-from ovos_utils.process_utils import StatusCallbackMap, ProcessStatus
 from pydub import AudioSegment
 from speech_recognition import AudioData
-
 from neon_utils.file_utils import decode_base64_string_to_file
-from neon_utils.messagebus_utils import get_messagebus
 from ovos_utils.log import LOG
 from neon_utils.configuration_utils import get_neon_user_config
 from neon_utils.user_utils import apply_local_user_profile_updates
-from ovos_utils.json_helper import merge_dict
 from ovos_bus_client import Message
+from ovos_config.config import update_mycroft_config
+from ovos_dinkum_listener.service import OVOSDinkumVoiceService
+from ovos_dinkum_listener.voice_loop.voice_loop import ListeningMode
 
-from ovos_listener.service import SpeechService
-from ovos_config.config import Configuration, update_mycroft_config
-
-from neon_speech.listener import NeonRecognizerLoop
 from neon_speech.stt import STTFactory
+
+ovos_dinkum_listener.plugins.OVOSSTTFactory = STTFactory
+
+_SERVICE_READY = Event()
 
 
 def on_ready():
     LOG.info('Speech client is ready.')
+
+
+def wrapped_ready_hook(ready_hook: callable):
+    def wrapper():
+        _SERVICE_READY.set()
+        LOG.info(f"Set Ready event")
+        ready_hook()
+    return wrapper
 
 
 def on_stopping():
@@ -72,7 +78,7 @@ def on_started():
     LOG.debug("Speech client started")
 
 
-class NeonSpeechClient(SpeechService):
+class NeonSpeechClient(OVOSDinkumVoiceService):
     def __init__(self, ready_hook=on_ready, error_hook=on_error,
                  stopping_hook=on_stopping, alive_hook=on_alive,
                  started_hook=on_started, watchdog=lambda: None,
@@ -93,10 +99,16 @@ class NeonSpeechClient(SpeechService):
             from neon_speech.utils import patch_config
             patch_config(speech_config)
         # Don't init SpeechClient, because we're overriding self.loop
-        Thread.__init__(self)
+        OVOSDinkumVoiceService.__init__(self,
+                                        on_ready=wrapped_ready_hook(ready_hook),
+                                        on_error=error_hook,
+                                        on_stopping=stopping_hook,
+                                        on_alive=alive_hook,
+                                        on_started=started_hook,
+                                        bus=bus,
+                                        watchdog=watchdog)
         self.daemon = daemonic
-        # Init messagebus and handlers
-        self.bus = bus or get_messagebus()
+        self.config.bus = self.bus
         from neon_utils.signal_utils import init_signal_handlers, \
             init_signal_bus
         init_signal_bus(self.bus)
@@ -105,19 +117,8 @@ class NeonSpeechClient(SpeechService):
         self._default_user = get_neon_user_config()
         self._default_user['user']['username'] = "local"
 
-        self.config = Configuration()
         self.lock = Lock()
 
-        callbacks = StatusCallbackMap(on_ready=ready_hook, on_error=error_hook,
-                                      on_stopping=stopping_hook,
-                                      on_alive=alive_hook,
-                                      on_started=started_hook)
-        self.status = ProcessStatus('voice', self.bus, callbacks)
-        self.status.set_started()
-        self.status.bind(self.bus)
-        self.loop = NeonRecognizerLoop(self.bus, watchdog)
-        self.connect_loop_events()
-        self.connect_bus_events()
         if self.config.get('listener', {}).get('enable_stt_api', True):
             self.api_stt = STTFactory.create(config=self.config,
                                              results_event=None)
@@ -127,11 +128,10 @@ class NeonSpeechClient(SpeechService):
 
     def shutdown(self):
         LOG.info("Shutting Down")
-        self.status.set_stopping()
-        self.loop.stop()
+        self.stop()
 
-    def connect_bus_events(self):
-        SpeechService.connect_bus_events(self)
+    def register_event_handlers(self):
+        OVOSDinkumVoiceService.register_event_handlers(self)
         # Register handler for internet (re-)connection
         self.bus.on("mycroft.internet.connected",
                     self.handle_internet_connected)
@@ -179,18 +179,19 @@ class NeonSpeechClient(SpeechService):
         else:
             try:
                 LOG.info(f"Disabling wake word: {requested_ww}")
-                self.config['hotwords'][requested_ww]['active'] = False
                 config_patch = {"hotwords": {requested_ww: {"active": False}}}
-                self.loop.config_loaded.clear()
-                update_mycroft_config(config_patch)
-                self.loop.config_loaded.wait()
+                _SERVICE_READY.clear()
+                update_mycroft_config(config_patch, bus=self.bus)
+                self.reload_configuration()  # TODO Not auto-reloading?
+                if not _SERVICE_READY.wait(15):
+                    raise TimeoutError("Timed out waiting for config reload")
                 resp = message.response({"error": False,
                                          "active": False,
                                          "wake_word": requested_ww})
             except Exception as e:
                 LOG.exception(e)
                 config_patch = {"hotwords": {requested_ww: {"active": True}}}
-                update_mycroft_config(config_patch)
+                update_mycroft_config(config_patch, bus=self.bus)
                 resp = message.response({"error": repr(e),
                                          "active": False,
                                          "wake_word": requested_ww})
@@ -219,19 +220,19 @@ class NeonSpeechClient(SpeechService):
         else:
             try:
                 LOG.info(f"Enabling wake word: {requested_ww}")
-                self.config['hotwords'][requested_ww]['active'] = True
                 config_patch = {"hotwords": {requested_ww: {"active": True}}}
-                self.loop.config_loaded.clear()
-                update_mycroft_config(config_patch)
-                self.loop.needs_reload = True
-                self.loop.config_loaded.wait()
+                _SERVICE_READY.clear()
+                update_mycroft_config(config_patch, bus=self.bus)
+                self.reload_configuration()  # TODO Not auto-reloading?
+                if not _SERVICE_READY.wait(30):
+                    raise TimeoutError("Timed out waiting for config reload")
                 resp = message.response({"error": False,
                                          "active": True,
                                          "wake_word": requested_ww})
             except Exception as e:
                 LOG.exception(e)
                 config_patch = {"hotwords": {requested_ww: {"active": False}}}
-                update_mycroft_config(config_patch)
+                update_mycroft_config(config_patch, bus=self.bus)
                 resp = message.response({"error": repr(e),
                                          "active": False,
                                          "wake_word": requested_ww})
@@ -241,8 +242,8 @@ class NeonSpeechClient(SpeechService):
     def handle_get_wake_words(self, message: Message):
         """
         Handle a request to get configured wake words and their current config.
-        This includes enabled and disabled wake words but excludes hotwords that
-        do not specify 'listen'
+        This includes enabled AND disabled wake words but excludes hotwords that
+        do not specify 'listen'.
         """
         hotwords = self.config.get('hotwords')
         wake_words = {ww: config for ww, config in hotwords.items()
@@ -251,6 +252,8 @@ class NeonSpeechClient(SpeechService):
         if wake_words.get(main_ww):
             LOG.debug(f"main_ww={main_ww}")
             wake_words[main_ww].setdefault('active', True)
+        else:
+            LOG.warning(f"Configured wake_word is not valid: {main_ww}")
         self.bus.emit(message.reply("neon.wake_words", data=wake_words))
 
     def handle_profile_update(self, message):
@@ -265,46 +268,25 @@ class NeonSpeechClient(SpeechService):
             apply_local_user_profile_updates(updated_profile,
                                              self._default_user)
 
-    def handle_utterance(self, event: dict):
-        """
-        Handle an utterance event on the Recognizer Loop
-        :param event: Utterance event
-        """
-        LOG.info("Utterance: " + str(event['utterances']))
-        context = event["context"]  # from audio transformers
-        context.update({'client_name': 'mycroft_listener',
-                        'source': 'audio',
-                        'ident': event.pop('ident', str(round(time()))),
-                        'raw_audio': event.pop('raw_audio', None),
-                        'destination': ["skills"],
-                        "timing": event.pop("timing", {}),
-                        'username': self._default_user["user"]["username"],
-                        'user_profiles': [self._default_user.content]
-                        })
-        if "data" in event:
-            data = event.pop("data")
-            context = merge_dict(context, data)
-
-        self._emit_utterance_to_skills(Message('recognizer_loop:utterance',
-                                               event, context))
-
     def handle_wake_words_state(self, message):
         """
         Handle a change of WW state
         :param message: Message associated with request
         """
+        # TODO: recognizer_loop:state.set
         enabled = message.data.get("enabled", True)
         mode = ListeningMode.WAKEWORD if enabled else ListeningMode.CONTINUOUS
-        self.loop.listen_mode = mode
-        if mode == ListeningMode.CONTINUOUS:
-            self.loop.responsive_recognizer.trigger_listen()
+        self.voice_loop.listen_mode = mode
+        self.voice_loop.reset_state()
 
     def handle_query_wake_words_state(self, message):
         """
         Query the current WW state
         :param message: Message associated with request
         """
-        enabled = self.loop.listen_mode == ListeningMode.WAKEWORD
+        # TODO: recognizer_loop:state.get
+        enabled = self.voice_loop.listen_mode == ListeningMode.WAKEWORD
+        self.voice_loop.reset_state()
         self.bus.emit(message.response({"enabled": enabled}))
 
     def handle_get_stt(self, message: Message):
@@ -392,15 +374,15 @@ class NeonSpeechClient(SpeechService):
         """
         Handle notification from core that internet connection is established
         """
-        if not self.loop.stt:
+        if not self.voice_loop.stt:
             LOG.debug("Internet connected before STT init")
             return
-        if self.loop.stt.config["module"] != self.config["stt"]["module"]:
+        if self.voice_loop.stt.config["module"] != self.config["stt"]["module"]:
             LOG.info("Reloading STT module")
-            self.loop.stt = STTFactory.create()
-        elif hasattr(self.loop.stt, "results_event"):
+            self.voice_loop.stt = STTFactory.create()
+        elif hasattr(self.voice_loop.stt, "results_event"):
             LOG.info(f"Internet Connected, Resetting STT Stream")
-            self.loop.stt.results_event.set()
+            self.voice_loop.stt.results_event.set()
 
     def handle_offline(self, _):
         """
@@ -410,10 +392,10 @@ class NeonSpeechClient(SpeechService):
         config = dict(self.config)
         if config['stt'].get('offline_module'):
             config['stt']['module'] = config['stt'].get('offline_module')
-            self.loop.stt = STTFactory.create(config)
+            self.voice_loop.stt = STTFactory.create(config)
         else:
             LOG.info(f"Offline Mode, Resetting STT Stream")
-            self.loop.stt.results_event.set()
+            self.voice_loop.stt.results_event.set()
 
     def handle_ready(self, message):
         """
@@ -468,8 +450,7 @@ class NeonSpeechClient(SpeechService):
         if isinstance(transcriptions, str):
             LOG.warning("Transcriptions is a str, no alternatives provided")
             transcriptions = [transcriptions]
-        audio, audio_context = self.loop.responsive_recognizer. \
-            audio_consumers.transform(audio_data)
+        audio, audio_context = self.transformers.transform(audio_data)
         LOG.info(f"Transcribed: {transcriptions}")
         return audio, audio_context, transcriptions
 
