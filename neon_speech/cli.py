@@ -52,6 +52,9 @@ def neon_speech_cli(version: bool = False):
 @click.option("--force-install", "-f", default=False, is_flag=True,
               help="Force pip installation of configured module")
 def run(module, package, force_install):
+    from neon_utils.configuration_utils import init_config_dir
+    init_config_dir()
+
     from neon_speech.__main__ import main
     from ovos_config.config import Configuration
     speech_config = Configuration()
