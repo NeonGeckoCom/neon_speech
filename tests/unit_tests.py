@@ -34,6 +34,8 @@ import unittest
 
 from os.path import dirname, join
 from threading import Thread, Event
+from time import sleep
+
 from ovos_bus_client import Message
 from ovos_utils.messagebus import FakeBus
 from speech_recognition import AudioData
@@ -297,7 +299,7 @@ class ServiceTests(unittest.TestCase):
                                      "listen": True}}}
         self.ready_event.clear()
         update_mycroft_config(config_patch, bus=self.bus)
-        self.service.reload_configuration()  # TODO Not auto-reloading?
+        # self.service.reload_configuration()  # TODO Not auto-reloading?
         self.assertTrue(self.ready_event.wait(30))  # Configuration changed
         self.assertIsNone(self.service.config
                           ['hotwords']['test_ww'].get('active'))
@@ -333,7 +335,7 @@ class ServiceTests(unittest.TestCase):
         update_mycroft_config({"hotwords": hotword_config,
                                "listener": {"wake_word": "hey_neon"}},
                               bus=self.bus)
-        self.service.reload_configuration()  # TODO Not auto-reloading?
+        # self.service.reload_configuration()  # TODO Not auto-reloading?
         self.assertTrue(self.ready_event.wait(30))  # Assert Reloaded
 
         self.assertTrue(self.service.config
@@ -390,7 +392,7 @@ class ServiceTests(unittest.TestCase):
         hotword_config['wake_up']['active'] = False
         self.ready_event.clear()
         update_mycroft_config({"hotwords": hotword_config}, bus=self.bus)
-        self.service.reload_configuration()  # TODO Not auto-reloading?
+        # self.service.reload_configuration()  # TODO Not auto-reloading?
         self.assertTrue(self.ready_event.wait(30))  # Assert Reloaded
         self.assertFalse(self.service.config
                          ['hotwords']['hey_mycroft']['active'])
@@ -434,21 +436,21 @@ class ServiceTests(unittest.TestCase):
                          {'hey_neon', 'hey_mycroft'},
                          self.service.config['hotwords'])
 
-    # TODO: Implement reload in Dinkum listener and re-implement test
     # def test_reload_hotwords(self):
     #     hotwords = self.service.hotwords.ww_names
     #     self.assertIsNotNone(hotwords)
     #     for spec in hotwords:
     #         engine = self.service.hotwords._plugins[spec].pop('engine')
+    #         self.service.hotwords._plugins[spec]['engine'] = None
     #         self.assertIsNotNone(engine)
-    #         self.assertIsNone(self.service.loop.engines[spec].get('engine'))
+    #         self.assertIsNone(self.service.hotwords._plugins[spec].get('engine'))
     #         break
     #     mock_chunk = b'\xff' * 1024
-    #     self.service.loop.responsive_recognizer.feed_hotwords(mock_chunk)
-    #     while self.service.loop.needs_reload:
-    #         sleep(0.5)
-    #     for spec in hotwords.keys():
-    #         self.assertIsNotNone(self.service.loop.engines[spec].get('engine'))
+    #     self.service.voice_loop._detect_ww(mock_chunk)
+    #     sleep(3)
+    #     for spec in self.service.hotwords.ww_names:
+    #         self.assertIsNotNone(self.service.hotwords._plugins[spec]
+    #                              .get('engine'))
 
 
 if __name__ == '__main__':

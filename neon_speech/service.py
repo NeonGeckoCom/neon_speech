@@ -182,7 +182,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                 config_patch = {"hotwords": {requested_ww: {"active": False}}}
                 _SERVICE_READY.clear()
                 update_mycroft_config(config_patch, bus=self.bus)
-                self.reload_configuration()  # TODO Not auto-reloading?
+                # self.reload_configuration()  # TODO Not auto-reloading?
                 if not _SERVICE_READY.wait(15):
                     raise TimeoutError("Timed out waiting for config reload")
                 resp = message.response({"error": False,
@@ -223,7 +223,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                 config_patch = {"hotwords": {requested_ww: {"active": True}}}
                 _SERVICE_READY.clear()
                 update_mycroft_config(config_patch, bus=self.bus)
-                self.reload_configuration()  # TODO Not auto-reloading?
+                # self.reload_configuration()  # TODO Not auto-reloading?
                 if not _SERVICE_READY.wait(30):
                     raise TimeoutError("Timed out waiting for config reload")
                 resp = message.response({"error": False,
