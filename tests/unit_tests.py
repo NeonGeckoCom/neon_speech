@@ -299,7 +299,6 @@ class ServiceTests(unittest.TestCase):
                                      "listen": True}}}
         self.ready_event.clear()
         update_mycroft_config(config_patch, bus=self.bus)
-        # self.service.reload_configuration()  # TODO Not auto-reloading?
         self.assertTrue(self.ready_event.wait(30))  # Configuration changed
         self.assertIsNone(self.service.config
                           ['hotwords']['test_ww'].get('active'))
@@ -335,7 +334,6 @@ class ServiceTests(unittest.TestCase):
         update_mycroft_config({"hotwords": hotword_config,
                                "listener": {"wake_word": "hey_neon"}},
                               bus=self.bus)
-        # self.service.reload_configuration()  # TODO Not auto-reloading?
         self.assertTrue(self.ready_event.wait(30))  # Assert Reloaded
 
         self.assertTrue(self.service.config
@@ -392,7 +390,6 @@ class ServiceTests(unittest.TestCase):
         hotword_config['wake_up']['active'] = False
         self.ready_event.clear()
         update_mycroft_config({"hotwords": hotword_config}, bus=self.bus)
-        # self.service.reload_configuration()  # TODO Not auto-reloading?
         self.assertTrue(self.ready_event.wait(30))  # Assert Reloaded
         self.assertFalse(self.service.config
                          ['hotwords']['hey_mycroft']['active'])

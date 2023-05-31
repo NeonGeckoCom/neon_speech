@@ -1,5 +1,4 @@
-# ovos-dinkum-listener~=0.0.1,>=0.0.2a24
-ovos-dinkum-listener@git+https://github.com/openvoiceos/ovos-dinkum-listener@TEST_ConfigReloading
+ovos-dinkum-listener~=0.0.1,>=0.0.2a32
 ovos-bus-client~=0.0.3
 ovos-utils~=0.0.30
 ovos-plugin-manager~=0.0.19,>=0.0.23a17
