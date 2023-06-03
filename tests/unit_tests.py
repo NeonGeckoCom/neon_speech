@@ -456,7 +456,7 @@ class TestCLI(unittest.TestCase):
     runner = CliRunner()
 
     @patch("neon_speech.cli.init_config_dir")
-    @patch("neon_speech.service.__main__.main")
+    @patch("neon_speech.__main__.main")
     def test_run(self, main, init_config):
         from neon_speech.cli import run
         self.runner.invoke(run)
