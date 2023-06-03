@@ -34,7 +34,8 @@ import unittest
 
 from os.path import dirname, join
 from threading import Thread, Event
-from time import sleep
+from unittest.mock import Mock, patch
+from click.testing import CliRunner
 
 from ovos_bus_client import Message
 from ovos_dinkum_listener.voice_loop.hotwords import HotWordException
@@ -449,6 +450,18 @@ class ServiceTests(unittest.TestCase):
         for spec in self.service.hotwords.ww_names:
             self.assertIsNotNone(self.service.hotwords._plugins[spec]
                                  .get('engine'))
+
+
+class TestCLI(unittest.TestCase):
+    runner = CliRunner()
+
+    @patch("neon_speech.cli.init_config_dir")
+    @patch("neon_speech.__main__.main")
+    def test_run(self, main, init_config):
+        from neon_speech.cli import run
+        self.runner.invoke(run)
+        init_config.assert_called_once()
+        main.assert_called_once()
 
 
 if __name__ == '__main__':
