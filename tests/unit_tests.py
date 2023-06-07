@@ -1,23 +1,30 @@
-# NEON AI (TM) SOFTWARE, Software Development Kit & Application Development System
+# NEON AI (TM) SOFTWARE, Software Development Kit & Application Framework
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2021 Neongecko.com Inc.
-#
-# Redistribution and use in source and binary forms, with or without modification, are permitted provided that the
-# following conditions are met:
-# 1. Redistributions of source code must retain the above copyright notice, this list of conditions
-#    and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions
-#    and the following disclaimer in the documentation and/or other materials provided with the distribution.
-# 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote
-#    products derived from this software without specific prior written permission.
-
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,
-# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
-# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
-# USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Copyright 2008-2022 Neongecko.com Inc.
+# Contributors: Daniel McKnight, Guy Daniels, Elon Gasper, Richard Leeds,
+# Regina Bloomstine, Casimiro Ferreira, Andrii Pernatii, Kirill Hrymailo
+# BSD-3 License
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from this
+#    software without specific prior written permission.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+# CONTRIBUTORS  BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+# OR PROFITS;  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import json
 import os
@@ -27,9 +34,11 @@ import unittest
 
 from os.path import dirname, join
 from threading import Thread, Event
-from time import sleep
+from unittest.mock import Mock, patch
+from click.testing import CliRunner
 
-from mycroft_bus_client import Message
+from ovos_bus_client import Message
+from ovos_dinkum_listener.voice_loop.hotwords import HotWordException
 from ovos_utils.messagebus import FakeBus
 from speech_recognition import AudioData
 
@@ -86,11 +95,13 @@ class UtilTests(unittest.TestCase):
         self.assertIsInstance(ovos_conf['module_overrides']['neon_core'], dict)
 
         from neon_speech.utils import patch_config
+        from ovos_config.locations import USER_CONFIG
         import yaml
         test_config = {"new_key": {'val': True}}
         patch_config(test_config)
         conf_file = os.path.join(test_config_dir, 'neon',
                                  'neon.yaml')
+        self.assertEqual(USER_CONFIG, conf_file)
         self.assertTrue(os.path.isfile(conf_file))
         with open(conf_file) as f:
             config = yaml.safe_load(f)
@@ -112,6 +123,7 @@ class UtilTests(unittest.TestCase):
         bus.connected_event.set()
         client = NeonSpeechClient(speech_config=TEST_CONFIG, daemonic=True,
                                   bus=bus)
+        self.assertIsInstance(client, NeonSpeechClient)
         audio, context, transcripts = \
             client._get_stt_from_file(join(AUDIO_FILE_PATH, "stop.wav"))
         self.assertIsInstance(audio, AudioData)
@@ -140,6 +152,7 @@ class UtilTests(unittest.TestCase):
 
     def test_ovos_plugin_compat(self):
         from neon_speech.stt import STTFactory
+        from ovos_plugin_manager.templates.stt import STT
         ovos_vosk_streaming = STTFactory().create(
             {'module': 'ovos-stt-plugin-vosk-streaming',
              'lang': 'en-us'})
@@ -158,11 +171,24 @@ class UtilTests(unittest.TestCase):
         self.assertIsInstance(transcriptions, list)
         self.assertIsInstance(transcriptions[0], str)
 
+        non_streaming = STTFactory().create(
+            {"module": "ovos-stt-plugin-server",
+             "ovos-stt-plugin-server": {"url": "https://0.0.0.0:8080/stt"}}
+        )
+        self.assertIsInstance(non_streaming, STT)
+        self.assertEqual(non_streaming.url, "https://0.0.0.0:8080/stt")
+
 
 class ServiceTests(unittest.TestCase):
     bus = FakeBus()
     bus.connected_event = Event()
     bus.connected_event.set()
+
+    ready_event = Event()
+
+    @classmethod
+    def on_ready(cls):
+        cls.ready_event.set()
 
     hotwords_config = {
         "hey_neon": {
@@ -204,7 +230,8 @@ class ServiceTests(unittest.TestCase):
         init_config_dir()
 
         update_mycroft_config({"hotwords": cls.hotwords_config,
-                               "stt": {"module": "neon-stt-plugin-nemo"}})
+                               "stt": {"module": "neon-stt-plugin-nemo"},
+                               "VAD": {"module": "dummy"}})
         import importlib
         import ovos_config.config
         importlib.reload(ovos_config.config)
@@ -214,11 +241,17 @@ class ServiceTests(unittest.TestCase):
         from neon_speech.utils import use_neon_speech
         use_neon_speech(init_config_dir)()
         from neon_speech.service import NeonSpeechClient
-        cls.service = NeonSpeechClient(bus=cls.bus)
+        cls.service = NeonSpeechClient(bus=cls.bus, ready_hook=cls.on_ready)
         # assert Configuration() == service.loop.config_core
 
+        def _mocked_run():
+            stopping_event = Event()
+            while cls.service.voice_loop._is_running:
+                stopping_event.wait(1)
+
+        cls.service.voice_loop.run = _mocked_run
         cls.service.start()
-        cls.service.loop.config_loaded.wait(30)
+        cls.ready_event.wait(60)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -226,27 +259,15 @@ class ServiceTests(unittest.TestCase):
         if os.path.exists(CONFIG_PATH):
             shutil.rmtree(CONFIG_PATH)
 
-    def test_loop_events(self):
-        from mycroft.listener import RecognizerLoop
-        self.assertIsInstance(self.service.loop, RecognizerLoop)
-        for event in ["recognizer_loop:utterance",
-                      "recognizer_loop:speech.recognition.unknown",
-                      "recognizer_loop:awoken", "recognizer_loop:wakeword",
-                      "recognizer_loop:hotword", "recognizer_loop:stopword",
-                      "recognizer_loop:wakeupword",
-                      "recognizer_loop:record_end",
-                      "recognizer_loop:no_internet",
-                      "recognizer_loop:hotword_event"]:
-            self.assertEqual(len(self.service.loop.listeners(event)), 1)
-
     def test_bus_events(self):
         self.assertEqual(self.service.bus, self.bus)
-        for event in ["open", "recognizer_loop:sleep",
+        for event in ["recognizer_loop:sleep",
                       "recognizer_loop:wake_up", "recognizer_loop:record_stop",
                       "recognizer_loop:state.set", "recognizer_loop:state.get",
                       "mycroft.mic.mute", "mycroft.mic.unmute",
                       "mycroft.mic.get_status", "mycroft.mic.listen",
-                      "mycroft.paired", "recognizer_loop:audio_output_start",
+                      "recognizer_loop:audio_output_start",
+                      "recognizer_loop:audio_output_end",
                       "mycroft.stop", "ovos.languages.stt",
                       "intent.service.skills.activated", "opm.stt.query",
                       "opm.ww.query", "opm.vad.query",
@@ -257,7 +278,12 @@ class ServiceTests(unittest.TestCase):
                       "neon.wake_words_state", "neon.query_wake_words_state",
                       "neon.profile_update", "neon.get_wake_words",
                       "neon.enable_wake_word", "neon.disable_wake_word"]:
-            self.assertEqual(len(self.bus.ee.listeners(event)), 1)
+            num_listeners = 1
+            if event == "mycroft.internet.connected":
+                # Configuration registers this too
+                num_listeners = 2
+            self.assertEqual(len(self.bus.ee.listeners(event)), num_listeners,
+                             f"{event}: {self.bus.ee.listeners(event)}")
 
     def test_get_wake_words(self):
         from ovos_config.config import update_mycroft_config
@@ -273,12 +299,12 @@ class ServiceTests(unittest.TestCase):
             "hotwords": {"test_ww": {"module": "ovos-ww-plugin-vosk",
                                      "rule": "fuzzy",
                                      "listen": True}}}
-        self.service.loop.config_loaded.clear()
+        self.ready_event.clear()
         update_mycroft_config(config_patch, bus=self.bus)
-        self.service.loop.config_loaded.wait(60)
-        self.assertIsNone(self.service.loop.config_core
+        self.assertTrue(self.ready_event.wait(30))  # Configuration changed
+        self.assertIsNone(self.service.config
                           ['hotwords']['test_ww'].get('active'))
-        self.assertEqual(self.service.loop.config_core['listener']['wake_word'],
+        self.assertEqual(self.service.config['listener']['wake_word'],
                          "test_ww")
         resp = self.bus.wait_for_response(Message("neon.get_wake_words"),
                                           "neon.wake_words")
@@ -305,20 +331,22 @@ class ServiceTests(unittest.TestCase):
         hotword_config['hey_mycroft']['active'] = True
         # hotword_config['hey_neon']['active'] = None
         hotword_config['wake_up']['active'] = False
-        self.service.loop.config_loaded.clear()
+
+        self.ready_event.clear()
         update_mycroft_config({"hotwords": hotword_config,
                                "listener": {"wake_word": "hey_neon"}},
                               bus=self.bus)
-        self.service.loop.config_loaded.wait(60)
-        self.assertTrue(self.service.loop.config_core
+        self.assertTrue(self.ready_event.wait(30))  # Assert Reloaded
+
+        self.assertTrue(self.service.config
                         ['hotwords']['hey_mycroft']['active'])
-        self.assertIsNone(self.service.loop.config_core
+        self.assertIsNone(self.service.config
                           ['hotwords']['hey_neon'].get('active'))
-        self.assertFalse(self.service.loop.config_core
+        self.assertFalse(self.service.config
                          ['hotwords']['wake_up']['active'])
-        self.assertEqual(set(self.service.loop.engines.keys()),
+        self.assertEqual(set(self.service.hotwords.ww_names),
                          {'hey_neon', "hey_mycroft"},
-                         self.service.config['hotwords'])
+                         self.service.hotwords.ww_names)
 
         # Test Disable Valid
         resp = self.bus.wait_for_response(Message("neon.disable_wake_word",
@@ -326,8 +354,7 @@ class ServiceTests(unittest.TestCase):
         self.assertIsInstance(resp, Message)
         self.assertEqual(resp.data, {"error": False, "active": False,
                                      "wake_word": "hey_mycroft"})
-        self.assertTrue(self.service.loop.config_loaded.isSet())
-        self.assertEqual(set(self.service.loop.engines.keys()), {'hey_neon'})
+        self.assertEqual(set(self.service.hotwords.ww_names), {'hey_neon'})
 
         # Test Disable already disabled
         resp = self.bus.wait_for_response(Message("neon.disable_wake_word",
@@ -336,8 +363,7 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(resp.data, {"error": "ww already disabled",
                                      "active": False,
                                      "wake_word": "hey_mycroft"})
-        self.assertTrue(self.service.loop.config_loaded.isSet())
-        self.assertEqual(set(self.service.loop.engines.keys()), {'hey_neon'})
+        self.assertEqual(set(self.service.hotwords.ww_names), {'hey_neon'})
 
         # Test Disable only active
         resp = self.bus.wait_for_response(Message("neon.disable_wake_word",
@@ -346,8 +372,7 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(resp.data, {"error": "only one active ww",
                                      "active": True,
                                      "wake_word": "hey_neon"})
-        self.assertTrue(self.service.loop.config_loaded.isSet())
-        self.assertEqual(set(self.service.loop.engines.keys()), {'hey_neon'})
+        self.assertEqual(set(self.service.hotwords.ww_names), {'hey_neon'})
 
         # Test Disable invalid word
         resp = self.bus.wait_for_response(Message("neon.disable_wake_word",
@@ -356,8 +381,7 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(resp.data, {"error": "ww already disabled",
                                      "active": False,
                                      "wake_word": "wake_up"})
-        self.assertTrue(self.service.loop.config_loaded.isSet())
-        self.assertEqual(set(self.service.loop.engines.keys()), {'hey_neon'})
+        self.assertEqual(set(self.service.hotwords.ww_names), {'hey_neon'})
 
     def test_enable_wake_word(self):
         from ovos_config.config import update_mycroft_config
@@ -366,18 +390,18 @@ class ServiceTests(unittest.TestCase):
         hotword_config['hey_mycroft']['active'] = False
         hotword_config['hey_neon']['active'] = True
         hotword_config['wake_up']['active'] = False
-        self.service.loop.config_loaded.clear()
+        self.ready_event.clear()
         update_mycroft_config({"hotwords": hotword_config}, bus=self.bus)
-        self.service.loop.config_loaded.wait(60)
-        self.assertFalse(self.service.loop.config_core
+        self.assertTrue(self.ready_event.wait(30))  # Assert Reloaded
+        self.assertFalse(self.service.config
                          ['hotwords']['hey_mycroft']['active'])
-        self.assertTrue(self.service.loop.config_core
+        self.assertTrue(self.service.config
                         ['hotwords']['hey_neon']['active'])
-        self.assertFalse(self.service.loop.config_core
+        self.assertFalse(self.service.config
                          ['hotwords']['wake_up']['active'])
-
-        self.assertEqual(set(self.service.loop.engines.keys()),
+        self.assertEqual(set(self.service.hotwords.ww_names),
                          {'hey_neon'}, self.service.config['hotwords'])
+
         # Test Enable valid
         resp = self.bus.wait_for_response(Message("neon.enable_wake_word",
                                                   {"wake_word": "hey_mycroft"}))
@@ -385,8 +409,7 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(resp.data, {"error": False,
                                      "active": True,
                                      "wake_word": "hey_mycroft"})
-        self.assertTrue(self.service.loop.config_loaded.isSet())
-        self.assertEqual(set(self.service.loop.engines.keys()),
+        self.assertEqual(set(self.service.hotwords.ww_names),
                          {'hey_neon', 'hey_mycroft'},
                          self.service.config['hotwords'])
 
@@ -397,8 +420,7 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(resp.data, {"error": "ww already enabled",
                                      "active": True,
                                      "wake_word": "hey_mycroft"})
-        self.assertTrue(self.service.loop.config_loaded.isSet())
-        self.assertEqual(set(self.service.loop.engines.keys()),
+        self.assertEqual(set(self.service.hotwords.ww_names),
                          {'hey_neon', 'hey_mycroft'},
                          self.service.config['hotwords'])
 
@@ -409,25 +431,37 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(resp.data, {"error": "ww not configured",
                                      "active": False,
                                      "wake_word": "wake_up"})
-        self.assertTrue(self.service.loop.config_loaded.isSet())
-        self.assertEqual(set(self.service.loop.engines.keys()),
+        self.assertEqual(set(self.service.hotwords.ww_names),
                          {'hey_neon', 'hey_mycroft'},
                          self.service.config['hotwords'])
 
     def test_reload_hotwords(self):
-        hotwords = self.service.loop.hot_words
+        hotwords = self.service.hotwords.ww_names
         self.assertIsNotNone(hotwords)
-        for spec in hotwords.keys():
-            engine = self.service.loop.engines[spec].pop('engine')
+        for spec in hotwords:
+            engine = self.service.hotwords._plugins[spec].pop('engine')
             self.assertIsNotNone(engine)
-            self.assertIsNone(self.service.loop.engines[spec].get('engine'))
+            self.assertIsNone(self.service.hotwords._plugins[spec].get('engine'))
             break
         mock_chunk = b'\xff' * 1024
-        self.service.loop.responsive_recognizer.feed_hotwords(mock_chunk)
-        while self.service.loop.needs_reload:
-            sleep(0.5)
-        for spec in hotwords.keys():
-            self.assertIsNotNone(self.service.loop.engines[spec].get('engine'))
+        with self.assertRaises(HotWordException):
+            self.service.voice_loop._detect_ww(mock_chunk)
+        self.service.hotwords.load_hotword_engines()
+        for spec in self.service.hotwords.ww_names:
+            self.assertIsNotNone(self.service.hotwords._plugins[spec]
+                                 .get('engine'))
+
+
+class TestCLI(unittest.TestCase):
+    runner = CliRunner()
+
+    @patch("neon_speech.cli.init_config_dir")
+    @patch("neon_speech.__main__.main")
+    def test_run(self, main, init_config):
+        from neon_speech.cli import run
+        self.runner.invoke(run)
+        init_config.assert_called_once()
+        main.assert_called_once()
 
 
 if __name__ == '__main__':

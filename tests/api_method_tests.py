@@ -27,18 +27,21 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import os
+import shutil
 import sys
 import mock
 import unittest
 
 from threading import Event
 from time import time
-from mycroft_bus_client import MessageBusClient, Message
+from ovos_bus_client import Message
+from ovos_config import get_xdg_config_locations
+
 from neon_utils.configuration_utils import init_config_dir
 from neon_utils.file_utils import encode_file_to_base64_string
 from ovos_utils.messagebus import FakeBus
 from ovos_utils.log import LOG
-from ovos_config.config import Configuration
+from ovos_config.config import Configuration, update_mycroft_config
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 from neon_speech.service import NeonSpeechClient
@@ -61,22 +64,26 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         os.environ["XDG_CONFIG_HOME"] = test_config_dir
         use_neon_speech(init_config_dir)()
 
-        test_config = Configuration()
+        test_config = dict(Configuration())
         test_config["stt"]["module"] = "deepspeech_stream_local"
+        test_config["listener"]["VAD"]["module"] = "dummy"
         assert test_config["stt"]["module"] == "deepspeech_stream_local"
 
         cls.speech_service = NeonSpeechClient(speech_config=test_config,
                                               daemonic=False, bus=cls.bus)
+        assert cls.speech_service.config["stt"]["module"] == "deepspeech_stream_local"
         cls.speech_service.start()
         ready = False
         timeout = time() + 120
         while not ready and time() < timeout:
             message = cls.bus.wait_for_response(
-                Message("mycroft.speech.is_ready"))
+                Message("mycroft.voice.is_ready"))
             if message:
                 ready = message.data.get("status")
         if not ready:
             raise TimeoutError("Speech module not ready after 120 seconds")
+        from ovos_plugin_manager.templates import STT
+        assert isinstance(cls.speech_service.voice_loop.stt, STT)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -85,6 +92,10 @@ class TestAPIMethodsStreaming(unittest.TestCase):
             cls.speech_service.shutdown()
         except Exception as e:
             LOG.error(e)
+
+        config_dir = os.environ.pop("XDG_CONFIG_HOME")
+        if os.path.isdir(config_dir):
+            shutil.rmtree(config_dir)
 
     def test_get_stt_no_file(self):
         context = {"client": "tester",
@@ -191,7 +202,10 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         self.assertFalse(resp.data['enabled'])
 
     def test_get_stt_supported_languages(self):
-        real_stt = self.speech_service.loop.stt
+        from ovos_plugin_manager.templates.stt import STT
+
+        real_stt = self.speech_service.stt
+        self.assertIsInstance(real_stt, STT)
         resp = self.bus.wait_for_response(Message(
             "ovos.languages.stt", {}, {'ctx': True}
         ))
@@ -202,7 +216,6 @@ class TestAPIMethodsStreaming(unittest.TestCase):
                          list(real_stt.available_languages) or ['en-us'])
 
         mock_languages = ('en-us', 'es', 'fr-fr', 'fr-ca')
-        from ovos_plugin_manager.templates.stt import STT
 
         class MockSTT(STT):
             def __init__(self):
@@ -216,13 +229,13 @@ class TestAPIMethodsStreaming(unittest.TestCase):
                 pass
 
         mock_stt = MockSTT()
-        self.speech_service.loop.stt = mock_stt
+        self.speech_service.voice_loop.stt = mock_stt
         resp = self.bus.wait_for_response(Message(
             "ovos.languages.stt", {}, {'ctx': True}
         ))
         self.assertEqual(resp.data['langs'], list(mock_languages))
 
-        self.speech_service.loop.stt = real_stt
+        self.speech_service.voice_loop.stt = real_stt
 
 
 class TestAPIMethodsNonStreaming(unittest.TestCase):
@@ -238,22 +251,27 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
         os.environ["XDG_CONFIG_HOME"] = test_config_dir
         use_neon_speech(init_config_dir)()
 
-        test_config = Configuration()
+        test_config = dict(Configuration())
         test_config["stt"]["module"] = "neon-stt-plugin-nemo"
+        test_config["listener"]["VAD"]["module"] = "dummy"
         assert test_config["stt"]["module"] == "neon-stt-plugin-nemo"
 
         cls.speech_service = NeonSpeechClient(speech_config=test_config,
                                               daemonic=False, bus=cls.bus)
+        assert cls.speech_service.config["stt"]["module"] == \
+               "neon-stt-plugin-nemo"
         cls.speech_service.start()
         ready = False
         timeout = time() + 120
         while not ready and time() < timeout:
             message = cls.bus.wait_for_response(
-                Message("mycroft.speech.is_ready"))
+                Message("mycroft.voice.is_ready"))
             if message:
                 ready = message.data.get("status")
         if not ready:
             raise TimeoutError("Speech module not ready after 120 seconds")
+        from ovos_plugin_manager.templates import STT
+        assert isinstance(cls.speech_service.voice_loop.stt, STT)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -262,6 +280,10 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
             cls.speech_service.shutdown()
         except Exception as e:
             LOG.error(e)
+
+        config_dir = os.environ.pop("XDG_CONFIG_HOME")
+        if os.path.isdir(config_dir):
+            shutil.rmtree(config_dir)
 
     def test_get_stt_no_file(self):
         context = {"client": "tester",
@@ -368,7 +390,10 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
         self.assertFalse(resp.data['enabled'])
 
     def test_get_stt_supported_languages(self):
-        real_stt = self.speech_service.loop.stt
+        from ovos_plugin_manager.templates.stt import STT
+
+        real_stt = self.speech_service.stt
+        self.assertIsInstance(real_stt, STT)
         resp = self.bus.wait_for_response(Message(
             "ovos.languages.stt", {}, {'ctx': True}
         ))
@@ -379,7 +404,6 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
                          list(real_stt.available_languages) or ['en-us'])
 
         mock_languages = ('en-us', 'es', 'fr-fr', 'fr-ca')
-        from ovos_plugin_manager.templates.stt import STT
 
         class MockSTT(STT):
             def __init__(self):
@@ -393,13 +417,13 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
                 pass
 
         mock_stt = MockSTT()
-        self.speech_service.loop.stt = mock_stt
+        self.speech_service.voice_loop.stt = mock_stt
         resp = self.bus.wait_for_response(Message(
             "ovos.languages.stt", {}, {'ctx': True}
         ))
         self.assertEqual(resp.data['langs'], list(mock_languages))
 
-        self.speech_service.loop.stt = real_stt
+        self.speech_service.voice_loop.stt = real_stt
 
 
 if __name__ == '__main__':

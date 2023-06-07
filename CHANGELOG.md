@@ -1,28 +1,108 @@
 # Changelog
 
-## [3.3.1a3](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.1a3) (2023-05-04)
+## [3.3.2a12](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.2a12) (2023-06-05)
 
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.1a2...3.3.1a3)
-
-**Merged pull requests:**
-
-- Specify Docker actions to use `diana` action runners [\#151](https://github.com/NeonGeckoCom/neon_speech/pull/151) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [3.3.1a2](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.1a2) (2023-05-04)
-
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.1a1...3.3.1a2)
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.2a11...3.3.2a12)
 
 **Merged pull requests:**
 
-- Troubleshoot Docker build failures [\#149](https://github.com/NeonGeckoCom/neon_speech/pull/149) ([NeonDaniel](https://github.com/NeonDaniel))
+- Update dependencies to stable versions [\#166](https://github.com/NeonGeckoCom/neon_speech/pull/166) ([NeonDaniel](https://github.com/NeonDaniel))
 
-## [3.3.1a1](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.1a1) (2023-05-03)
+## [3.3.2a11](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.2a11) (2023-06-03)
 
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.0...3.3.1a1)
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.2a10...3.3.2a11)
 
 **Merged pull requests:**
 
-- Handle hotword engine exception handling with unit tests [\#148](https://github.com/NeonGeckoCom/neon_speech/pull/148) ([NeonDaniel](https://github.com/NeonDaniel))
+- Implement tests for CLI module [\#165](https://github.com/NeonGeckoCom/neon_speech/pull/165) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [3.3.2a10](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.2a10) (2023-06-03)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.2a9...3.3.2a10)
+
+**Merged pull requests:**
+
+- Update dependencies [\#164](https://github.com/NeonGeckoCom/neon_speech/pull/164) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [3.3.2a9](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.2a9) (2023-06-01)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.2a8...3.3.2a9)
+
+**Merged pull requests:**
+
+- Replace Hotword reload tests [\#163](https://github.com/NeonGeckoCom/neon_speech/pull/163) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [3.3.2a8](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.2a8) (2023-05-31)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.2a7...3.3.2a8)
+
+**Merged pull requests:**
+
+- Update Dinkum listener dependency and clean up config reload handling [\#162](https://github.com/NeonGeckoCom/neon_speech/pull/162) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [3.3.2a7](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.2a7) (2023-05-26)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.2a6...3.3.2a7)
+
+**Merged pull requests:**
+
+- Refactor config init to CLI and out of `main` method [\#160](https://github.com/NeonGeckoCom/neon_speech/pull/160) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [3.3.2a6](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.2a6) (2023-05-25)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.2a5...3.3.2a6)
+
+**Closed issues:**
+
+- Resolve non-server unit test failures [\#84](https://github.com/NeonGeckoCom/neon_speech/issues/84)
+
+**Merged pull requests:**
+
+- Refactor on Dinkum Listener [\#157](https://github.com/NeonGeckoCom/neon_speech/pull/157) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [3.3.2a5](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.2a5) (2023-05-24)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.2a4...3.3.2a5)
+
+**Merged pull requests:**
+
+- Refactor 'speech' to 'voice' for future compat. [\#159](https://github.com/NeonGeckoCom/neon_speech/pull/159) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [3.3.2a4](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.2a4) (2023-05-18)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.2a3...3.3.2a4)
+
+**Merged pull requests:**
+
+- Add malloc logging to speech service [\#156](https://github.com/NeonGeckoCom/neon_speech/pull/156) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [3.3.2a3](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.2a3) (2023-05-18)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.2a2...3.3.2a3)
+
+**Merged pull requests:**
+
+- Refactor on ovos-listener module [\#155](https://github.com/NeonGeckoCom/neon_speech/pull/155) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [3.3.2a2](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.2a2) (2023-05-11)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.2a1...3.3.2a2)
+
+**Merged pull requests:**
+
+- Add test coverage for non-streaming STT init [\#154](https://github.com/NeonGeckoCom/neon_speech/pull/154) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [3.3.2a1](https://github.com/NeonGeckoCom/neon_speech/tree/3.3.2a1) (2023-05-11)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/3.3.1...3.3.2a1)
+
+**Fixed bugs:**
+
+- \[BUG\] Whisper STT plugins don't work with neon\_speech [\#150](https://github.com/NeonGeckoCom/neon_speech/issues/150)
+
+**Merged pull requests:**
+
+- Fix non-streaming plugin config compat. with ovos-plugin-manager [\#153](https://github.com/NeonGeckoCom/neon_speech/pull/153) ([NeonDaniel](https://github.com/NeonDaniel))
 
 
 

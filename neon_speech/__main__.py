@@ -27,27 +27,31 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from ovos_utils import wait_for_exit_signal
-from neon_utils.configuration_utils import init_config_dir
 from neon_utils.log_utils import init_log
+from neon_utils.process_utils import start_malloc, snapshot_malloc, print_malloc
 from ovos_utils.log import LOG
+from ovos_utils.process_utils import PIDLock, reset_sigint_handler
+from neon_speech.service import NeonSpeechClient
 
 
 def main(*args, **kwargs):
     # Initialize configuration
-    init_config_dir()
     init_log(log_name="voice")
     if kwargs.get("config"):
         LOG.warning("Found config kwarg, updating to 'speech_config'")
         kwargs["speech_config"] = kwargs.pop("config")
 
-    from mycroft.lock import Lock
-    from mycroft.util.process_utils import reset_sigint_handler
-    from neon_speech.service import NeonSpeechClient
     reset_sigint_handler()
-    Lock("speech")
+    PIDLock("voice")
+    malloc_running = start_malloc(stack_depth=4)
     service = NeonSpeechClient(*args, **kwargs)
     service.start()
     wait_for_exit_signal()
+    if malloc_running:
+        try:
+            print_malloc(snapshot_malloc())
+        except Exception as e:
+            LOG.error(e)
     service.shutdown()
 
 

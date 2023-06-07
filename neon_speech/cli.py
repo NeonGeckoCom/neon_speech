@@ -30,6 +30,7 @@ import click
 
 from click_default_group import DefaultGroup
 from neon_utils.packaging_utils import get_package_version_spec
+from neon_utils.configuration_utils import init_config_dir
 
 
 @click.group("neon-speech", cls=DefaultGroup,
@@ -52,6 +53,8 @@ def neon_speech_cli(version: bool = False):
 @click.option("--force-install", "-f", default=False, is_flag=True,
               help="Force pip installation of configured module")
 def run(module, package, force_install):
+    init_config_dir()
+
     from neon_speech.__main__ import main
     from ovos_config.config import Configuration
     speech_config = Configuration()
