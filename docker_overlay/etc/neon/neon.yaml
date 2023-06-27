@@ -65,5 +65,5 @@ MQ:
       user: neon_api_utils
       password: Klatchat2021
 signal:
-  use_signal_files: true
+  use_signal_files: false
   max_wait_seconds: 300
