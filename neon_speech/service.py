@@ -32,6 +32,8 @@ import ovos_dinkum_listener.plugins
 from tempfile import mkstemp
 from threading import Lock, Event
 from time import time
+
+from ovos_utils.process_utils import ProcessState
 from pydub import AudioSegment
 from speech_recognition import AudioData
 from neon_utils.file_utils import decode_base64_string_to_file
@@ -67,7 +69,7 @@ def on_stopping():
 
 
 def on_error(e='Unknown'):
-    LOG.error('Audio service failed to launch ({}).'.format(repr(e)))
+    LOG.error(f'Speech service failed to launch ({e}).')
 
 
 def on_alive():
@@ -125,6 +127,12 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         else:
             LOG.info("Skipping api_stt init")
             self.api_stt = None
+
+    def run(self):
+        OVOSDinkumVoiceService.run(self)
+        if self.status == ProcessState.ERROR:
+            LOG.error("Failed on error!")
+        LOG.info("Done Running")
 
     def shutdown(self):
         LOG.info("Shutting Down")

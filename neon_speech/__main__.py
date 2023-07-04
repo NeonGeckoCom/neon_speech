@@ -47,11 +47,13 @@ def main(*args, **kwargs):
     service = NeonSpeechClient(*args, **kwargs)
     service.start()
     wait_for_exit_signal()
+    LOG.debug("Exiting")
     if malloc_running:
         try:
             print_malloc(snapshot_malloc())
         except Exception as e:
             LOG.error(e)
+    LOG.debug("Service shutting down")
     service.shutdown()
 
 
