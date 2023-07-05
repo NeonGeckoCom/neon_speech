@@ -109,7 +109,6 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                                         on_started=started_hook,
                                         bus=bus,
                                         watchdog=watchdog)
-        self._shutting_down = False
         self.daemon = daemonic
         self.config.bus = self.bus
         from neon_utils.signal_utils import init_signal_handlers, \
@@ -130,16 +129,15 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             self.api_stt = None
 
     def run(self):
-        while not self._shutting_down:
+        while not self.status.state == ProcessState.STOPPING:
             OVOSDinkumVoiceService.run(self)
-            if not self._shutting_down:
+            if self.status.state == ProcessState.ERROR:
                 # Upstream exception handling will shut down on error
                 LOG.error("Service unexpectedly stopped!")
         LOG.info("Done Running")
 
     def shutdown(self):
         LOG.info("Shutting Down")
-        self._shutting_down = True
         self.stop()
 
     def register_event_handlers(self):
