@@ -79,7 +79,7 @@ setup(
     entry_points={
         'console_scripts': [
             # TODO: Deprecate `neon_speech_client` entrypoint
-            'neon_speech_client=neon_speech.__main__:main',
+            'neon_speech_client=neon_speech.__main__:deprecated_entrypoint',
             'neon-speech=neon_speech.cli:neon_speech_cli'
         ]
     }
