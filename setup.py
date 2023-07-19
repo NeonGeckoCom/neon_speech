@@ -78,7 +78,8 @@ setup(
     long_description_content_type="text/markdown",
     entry_points={
         'console_scripts': [
-            'neon_speech_client=neon_speech.__main__:main',
+            # TODO: Deprecate `neon_speech_client` entrypoint
+            'neon_speech_client=neon_speech.__main__:deprecated_entrypoint',
             'neon-speech=neon_speech.cli:neon_speech_cli'
         ]
     }
