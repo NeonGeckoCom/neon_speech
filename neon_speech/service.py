@@ -113,12 +113,16 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             init_signal_bus
         init_signal_bus(self.bus)
         init_signal_handlers()
+        try:
+            self._default_user = get_neon_user_config()
+        except PermissionError:
+            LOG.warning("Unable to get writable config path; fallback to /tmp")
+            self._default_user = get_neon_user_config("/tmp")
 
-        self._default_user = get_neon_user_config()
         self._default_user['user']['username'] = "local"
 
         self.lock = Lock()
-
+        self._stop_service = Event()
         if self.config.get('listener', {}).get('enable_stt_api', True):
             self.api_stt = STTFactory.create(config=self.config,
                                              results_event=None)
@@ -126,9 +130,27 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             LOG.info("Skipping api_stt init")
             self.api_stt = None
 
+    def run(self):
+        if self.config.get('listener', {}).get('enable_voice_loop', True):
+            OVOSDinkumVoiceService.run(self)
+        else:
+            LOG.info(f"Running without voice_loop")
+            self.register_event_handlers()
+            self.status.set_ready()
+            try:
+                self._stop_service.wait()
+            except KeyboardInterrupt:
+                self.status.set_stopping()
+            except Exception as e:
+                LOG.exception("voice_loop failed")
+                self.status.set_error(str(e))
+            LOG.info("Service stopped")
+            self._after_stop()
+
     def shutdown(self):
         LOG.info("Shutting Down")
         self.stop()
+        self._stop_service.set()
 
     def register_event_handlers(self):
         OVOSDinkumVoiceService.register_event_handlers(self)
