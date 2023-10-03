@@ -378,10 +378,9 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             with self._stopwatch:
                 _, parser_data, transcriptions = \
                     self._get_stt_from_file(wav_file_path, lang)
-            message.context.setdefault('timing', dict())
-            message.context['timing']['get_stt'] = self._stopwatch.time
             message.context["audio_parser_data"] = parser_data
             context = build_context(message)
+            context['timing']['get_stt'] = self._stopwatch.time
             data = {
                 "utterances": transcriptions,
                 "lang": message.data.get("lang", "en-us")
