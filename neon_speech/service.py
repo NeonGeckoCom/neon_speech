@@ -37,6 +37,7 @@ from speech_recognition import AudioData
 from neon_utils.file_utils import decode_base64_string_to_file
 from ovos_utils.log import LOG
 from neon_utils.configuration_utils import get_neon_user_config
+from neon_utils.metrics_utils import Stopwatch
 from neon_utils.user_utils import apply_local_user_profile_updates
 from ovos_bus_client import Message
 from ovos_config.config import update_mycroft_config
@@ -79,6 +80,8 @@ def on_started():
 
 
 class NeonSpeechClient(OVOSDinkumVoiceService):
+    _stopwatch = Stopwatch("get_stt")
+
     def __init__(self, ready_hook=on_ready, error_hook=on_error,
                  stopping_hook=on_stopping, alive_hook=on_alive,
                  started_hook=on_started, watchdog=lambda: None,
@@ -372,8 +375,11 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             wav_file_path = message.data.get("audio_file")
         lang = message.data.get("lang")
         try:
-            _, parser_data, transcriptions = \
-                self._get_stt_from_file(wav_file_path, lang)
+            with self._stopwatch:
+                _, parser_data, transcriptions = \
+                    self._get_stt_from_file(wav_file_path, lang)
+            message.context.setdefault('timing', dict())
+            message.context['timing']['get_stt'] = self._stopwatch.time()
             message.context["audio_parser_data"] = parser_data
             context = build_context(message)
             data = {
