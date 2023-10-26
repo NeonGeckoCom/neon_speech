@@ -139,13 +139,8 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             log_deprecation(f"Adding audio to destination context for "
                             f"{message.msg_type}", "5.0.0")
             message.context['destination'].append('audio')
-        LOG.debug(f"Checking sources {native_sources} for {message.context}")
         return OVOSDinkumVoiceService._validate_message_context(self, message,
                                                                 native_sources)
-
-    def _handle_listen(self, message: Message):
-        LOG.debug(f"handle listen context={message.context}")
-        OVOSDinkumVoiceService._handle_listen(self, message)
 
     def run(self):
         if self.config.get('listener', {}).get('enable_voice_loop', True):
