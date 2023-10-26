@@ -134,7 +134,8 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             self.api_stt = None
 
     def _validate_message_context(self, message: Message, native_sources=None):
-        if "audio" not in message.context['destination']:
+        if message.context.get('destination') and \
+                "audio" not in message.context['destination']:
             log_deprecation(f"Adding audio to destination context for "
                             f"{message.msg_type}", "5.0.0")
             message.context['destination'].append('audio')
