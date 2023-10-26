@@ -35,7 +35,7 @@ from time import time
 from pydub import AudioSegment
 from speech_recognition import AudioData
 from neon_utils.file_utils import decode_base64_string_to_file
-from ovos_utils.log import LOG
+from ovos_utils.log import LOG, log_deprecation
 from neon_utils.configuration_utils import get_neon_user_config
 from neon_utils.metrics_utils import Stopwatch
 from neon_utils.user_utils import apply_local_user_profile_updates
@@ -134,6 +134,14 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         else:
             LOG.info("Skipping api_stt init")
             self.api_stt = None
+
+    def _validate_message_context(self, message: Message, native_sources=None):
+        if "audio" not in message.context['destination']:
+            log_deprecation(f"Adding audio to destination context for "
+                            f"{message.msg_type}", "5.0.0")
+            message.context['destination'].append('audio')
+        OVOSDinkumVoiceService._validate_message_context(self, message,
+                                                         native_sources)
 
     def run(self):
         if self.config.get('listener', {}).get('enable_voice_loop', True):
