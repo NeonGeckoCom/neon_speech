@@ -109,9 +109,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                                         on_alive=alive_hook,
                                         on_started=started_hook,
                                         bus=bus,
-                                        watchdog=watchdog,
-                                        validate_source=False)
-        # TODO: Temporarily disable validate_source to ensure backwards-compat
+                                        watchdog=watchdog)
         self.daemon = daemonic
         self.config.bus = self.bus
         from neon_utils.signal_utils import init_signal_handlers, \
@@ -140,12 +138,6 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             log_deprecation(f"Adding audio to destination context for "
                             f"{message.msg_type}", "5.0.0")
             message.context['destination'].append('audio')
-        if not OVOSDinkumVoiceService._validate_message_context(self, message,
-                                                                native_sources):
-            # TODO: Temporary backwards-compat.
-            LOG.warning(f"Context not validated for: {message.msg_type}|"
-                        f"sources={native_sources}|context={message.context}")
-            return True
 
     def run(self):
         if self.config.get('listener', {}).get('enable_voice_loop', True):
