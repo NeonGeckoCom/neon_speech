@@ -109,7 +109,9 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                                         on_alive=alive_hook,
                                         on_started=started_hook,
                                         bus=bus,
-                                        watchdog=watchdog)
+                                        watchdog=watchdog,
+                                        validate_source=False)
+        # TODO: Temporarily disable validate_source to ensure backwards-compat
         self.daemon = daemonic
         self.config.bus = self.bus
         from neon_utils.signal_utils import init_signal_handlers, \
