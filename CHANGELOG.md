@@ -1,20 +1,60 @@
 # Changelog
 
-## [4.0.1a2](https://github.com/NeonGeckoCom/neon_speech/tree/4.0.1a2) (2023-07-18)
+## [4.2.0](https://github.com/NeonGeckoCom/neon_speech/tree/4.2.0) (2023-10-27)
 
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.0.1a1...4.0.1a2)
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.1.1a6...4.2.0)
+
+**Fixed bugs:**
+
+- \[BUG\] Docker `start_listening` resource missing [\#170](https://github.com/NeonGeckoCom/neon_speech/issues/170)
+
+## [4.1.1a6](https://github.com/NeonGeckoCom/neon_speech/tree/4.1.1a6) (2023-10-26)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.1.1a5...4.1.1a6)
 
 **Merged pull requests:**
 
-- Update dependencies and mark deprecation [\#171](https://github.com/NeonGeckoCom/neon_speech/pull/171) ([NeonDaniel](https://github.com/NeonDaniel))
+- OVOS Dinkum Listener Backwards Compat [\#178](https://github.com/NeonGeckoCom/neon_speech/pull/178) ([NeonDaniel](https://github.com/NeonDaniel))
 
-## [4.0.1a1](https://github.com/NeonGeckoCom/neon_speech/tree/4.0.1a1) (2023-06-27)
+## [4.1.1a5](https://github.com/NeonGeckoCom/neon_speech/tree/4.1.1a5) (2023-10-26)
 
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.0.0...4.0.1a1)
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.1.1a4...4.1.1a5)
 
 **Merged pull requests:**
 
-- Update Docker to use OVOS\_CONFIG envvars [\#169](https://github.com/NeonGeckoCom/neon_speech/pull/169) ([NeonDaniel](https://github.com/NeonDaniel))
+- Stable dependencies for release [\#177](https://github.com/NeonGeckoCom/neon_speech/pull/177) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [4.1.1a4](https://github.com/NeonGeckoCom/neon_speech/tree/4.1.1a4) (2023-10-13)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.1.1a3...4.1.1a4)
+
+**Merged pull requests:**
+
+- Update Dinkum Listener dependency [\#176](https://github.com/NeonGeckoCom/neon_speech/pull/176) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [4.1.1a3](https://github.com/NeonGeckoCom/neon_speech/tree/4.1.1a3) (2023-10-03)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.1.1a2...4.1.1a3)
+
+**Merged pull requests:**
+
+- Add timing metrics for minerva testing [\#175](https://github.com/NeonGeckoCom/neon_speech/pull/175) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [4.1.1a2](https://github.com/NeonGeckoCom/neon_speech/tree/4.1.1a2) (2023-07-28)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.1.1a1...4.1.1a2)
+
+**Merged pull requests:**
+
+- Kubernetes/No-audio server compat. [\#174](https://github.com/NeonGeckoCom/neon_speech/pull/174) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [4.1.1a1](https://github.com/NeonGeckoCom/neon_speech/tree/4.1.1a1) (2023-07-27)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.1.0...4.1.1a1)
+
+**Merged pull requests:**
+
+- Update container config handling and resolve logged warnings [\#173](https://github.com/NeonGeckoCom/neon_speech/pull/173) ([NeonDaniel](https://github.com/NeonDaniel))
 
 
 
