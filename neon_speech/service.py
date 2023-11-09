@@ -456,15 +456,21 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         :return: (AudioData of object, extracted context, transcriptions)
         """
         from neon_utils.file_utils import get_audio_file_stream
-        lang = lang or 'en-us'  # TODO: read default from config
-        segment = AudioSegment.from_file(wav_file)
+        lang = lang or self.config.get('lang')
+        desired_sample_rate = self.config['listener'].get('sample_rate', 16000)
+        desired_sample_width = self.config['listener'].get('sample_width', 2)
+        segment = (AudioSegment.from_file(wav_file).set_channels(1)
+                   .set_frame_rate(desired_sample_rate)
+                   .set_sample_width(desired_sample_width))
+        LOG.debug(f"Audio fr={segment.frame_rate},sw={segment.sample_width},"
+                  f"fw={segment.frame_width},ch={segment.channels}")
         audio_data = AudioData(segment.raw_data, segment.frame_rate,
                                segment.sample_width)
-        audio_stream = get_audio_file_stream(wav_file)
         if not self.api_stt:
             raise RuntimeError("api_stt not initialized."
                                " is `listener['enable_stt_api'] set to False?")
         if hasattr(self.api_stt, 'stream_start'):
+            audio_stream = get_audio_file_stream(wav_file, desired_sample_rate)
             if self.lock.acquire(True, 30):
                 LOG.info(f"Starting STT processing (lang={lang}): {wav_file}")
                 self.api_stt.stream_start(lang)
