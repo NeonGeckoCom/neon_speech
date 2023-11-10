@@ -375,6 +375,9 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                               'transcribed': time()}}
             return ctx
 
+        received_time = time()
+        sent_time = message.context.get("timing", {}).get("client_sent",
+                                                          received_time)
         ident = message.context.get("ident") or "neon.audio_input.response"
         LOG.info(f"Handling audio input: {ident}")
         if message.data.get("audio_data"):
@@ -385,10 +388,13 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         lang = message.data.get("lang")
         try:
             with self._stopwatch:
+                # _=transformed audio_data
                 _, parser_data, transcriptions = \
                     self._get_stt_from_file(wav_file_path, lang)
             message.context["audio_parser_data"] = parser_data
             context = build_context(message)
+            if received_time != sent_time:
+                context['timing']['mq_from_client'] = received_time - sent_time
             context['timing']['get_stt'] = self._stopwatch.time
             data = {
                 "utterances": transcriptions,
