@@ -395,14 +395,18 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                 _, parser_data, transcriptions = \
                     self._get_stt_from_file(wav_file_path, lang)
             message.context["audio_parser_data"] = parser_data
+            message.context.setdefault('timing', dict())
             message.context['timing']['get_stt'] = self._stopwatch.time
             context = build_context(message)
             data = {
                 "utterances": transcriptions,
                 "lang": message.data.get("lang", "en-us")
             }
+            # Send a new message to the skills module with proper routing ctx
             handled = self._emit_utterance_to_skills(Message(
                 'recognizer_loop:utterance', data, context))
+
+            # Reply to original message with transcription/audio parser data
             self.bus.emit(message.reply(ident,
                                         data={"parser_data": parser_data,
                                               "transcripts": transcriptions,
