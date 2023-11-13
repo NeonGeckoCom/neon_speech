@@ -187,6 +187,8 @@ class TestAPIMethodsStreaming(unittest.TestCase):
             self.assertEqual(context[key], stt_resp.context[key])
         self.assertIsInstance(stt_resp.data.get("skills_recv"), bool,
                               stt_resp.serialize())
+        self.assertIsInstance(stt_resp.context['timing']['mq_from_client'],
+                              float, stt_resp.context)
 
         handle_utterance.assert_called_once()
         message = handle_utterance.call_args[0][0]
@@ -199,10 +201,10 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         self.assertIn("stop", message.data["utterances"],
                       message.data.get("utterances"))
         self.assertIsInstance(message.context["timing"], dict)
-        self.assertIsInstance(stt_resp.context['timing']['mq_from_client'],
-                              float, stt_resp.context)
-        self.assertIsInstance(stt_resp.context['timing']['transcribed'], float,
-                              stt_resp.context)
+        self.assertIsInstance(message.context['timing']['mq_from_client'],
+                              float, message.context)
+        self.assertIsInstance(message.context['timing']['transcribed'], float,
+                              message.context)
         self.assertEqual(message.context["destination"], ["skills"])
 
     def test_wake_words_state(self):
