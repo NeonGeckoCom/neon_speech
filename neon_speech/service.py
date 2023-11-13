@@ -351,7 +351,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             sent_time = message.context.get("timing", {}).get("client_sent",
                                                               received_time)
             if received_time != sent_time:
-                message.context['timing']['mq_from_client'] = \
+                message.context['timing']['client_to_core'] = \
                     received_time - sent_time
             self.bus.emit(message.reply(ident,
                                         data={"parser_data": parser_data,
@@ -386,7 +386,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         sent_time = message.context.get("timing", {}).get("client_sent",
                                                           received_time)
         if received_time != sent_time:
-            message.context['timing']['mq_from_client'] = \
+            message.context['timing']['client_to_core'] = \
                 received_time - sent_time
         ident = message.context.get("ident") or "neon.audio_input.response"
         LOG.info(f"Handling audio input: {ident}")
