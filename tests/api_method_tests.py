@@ -148,10 +148,11 @@ class TestAPIMethodsStreaming(unittest.TestCase):
                               stt_resp.serialize())
         self.assertIn("stop", stt_resp.data.get("transcripts"))
         self.assertEqual(stt_resp.context['timing']['client_sent'],
-                         context['timing']['client_sent'])
+                         context['timing']['client_sent'], stt_resp.context)
         self.assertIsInstance(stt_resp.context['timing']['mq_from_client'],
-                              float)
-        self.assertIsInstance(stt_resp.context['timing']['transcribed'], float)
+                              float, stt_resp.context)
+        self.assertIsInstance(stt_resp.context['timing']['transcribed'], float,
+                              stt_resp.context)
 
     def test_get_stt_valid_contents(self):
         context = {"client": "tester",
