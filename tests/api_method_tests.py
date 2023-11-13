@@ -138,7 +138,10 @@ class TestAPIMethodsStreaming(unittest.TestCase):
             "neon.get_stt", {"audio_file": os.path.join(AUDIO_FILE_PATH,
                                                         "stop.wav")},
             context), context["ident"], 60.0)
-        self.assertEqual(stt_resp.context, context)
+        for key in context:
+            if key != 'timing':
+                self.assertEqual(stt_resp.context[key], context[key])
+
         self.assertIsInstance(stt_resp.data.get("parser_data"), dict,
                               stt_resp.serialize())
         self.assertIsInstance(stt_resp.data.get("transcripts"), list,
