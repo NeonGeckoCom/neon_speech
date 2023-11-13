@@ -176,7 +176,8 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         context = {"client": "tester",
                    "ident": "11111",
                    "user": "TestRunner",
-                   "extra_data": "something"}
+                   "extra_data": "something",
+                   "timing": {"client_sent": time()}}
         audio_data = encode_file_to_base64_string(os.path.join(AUDIO_FILE_PATH,
                                                                "stop.wav"))
         stt_resp = self.bus.wait_for_response(Message(
@@ -199,6 +200,10 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         self.assertIn("stop", message.data["utterances"],
                       message.data.get("utterances"))
         self.assertIsInstance(message.context["timing"], dict)
+        self.assertIsInstance(stt_resp.context['timing']['mq_from_client'],
+                              float, stt_resp.context)
+        self.assertIsInstance(stt_resp.context['timing']['transcribed'], float,
+                              stt_resp.context)
         self.assertEqual(message.context["destination"], ["skills"])
 
     def test_wake_words_state(self):
