@@ -69,18 +69,18 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         test_config["listener"]["VAD"]["module"] = "dummy"
         assert test_config["stt"]["module"] == "deepspeech_stream_local"
 
+        ready_event = Event()
+
+        def _ready():
+            ready_event.set()
+
         cls.speech_service = NeonSpeechClient(speech_config=test_config,
-                                              daemonic=False, bus=cls.bus)
+                                              daemonic=False, bus=cls.bus,
+                                              ready_hook=_ready())
         assert cls.speech_service.config["stt"]["module"] == "deepspeech_stream_local"
         cls.speech_service.start()
-        ready = False
-        timeout = time() + 120
-        while not ready and time() < timeout:
-            message = cls.bus.wait_for_response(
-                Message("mycroft.voice.is_ready"))
-            if message:
-                ready = message.data.get("status")
-        if not ready:
+
+        if not ready_event.wait(120):
             raise TimeoutError("Speech module not ready after 120 seconds")
         from ovos_plugin_manager.templates import STT
         assert isinstance(cls.speech_service.voice_loop.stt, STT)
@@ -265,19 +265,19 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
         test_config["listener"]["VAD"]["module"] = "dummy"
         assert test_config["stt"]["module"] == "neon-stt-plugin-nemo"
 
+        ready_event = Event()
+
+        def _ready():
+            ready_event.set()
+
         cls.speech_service = NeonSpeechClient(speech_config=test_config,
-                                              daemonic=False, bus=cls.bus)
+                                              daemonic=False, bus=cls.bus,
+                                              ready_hook=_ready)
         assert cls.speech_service.config["stt"]["module"] == \
                "neon-stt-plugin-nemo"
         cls.speech_service.start()
-        ready = False
-        timeout = time() + 120
-        while not ready and time() < timeout:
-            message = cls.bus.wait_for_response(
-                Message("mycroft.voice.is_ready"))
-            if message:
-                ready = message.data.get("status")
-        if not ready:
+
+        if not ready_event.wait(120):
             raise TimeoutError("Speech module not ready after 120 seconds")
         from ovos_plugin_manager.templates import STT
         assert isinstance(cls.speech_service.voice_loop.stt, STT)
