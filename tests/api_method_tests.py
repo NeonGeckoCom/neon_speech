@@ -132,7 +132,8 @@ class TestAPIMethodsStreaming(unittest.TestCase):
     def test_get_stt_valid_file(self):
         context = {"client": "tester",
                    "ident": "12345",
-                   "user": "TestRunner"}
+                   "user": "TestRunner",
+                   "timing": {"client_sent": time()}}
         stt_resp = self.bus.wait_for_response(Message(
             "neon.get_stt", {"audio_file": os.path.join(AUDIO_FILE_PATH,
                                                         "stop.wav")},
@@ -143,6 +144,11 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         self.assertIsInstance(stt_resp.data.get("transcripts"), list,
                               stt_resp.serialize())
         self.assertIn("stop", stt_resp.data.get("transcripts"))
+        self.assertEqual(stt_resp.context['timing']['client_sent'],
+                         context['timing']['client_sent'])
+        self.assertIsInstance(stt_resp.context['timing']['mq_from_client'],
+                              float)
+        self.assertIsInstance(stt_resp.context['timing']['transcribed'], float)
 
     def test_get_stt_valid_contents(self):
         context = {"client": "tester",

@@ -370,14 +370,17 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                         'username': self._default_user["user"]["username"] or
                         "local",
                         'user_profiles': [self._default_user.content]}
-            ctx = {**defaults, **ctx, 'destination': ['skills'],
-                   'timing': {'start': msg.data.get('time'),
-                              'transcribed': time()}}
+            ctx = {**defaults, **ctx, 'destination': ['skills']}
+            ctx['timing'] = {**ctx.get('timing', {}),
+                             **{'start': msg.data.get('time'),
+                                'transcribed': time()}}
             return ctx
 
         received_time = time()
         sent_time = message.context.get("timing", {}).get("client_sent",
                                                           received_time)
+        if received_time != sent_time:
+            message.context['timing']['mq_from_client'] = received_time - sent_time
         ident = message.context.get("ident") or "neon.audio_input.response"
         LOG.info(f"Handling audio input: {ident}")
         if message.data.get("audio_data"):
@@ -392,10 +395,8 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                 _, parser_data, transcriptions = \
                     self._get_stt_from_file(wav_file_path, lang)
             message.context["audio_parser_data"] = parser_data
+            message.context['timing']['get_stt'] = self._stopwatch.time
             context = build_context(message)
-            if received_time != sent_time:
-                context['timing']['mq_from_client'] = received_time - sent_time
-            context['timing']['get_stt'] = self._stopwatch.time
             data = {
                 "utterances": transcriptions,
                 "lang": message.data.get("lang", "en-us")
