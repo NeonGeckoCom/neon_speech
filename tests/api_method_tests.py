@@ -76,7 +76,7 @@ class TestAPIMethodsStreaming(unittest.TestCase):
 
         cls.speech_service = NeonSpeechClient(speech_config=test_config,
                                               daemonic=False, bus=cls.bus,
-                                              ready_hook=_ready())
+                                              ready_hook=_ready)
         assert cls.speech_service.config["stt"]["module"] == "deepspeech_stream_local"
         cls.speech_service.start()
 
@@ -181,7 +181,7 @@ class TestAPIMethodsStreaming(unittest.TestCase):
                                                                "stop.wav"))
         stt_resp = self.bus.wait_for_response(Message(
             "neon.audio_input", {"audio_data": audio_data},
-            context), context["ident"], 60.0)
+            dict(context)), context["ident"], 60.0)
         self.assertIsInstance(stt_resp, Message)
         for key in context:
             self.assertIn(key, stt_resp.context)
@@ -369,7 +369,7 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
                                                                "stop.wav"))
         stt_resp = self.bus.wait_for_response(Message(
             "neon.audio_input", {"audio_data": audio_data},
-            context), context["ident"], 60.0)
+            dict(context)), context["ident"], 60.0)
         self.assertIsInstance(stt_resp, Message)
         for key in context:
             self.assertIn(key, stt_resp.context)
