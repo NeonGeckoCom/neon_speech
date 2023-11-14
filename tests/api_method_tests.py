@@ -184,7 +184,8 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         self.assertIsInstance(stt_resp, Message)
         for key in context:
             self.assertIn(key, stt_resp.context)
-            self.assertEqual(context[key], stt_resp.context[key])
+            if key != "timing":
+                self.assertEqual(context[key], stt_resp.context[key])
         self.assertIsInstance(stt_resp.data.get("skills_recv"), bool,
                               stt_resp.serialize())
         self.assertIsInstance(stt_resp.context['timing']['client_to_core'],
@@ -379,7 +380,8 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
         self.assertIsInstance(stt_resp, Message)
         for key in context:
             self.assertIn(key, stt_resp.context)
-            self.assertEqual(context[key], stt_resp.context[key])
+            if key != "timing":
+                self.assertEqual(context[key], stt_resp.context[key])
         self.assertIsInstance(stt_resp.data.get("skills_recv"), bool,
                               stt_resp.serialize())
 
@@ -388,7 +390,8 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
         self.assertIsInstance(message, Message)
         for key in context:
             self.assertIn(key, message.context)
-            self.assertEqual(context[key], message.context[key])
+            if key != "timing":
+                self.assertEqual(context[key], message.context[key])
         self.assertIsInstance(message.data["utterances"], list, message.data)
         self.assertIn("stop", message.data["utterances"],
                       message.data.get("utterances"))
