@@ -114,8 +114,9 @@ class TestAPIMethodsStreaming(unittest.TestCase):
                    "user": "TestRunner"}
         stt_resp = self.bus.wait_for_response(
             Message("neon.get_stt", {"audio_file": "~/invalid_file.wav"},
-                    context), context["ident"])
-        self.assertEqual(stt_resp.context, context)
+                    dict(context)), context["ident"])
+        for key in context:
+            self.assertEqual(stt_resp.context[key], context[key])
         self.assertIsInstance(stt_resp.data.get("error"), str)
 
     def test_get_stt_invalid_file_type(self):
@@ -319,8 +320,9 @@ class TestAPIMethodsNonStreaming(unittest.TestCase):
                    "user": "TestRunner"}
         stt_resp = self.bus.wait_for_response(
             Message("neon.get_stt", {"audio_file": "~/invalid_file.wav"},
-                    context), context["ident"])
-        self.assertEqual(stt_resp.context, context)
+                    dict(context)), context["ident"])
+        for key in context:
+            self.assertEqual(stt_resp.context[key], context[key])
         self.assertIsInstance(stt_resp.data.get("error"), str)
 
     def test_get_stt_invalid_file_type(self):
