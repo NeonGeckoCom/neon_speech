@@ -335,18 +335,21 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             wav_file_path = message.data.get("audio_file")
         lang = message.data.get("lang")
         ident = message.context.get("ident") or "neon.get_stt.response"
+
+        message.context.setdefault("timing", dict())
         LOG.info(f"Handling STT request: {ident}")
         if not wav_file_path:
+            message.context['timing']['response_sent'] = time()
             self.bus.emit(message.reply(
                 ident, data={"error": f"audio_file not specified!"}))
             return
 
         if not os.path.isfile(wav_file_path):
+            message.context['timing']['response_sent'] = time()
             self.bus.emit(message.reply(
                 ident, data={"error": f"{wav_file_path} Not found!"}))
 
         try:
-            message.context.setdefault("timing", dict())
 
             _, parser_data, transcriptions = \
                 self._get_stt_from_file(wav_file_path, lang)
@@ -363,6 +366,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                                               "transcripts": transcriptions}))
         except Exception as e:
             LOG.error(e)
+            message.context['timing']['response_sent'] = time()
             self.bus.emit(message.reply(ident, data={"error": repr(e)}))
 
     def handle_audio_input(self, message):
