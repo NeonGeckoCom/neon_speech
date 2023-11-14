@@ -346,7 +346,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                 ident, data={"error": f"{wav_file_path} Not found!"}))
 
         try:
-            message.context['timing'].setdefault(dict())
+            message.context.setdefault("timing", dict())
 
             _, parser_data, transcriptions = \
                 self._get_stt_from_file(wav_file_path, lang)
