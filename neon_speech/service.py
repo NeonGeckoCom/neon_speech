@@ -112,6 +112,8 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                                         watchdog=watchdog)
         self.daemon = daemonic
         self.config.bus = self.bus
+        self._stt_stopwatch = Stopwatch("get_stt", allow_reporting=True,
+                                        bus=self.bus)
         from neon_utils.signal_utils import init_signal_handlers, \
             init_signal_bus
         init_signal_bus(self.bus)
@@ -132,6 +134,25 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         else:
             LOG.info("Skipping api_stt init")
             self.api_stt = None
+
+    def _record_begin(self):
+        self._stt_stopwatch.start()
+        OVOSDinkumVoiceService._record_begin(self)
+
+    def _stt_text(self, text: str, stt_context: dict):
+        self._stt_stopwatch.stop()
+        stt_context.setdefault("timing", dict())
+        stt_context["timing"]["get_stt"] = self._stt_stopwatch.time
+
+        # This is where the first Message of the interaction is created
+        OVOSDinkumVoiceService._stt_text(self, text, stt_context)
+        self._stt_stopwatch.report()
+
+    def _save_stt(self, audio_bytes, stt_meta, save_path=None):
+        with Stopwatch("save_audio", True, self.bus):
+            path = OVOSDinkumVoiceService._save_stt(self, audio_bytes, stt_meta,
+                                                    save_path)
+        return path
 
     def _validate_message_context(self, message: Message, native_sources=None):
         if message.context.get('destination') and \
