@@ -149,9 +149,21 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         self._stt_stopwatch.report()
 
     def _save_stt(self, audio_bytes, stt_meta, save_path=None):
-        with Stopwatch("save_audio", True, self.bus):
+        stopwatch = Stopwatch("save_audio", True, self.bus)
+        with stopwatch:
             path = OVOSDinkumVoiceService._save_stt(self, audio_bytes, stt_meta,
                                                     save_path)
+        stt_meta.setdefault('timing', dict())
+        stt_meta['timing']['save_audio'] = stopwatch.time
+        return path
+
+    def _save_ww(self, audio_bytes, ww_meta, save_path=None):
+        stopwatch = Stopwatch("save_ww", True, self.bus)
+        with stopwatch:
+            path = OVOSDinkumVoiceService._save_ww(self, audio_bytes, ww_meta,
+                                                   save_path)
+        ww_meta.setdefault('timing', dict())
+        ww_meta['timing']['save_ww'] = stopwatch.time
         return path
 
     def _validate_message_context(self, message: Message, native_sources=None):
