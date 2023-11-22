@@ -4,7 +4,7 @@ ovos-utils~=0.0.30
 ovos-plugin-manager~=0.0.23
 click~=8.0
 click-default-group~=1.2
-neon-utils[network,audio]~=1.6
+neon-utils[network,audio]~=1.6,>=1.7.1a4
 ovos-config~=0.0.7
 
 ovos-vad-plugin-webrtcvad~=0.0.1
