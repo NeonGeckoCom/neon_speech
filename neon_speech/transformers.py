@@ -25,6 +25,23 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+import ovos_dinkum_listener.transformers
+from neon_utils.metrics_utils import Stopwatch
+from ovos_dinkum_listener.transformers import AudioTransformersService
 
-# Import to ensure patched class is applied
-from neon_speech.transformers import NeonAudioTransformerService
+
+class NeonAudioTransformerService(AudioTransformersService):
+    """
+    Overrides the default AudioTransformersService to add timing metrics
+    """
+
+    def transform(self, chunk: bytes) -> (bytes, dict):
+        stopwatch = Stopwatch("transform_audio", True, self.bus)
+        with stopwatch:
+            chunk, context = AudioTransformersService.transform(self, chunk)
+        context.setdefault("timing", dict())
+        context['timing']['transform_audio'] = stopwatch.time
+        return chunk, context
+
+
+ovos_dinkum_listener.transformers.AudioTransformersService = NeonAudioTransformerService
