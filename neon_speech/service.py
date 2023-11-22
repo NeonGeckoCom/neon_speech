@@ -295,10 +295,18 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         :param message: Message associated with profile update
         """
         updated_profile = message.data.get("profile")
-        if updated_profile["user"]["username"] == \
+        if updated_profile["user"]["username"] != \
                 self._default_user["user"]["username"]:
-            apply_local_user_profile_updates(updated_profile,
-                                             self._default_user)
+            LOG.info(f"Ignoring profile update for "
+                     f"{updated_profile['user']['username']}")
+            return
+        apply_local_user_profile_updates(updated_profile,
+                                         self._default_user)
+        if updated_profile.get("speech", {}).get("stt_language"):
+            new_stt_lang = updated_profile["speech"]["stt_language"]
+            if new_stt_lang != self.config['lang']:
+                from neon_speech.utils import patch_config
+                patch_config({"lang": new_stt_lang})
 
     def handle_wake_words_state(self, message):
         """
