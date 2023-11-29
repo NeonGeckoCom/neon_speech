@@ -221,6 +221,16 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         self.bus.on("neon.enable_wake_word", self.handle_enable_wake_word)
         self.bus.on("neon.disable_wake_word", self.handle_disable_wake_word)
 
+    def _handle_get_languages_stt(self, message):
+        if self.config.get('listener', {}).get('enable_voice_loop', True):
+            return OVOSDinkumVoiceService._handle_get_languages_stt(self,
+                                                                    message)
+        # For server use, get the API STT langs
+        stt_langs = self.api_stt.available_languages or \
+            [self.config.get('lang') or 'en-us']
+        LOG.debug(f"Got stt_langs: {stt_langs}")
+        self.bus.emit(message.response({'langs': list(stt_langs)}))
+
     def handle_disable_wake_word(self, message: Message):
         """
         Disable a wake word. If the requested wake word is the only one enabled,
