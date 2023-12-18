@@ -27,6 +27,8 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import os
+from typing import Dict
+
 import ovos_dinkum_listener.plugins
 
 from tempfile import mkstemp
@@ -80,8 +82,6 @@ def on_started():
 
 
 class NeonSpeechClient(OVOSDinkumVoiceService):
-    _stopwatch = Stopwatch("get_stt")
-
     def __init__(self, ready_hook=on_ready, error_hook=on_error,
                  stopping_hook=on_stopping, alive_hook=on_alive,
                  started_hook=on_started, watchdog=lambda: None,
@@ -112,6 +112,8 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                                         watchdog=watchdog)
         self.daemon = daemonic
         self.config.bus = self.bus
+        self._stt_stopwatch = Stopwatch("get_stt", allow_reporting=True,
+                                        bus=self.bus)
         from neon_utils.signal_utils import init_signal_handlers, \
             init_signal_bus
         init_signal_bus(self.bus)
@@ -132,6 +134,37 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         else:
             LOG.info("Skipping api_stt init")
             self.api_stt = None
+
+    def _record_begin(self):
+        self._stt_stopwatch.start()
+        OVOSDinkumVoiceService._record_begin(self)
+
+    def _stt_text(self, text: str, stt_context: dict):
+        self._stt_stopwatch.stop()
+        stt_context.setdefault("timing", dict())
+        stt_context["timing"]["get_stt"] = self._stt_stopwatch.time
+
+        # This is where the first Message of the interaction is created
+        OVOSDinkumVoiceService._stt_text(self, text, stt_context)
+        self._stt_stopwatch.report()
+
+    def _save_stt(self, audio_bytes, stt_meta, save_path=None):
+        stopwatch = Stopwatch("save_audio", True, self.bus)
+        with stopwatch:
+            path = OVOSDinkumVoiceService._save_stt(self, audio_bytes, stt_meta,
+                                                    save_path)
+        stt_meta.setdefault('timing', dict())
+        stt_meta['timing']['save_audio'] = stopwatch.time
+        return path
+
+    def _save_ww(self, audio_bytes, ww_meta, save_path=None):
+        stopwatch = Stopwatch("save_ww", True, self.bus)
+        with stopwatch:
+            path = OVOSDinkumVoiceService._save_ww(self, audio_bytes, ww_meta,
+                                                   save_path)
+        ww_meta.setdefault('timing', dict())
+        ww_meta['timing']['save_ww'] = stopwatch.time
+        return path
 
     def _validate_message_context(self, message: Message, native_sources=None):
         if message.context.get('destination') and \
@@ -187,6 +220,16 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         self.bus.on("neon.get_wake_words", self.handle_get_wake_words)
         self.bus.on("neon.enable_wake_word", self.handle_enable_wake_word)
         self.bus.on("neon.disable_wake_word", self.handle_disable_wake_word)
+
+    def _handle_get_languages_stt(self, message):
+        if self.config.get('listener', {}).get('enable_voice_loop', True):
+            return OVOSDinkumVoiceService._handle_get_languages_stt(self,
+                                                                    message)
+        # For server use, get the API STT langs
+        stt_langs = self.api_stt.available_languages or \
+            [self.config.get('lang') or 'en-us']
+        LOG.debug(f"Got stt_langs: {stt_langs}")
+        self.bus.emit(message.response({'langs': list(stt_langs)}))
 
     def handle_disable_wake_word(self, message: Message):
         """
@@ -295,10 +338,18 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         :param message: Message associated with profile update
         """
         updated_profile = message.data.get("profile")
-        if updated_profile["user"]["username"] == \
+        if updated_profile["user"]["username"] != \
                 self._default_user["user"]["username"]:
-            apply_local_user_profile_updates(updated_profile,
-                                             self._default_user)
+            LOG.info(f"Ignoring profile update for "
+                     f"{updated_profile['user']['username']}")
+            return
+        apply_local_user_profile_updates(updated_profile,
+                                         self._default_user)
+        if updated_profile.get("speech", {}).get("stt_language"):
+            new_stt_lang = updated_profile["speech"]["stt_language"]
+            if new_stt_lang != self.config['lang']:
+                from neon_speech.utils import patch_config
+                patch_config({"lang": new_stt_lang})
 
     def handle_wake_words_state(self, message):
         """
@@ -327,6 +378,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         Emits a response to the sender with stt data or error data
         :param message: Message associated with request
         """
+        received_time = time()
         if message.data.get("audio_data"):
             wav_file_path = self._write_encoded_file(
                 message.data.pop("audio_data"))
@@ -334,24 +386,38 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             wav_file_path = message.data.get("audio_file")
         lang = message.data.get("lang")
         ident = message.context.get("ident") or "neon.get_stt.response"
+
+        message.context.setdefault("timing", dict())
         LOG.info(f"Handling STT request: {ident}")
         if not wav_file_path:
+            message.context['timing']['response_sent'] = time()
             self.bus.emit(message.reply(
                 ident, data={"error": f"audio_file not specified!"}))
             return
 
         if not os.path.isfile(wav_file_path):
+            message.context['timing']['response_sent'] = time()
             self.bus.emit(message.reply(
                 ident, data={"error": f"{wav_file_path} Not found!"}))
 
         try:
+
             _, parser_data, transcriptions = \
                 self._get_stt_from_file(wav_file_path, lang)
+            timing = parser_data.pop('timing')
+            message.context["timing"] = {**message.context["timing"], **timing}
+            sent_time = message.context["timing"].get("client_sent",
+                                                      received_time)
+            if received_time != sent_time:
+                message.context['timing']['client_to_core'] = \
+                    received_time - sent_time
+            message.context['timing']['response_sent'] = time()
             self.bus.emit(message.reply(ident,
                                         data={"parser_data": parser_data,
                                               "transcripts": transcriptions}))
         except Exception as e:
             LOG.error(e)
+            message.context['timing']['response_sent'] = time()
             self.bus.emit(message.reply(ident, data={"error": repr(e)}))
 
     def handle_audio_input(self, message):
@@ -370,11 +436,18 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                         'username': self._default_user["user"]["username"] or
                         "local",
                         'user_profiles': [self._default_user.content]}
-            ctx = {**defaults, **ctx, 'destination': ['skills'],
-                   'timing': {'start': msg.data.get('time'),
-                              'transcribed': time()}}
+            ctx = {**defaults, **ctx, 'destination': ['skills']}
+            ctx['timing'] = {**ctx.get('timing', {}),
+                             **{'start': msg.data.get('time'),
+                                'transcribed': time()}}
             return ctx
 
+        received_time = time()
+        sent_time = message.context.get("timing", {}).get("client_sent",
+                                                          received_time)
+        if received_time != sent_time:
+            message.context['timing']['client_to_core'] = \
+                received_time - sent_time
         ident = message.context.get("ident") or "neon.audio_input.response"
         LOG.info(f"Handling audio input: {ident}")
         if message.data.get("audio_data"):
@@ -384,18 +457,23 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             wav_file_path = message.data.get("audio_file")
         lang = message.data.get("lang")
         try:
-            with self._stopwatch:
-                _, parser_data, transcriptions = \
-                    self._get_stt_from_file(wav_file_path, lang)
+            # _=transformed audio_data
+            _, parser_data, transcriptions = \
+                self._get_stt_from_file(wav_file_path, lang)
+            timing = parser_data.pop('timing')
             message.context["audio_parser_data"] = parser_data
+            message.context.setdefault('timing', dict())
+            message.context['timing'] = {**timing, **message.context['timing']}
             context = build_context(message)
-            context['timing']['get_stt'] = self._stopwatch.time
             data = {
                 "utterances": transcriptions,
                 "lang": message.data.get("lang", "en-us")
             }
+            # Send a new message to the skills module with proper routing ctx
             handled = self._emit_utterance_to_skills(Message(
                 'recognizer_loop:utterance', data, context))
+
+            # Reply to original message with transcription/audio parser data
             self.bus.emit(message.reply(ident,
                                         data={"parser_data": parser_data,
                                               "transcripts": transcriptions,
@@ -423,7 +501,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         Handle notification to operate in offline mode
         """
         LOG.info("Offline mode selected, Reloading STT Plugin")
-        config = dict(self.config)
+        config: Dict[str, dict] = dict(self.config)
         if config['stt'].get('offline_module'):
             config['stt']['module'] = config['stt'].get('offline_module')
             self.voice_loop.stt = STTFactory.create(config)
@@ -456,35 +534,48 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         :return: (AudioData of object, extracted context, transcriptions)
         """
         from neon_utils.file_utils import get_audio_file_stream
-        lang = lang or 'en-us'  # TODO: read default from config
-        segment = AudioSegment.from_file(wav_file)
+        _stopwatch = Stopwatch()
+        lang = lang or self.config.get('lang')
+        desired_sample_rate = self.config['listener'].get('sample_rate', 16000)
+        desired_sample_width = self.config['listener'].get('sample_width', 2)
+        segment = (AudioSegment.from_file(wav_file).set_channels(1)
+                   .set_frame_rate(desired_sample_rate)
+                   .set_sample_width(desired_sample_width))
+        LOG.debug(f"Audio fr={segment.frame_rate},sw={segment.sample_width},"
+                  f"fw={segment.frame_width},ch={segment.channels}")
         audio_data = AudioData(segment.raw_data, segment.frame_rate,
                                segment.sample_width)
-        audio_stream = get_audio_file_stream(wav_file)
         if not self.api_stt:
             raise RuntimeError("api_stt not initialized."
                                " is `listener['enable_stt_api'] set to False?")
-        if hasattr(self.api_stt, 'stream_start'):
-            if self.lock.acquire(True, 30):
-                LOG.info(f"Starting STT processing (lang={lang}): {wav_file}")
-                self.api_stt.stream_start(lang)
-                while True:
-                    try:
-                        data = audio_stream.read(1024)
-                        self.api_stt.stream_data(data)
-                    except EOFError:
-                        break
-                transcriptions = self.api_stt.stream_stop()
-                self.lock.release()
+        with _stopwatch:
+            if hasattr(self.api_stt, 'stream_start'):
+                audio_stream = get_audio_file_stream(wav_file, desired_sample_rate)
+                if self.lock.acquire(True, 30):
+                    LOG.info(f"Starting STT processing (lang={lang}): {wav_file}")
+                    self.api_stt.stream_start(lang)
+                    while True:
+                        try:
+                            data = audio_stream.read(1024)
+                            self.api_stt.stream_data(data)
+                        except EOFError:
+                            break
+                    transcriptions = self.api_stt.stream_stop()
+                    self.lock.release()
+                else:
+                    LOG.error(f"Timed out acquiring lock, not processing: {wav_file}")
+                    transcriptions = []
             else:
-                LOG.error(f"Timed out acquiring lock, not processing: {wav_file}")
-                transcriptions = []
-        else:
-            transcriptions = self.api_stt.execute(audio_data, lang)
-        if isinstance(transcriptions, str):
-            LOG.warning("Transcriptions is a str, no alternatives provided")
-            transcriptions = [transcriptions]
-        audio, audio_context = self.transformers.transform(audio_data)
+                transcriptions = self.api_stt.execute(audio_data, lang)
+            if isinstance(transcriptions, str):
+                LOG.warning("Transcriptions is a str, no alternatives provided")
+                transcriptions = [transcriptions]
+
+        get_stt = float(_stopwatch.time)
+        with _stopwatch:
+            audio, audio_context = self.transformers.transform(audio_data)
+        audio_context["timing"] = {"get_stt": get_stt,
+                                   "transform_audio": _stopwatch.time}
         LOG.info(f"Transcribed: {transcriptions}")
         return audio, audio_context, transcriptions
 
