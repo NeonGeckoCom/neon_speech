@@ -16,6 +16,7 @@ jobs:
     uses: neongeckocom/.github/.github/workflows/docker_build_tests.yml@master
     with:
       runner: self-hosted
+      platforms: linux/amd64,linux/arm64    
   unit_tests:
     timeout-minutes: 15
     strategy:
