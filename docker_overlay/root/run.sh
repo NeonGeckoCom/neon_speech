@@ -28,5 +28,5 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Plugin installation must occur in a separate thread, before module load, for the entry point to be loaded.
-neon-speech install-plugin -f
+neon-speech install-dependencies
 neon-speech run
