@@ -44,7 +44,7 @@ RUN chmod ugo+x /root/run.sh
 
 RUN pip list
 
-RUN neon-speech install-plugin -f
+RUN neon-speech install-dependencies
 
 CMD ["/root/run.sh"]
 
