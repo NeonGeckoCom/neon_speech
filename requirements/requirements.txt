@@ -5,8 +5,6 @@ ovos-plugin-manager~=0.0.23
 click~=8.0
 click-default-group~=1.2
 neon-utils[network,audio]~=1.9
-ovos-config~=0.0.7
-
 ovos-vad-plugin-webrtcvad~=0.0.1
 ovos-ww-plugin-vosk~=0.1
 ovos-microphone-plugin-alsa~=0.0.0
