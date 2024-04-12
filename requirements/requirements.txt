@@ -1,4 +1,4 @@
-ovos-dinkum-listener~=0.0.2,>=0.0.3a34
+ovos-dinkum-listener==0.0.3a35
 ovos-bus-client~=0.0.3
 ovos-utils~=0.0.30
 ovos-plugin-manager~=0.0.23
