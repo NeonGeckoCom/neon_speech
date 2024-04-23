@@ -1,60 +1,60 @@
 # Changelog
 
-## [4.2.1a7](https://github.com/NeonGeckoCom/neon_speech/tree/4.2.1a7) (2023-12-13)
+## [4.3.1a7](https://github.com/NeonGeckoCom/neon_speech/tree/4.3.1a7) (2024-04-23)
 
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.2.1a6...4.2.1a7)
-
-**Merged pull requests:**
-
-- Update neon-utils dependency to stable release [\#186](https://github.com/NeonGeckoCom/neon_speech/pull/186) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [4.2.1a6](https://github.com/NeonGeckoCom/neon_speech/tree/4.2.1a6) (2023-11-29)
-
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.2.1a5...4.2.1a6)
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.3.1a6...4.3.1a7)
 
 **Merged pull requests:**
 
-- Override ovos.language.stt handler for server/API usage [\#185](https://github.com/NeonGeckoCom/neon_speech/pull/185) ([NeonDaniel](https://github.com/NeonDaniel))
+- Fix deprecation logs and formatting changes [\#194](https://github.com/NeonGeckoCom/neon_speech/pull/194) ([NeonDaniel](https://github.com/NeonDaniel))
 
-## [4.2.1a5](https://github.com/NeonGeckoCom/neon_speech/tree/4.2.1a5) (2023-11-22)
+## [4.3.1a6](https://github.com/NeonGeckoCom/neon_speech/tree/4.3.1a6) (2024-04-23)
 
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.2.1a4...4.2.1a5)
-
-**Merged pull requests:**
-
-- Update global config on local user STT language change [\#184](https://github.com/NeonGeckoCom/neon_speech/pull/184) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [4.2.1a4](https://github.com/NeonGeckoCom/neon_speech/tree/4.2.1a4) (2023-11-22)
-
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.2.1a3...4.2.1a4)
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.3.1a5...4.3.1a6)
 
 **Merged pull requests:**
 
-- Add timing metrics [\#183](https://github.com/NeonGeckoCom/neon_speech/pull/183) ([NeonDaniel](https://github.com/NeonDaniel))
+- Update dependencies to prep stable release [\#193](https://github.com/NeonGeckoCom/neon_speech/pull/193) ([NeonDaniel](https://github.com/NeonDaniel))
 
-## [4.2.1a3](https://github.com/NeonGeckoCom/neon_speech/tree/4.2.1a3) (2023-11-14)
+## [4.3.1a5](https://github.com/NeonGeckoCom/neon_speech/tree/4.3.1a5) (2024-04-12)
 
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.2.1a2...4.2.1a3)
-
-**Merged pull requests:**
-
-- Improved timing context handling with unit tests [\#182](https://github.com/NeonGeckoCom/neon_speech/pull/182) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [4.2.1a2](https://github.com/NeonGeckoCom/neon_speech/tree/4.2.1a2) (2023-11-10)
-
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.2.1a1...4.2.1a2)
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.3.1a4...4.3.1a5)
 
 **Merged pull requests:**
 
-- Add timing metrics for audio input to handler in speech service [\#181](https://github.com/NeonGeckoCom/neon_speech/pull/181) ([NeonDaniel](https://github.com/NeonDaniel))
+- Update dependencies to pin latest ovos-dinkum-listener [\#192](https://github.com/NeonGeckoCom/neon_speech/pull/192) ([NeonDaniel](https://github.com/NeonDaniel))
 
-## [4.2.1a1](https://github.com/NeonGeckoCom/neon_speech/tree/4.2.1a1) (2023-11-09)
+## [4.3.1a4](https://github.com/NeonGeckoCom/neon_speech/tree/4.3.1a4) (2024-04-09)
 
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.2.0...4.2.1a1)
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.3.1a3...4.3.1a4)
 
 **Merged pull requests:**
 
-- Resample API input wav audio to ensure format matches listener config [\#180](https://github.com/NeonGeckoCom/neon_speech/pull/180) ([NeonDaniel](https://github.com/NeonDaniel))
+- Update ovos-dinkum-listener to latest version [\#191](https://github.com/NeonGeckoCom/neon_speech/pull/191) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [4.3.1a3](https://github.com/NeonGeckoCom/neon_speech/tree/4.3.1a3) (2024-04-09)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.3.1a2...4.3.1a3)
+
+**Merged pull requests:**
+
+- Feature/plugin installation from config [\#190](https://github.com/NeonGeckoCom/neon_speech/pull/190) ([dblencowe](https://github.com/dblencowe))
+
+## [4.3.1a2](https://github.com/NeonGeckoCom/neon_speech/tree/4.3.1a2) (2024-01-30)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.3.1a1...4.3.1a2)
+
+**Merged pull requests:**
+
+- feat: upgrades dockerfile to python3.10-slim [\#189](https://github.com/NeonGeckoCom/neon_speech/pull/189) ([dblencowe](https://github.com/dblencowe))
+
+## [4.3.1a1](https://github.com/NeonGeckoCom/neon_speech/tree/4.3.1a1) (2024-01-23)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.3.0...4.3.1a1)
+
+**Merged pull requests:**
+
+- feat: Adds arm64 docker image builds [\#188](https://github.com/NeonGeckoCom/neon_speech/pull/188) ([dblencowe](https://github.com/dblencowe))
 
 
 

@@ -1,4 +1,4 @@
-FROM python:3.8-slim as base
+FROM python:3.10-slim as base
 
 LABEL vendor=neon.ai \
     ai.neon.name="neon-speech"
@@ -44,7 +44,7 @@ RUN chmod ugo+x /root/run.sh
 
 RUN pip list
 
-RUN neon-speech install-plugin -f
+RUN neon-speech install-dependencies
 
 CMD ["/root/run.sh"]
 
