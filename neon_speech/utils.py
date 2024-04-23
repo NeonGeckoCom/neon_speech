@@ -60,13 +60,15 @@ def _plugin_to_package(plugin: str) -> str:
     }
     return known_plugins.get(plugin) or plugin
 
+
 def build_extra_dependency_list(config: Union[dict, Configuration], additional: List[str] = []) -> List[str]:
     extra_dependencies = config.get("extra_dependencies", {})
     dependencies = additional + extra_dependencies.get("global", []) + extra_dependencies.get("voice", [])
 
     return dependencies
 
-@deprecated("Replaced by `neon_utils.packaging_utils.install_packages_from_pip`", "2.0.0")
+
+@deprecated("Replaced by `neon_utils.packaging_utils.install_packages_from_pip`", "5.0.0")
 def install_stt_plugin(plugin: str) -> bool:
     """
     Install an stt plugin using pip
