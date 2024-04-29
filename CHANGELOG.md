@@ -1,60 +1,12 @@
 # Changelog
 
-## [4.3.1a7](https://github.com/NeonGeckoCom/neon_speech/tree/4.3.1a7) (2024-04-23)
+## [4.4.1a1](https://github.com/NeonGeckoCom/neon_speech/tree/4.4.1a1) (2024-04-25)
 
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.3.1a6...4.3.1a7)
-
-**Merged pull requests:**
-
-- Fix deprecation logs and formatting changes [\#194](https://github.com/NeonGeckoCom/neon_speech/pull/194) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [4.3.1a6](https://github.com/NeonGeckoCom/neon_speech/tree/4.3.1a6) (2024-04-23)
-
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.3.1a5...4.3.1a6)
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.4.0...4.4.1a1)
 
 **Merged pull requests:**
 
-- Update dependencies to prep stable release [\#193](https://github.com/NeonGeckoCom/neon_speech/pull/193) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [4.3.1a5](https://github.com/NeonGeckoCom/neon_speech/tree/4.3.1a5) (2024-04-12)
-
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.3.1a4...4.3.1a5)
-
-**Merged pull requests:**
-
-- Update dependencies to pin latest ovos-dinkum-listener [\#192](https://github.com/NeonGeckoCom/neon_speech/pull/192) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [4.3.1a4](https://github.com/NeonGeckoCom/neon_speech/tree/4.3.1a4) (2024-04-09)
-
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.3.1a3...4.3.1a4)
-
-**Merged pull requests:**
-
-- Update ovos-dinkum-listener to latest version [\#191](https://github.com/NeonGeckoCom/neon_speech/pull/191) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [4.3.1a3](https://github.com/NeonGeckoCom/neon_speech/tree/4.3.1a3) (2024-04-09)
-
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.3.1a2...4.3.1a3)
-
-**Merged pull requests:**
-
-- Feature/plugin installation from config [\#190](https://github.com/NeonGeckoCom/neon_speech/pull/190) ([dblencowe](https://github.com/dblencowe))
-
-## [4.3.1a2](https://github.com/NeonGeckoCom/neon_speech/tree/4.3.1a2) (2024-01-30)
-
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.3.1a1...4.3.1a2)
-
-**Merged pull requests:**
-
-- feat: upgrades dockerfile to python3.10-slim [\#189](https://github.com/NeonGeckoCom/neon_speech/pull/189) ([dblencowe](https://github.com/dblencowe))
-
-## [4.3.1a1](https://github.com/NeonGeckoCom/neon_speech/tree/4.3.1a1) (2024-01-23)
-
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.3.0...4.3.1a1)
-
-**Merged pull requests:**
-
-- feat: Adds arm64 docker image builds [\#188](https://github.com/NeonGeckoCom/neon_speech/pull/188) ([dblencowe](https://github.com/dblencowe))
+- Revert ovos-dinkum-listener dependency to previous validated version [\#197](https://github.com/NeonGeckoCom/neon_speech/pull/197) ([NeonDaniel](https://github.com/NeonDaniel))
 
 
 
