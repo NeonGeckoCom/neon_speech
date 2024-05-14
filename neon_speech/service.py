@@ -35,7 +35,6 @@ from tempfile import mkstemp
 from threading import Lock, Event
 from time import time
 
-from ovos_utils.process_utils import ProcessState
 from pydub import AudioSegment
 from speech_recognition import AudioData
 from neon_utils.file_utils import decode_base64_string_to_file
