@@ -34,6 +34,7 @@ import ovos_dinkum_listener.plugins
 from tempfile import mkstemp
 from threading import Lock, Event
 from time import time
+
 from pydub import AudioSegment
 from speech_recognition import AudioData
 from neon_utils.file_utils import decode_base64_string_to_file
@@ -135,9 +136,9 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             LOG.info("Skipping api_stt init")
             self.api_stt = None
 
-    def _record_begin(self):
+    def _record_end_signal(self):
         self._stt_stopwatch.start()
-        OVOSDinkumVoiceService._record_begin(self)
+        OVOSDinkumVoiceService._record_end_signal(self)
 
     def _stt_text(self, text: str, stt_context: dict):
         self._stt_stopwatch.stop()
