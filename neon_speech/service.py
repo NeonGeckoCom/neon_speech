@@ -41,6 +41,7 @@ from neon_utils.file_utils import decode_base64_string_to_file
 from ovos_utils.log import LOG, log_deprecation
 from neon_utils.configuration_utils import get_neon_user_config
 from neon_utils.metrics_utils import Stopwatch
+from neon_utils.parse_utils import clean_quotes
 from neon_utils.user_utils import apply_local_user_profile_updates
 from ovos_bus_client import Message
 from ovos_config.config import update_mycroft_config
@@ -571,6 +572,8 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             if isinstance(transcriptions, str):
                 LOG.warning("Transcriptions is a str, no alternatives provided")
                 transcriptions = [transcriptions]
+
+            transcriptions = [clean_quotes(t) for t in transcriptions]
 
         get_stt = float(_stopwatch.time)
         with _stopwatch:
