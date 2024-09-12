@@ -176,7 +176,8 @@ class UtilTests(unittest.TestCase):
              "ovos-stt-plugin-server": {"url": "https://0.0.0.0:8080/stt"}}
         )
         self.assertIsInstance(non_streaming, STT)
-        self.assertEqual(non_streaming.url, "https://0.0.0.0:8080/stt")
+        self.assertEqual(non_streaming.config,
+                         {"url": "https://0.0.0.0:8080/stt"})
 
 
 class ServiceTests(unittest.TestCase):
