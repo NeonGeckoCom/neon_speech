@@ -31,6 +31,7 @@ import os
 import shutil
 import sys
 import unittest
+import yaml
 
 from os.path import dirname, join
 from threading import Thread, Event
@@ -47,7 +48,6 @@ CONFIG_PATH = os.path.join(dirname(__file__), "config")
 os.environ["XDG_CONFIG_HOME"] = CONFIG_PATH
 os.environ["OVOS_CONFIG_BASE_FOLDER"] = "neon"
 os.environ["OVOS_CONFIG_FILENAME"] = "neon.yaml"
-
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
@@ -229,13 +229,13 @@ class ServiceTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from ovos_config.config import update_mycroft_config
-        # from neon_utils.configuration_utils import init_config_dir
-        # init_config_dir()
+        os.makedirs(join(CONFIG_PATH, "neon"), exist_ok=True)
+        test_config = join(CONFIG_PATH, "neon", "neon.yaml")
+        with open(test_config, 'w+') as f:
+            yaml.dump({"hotwords": cls.hotwords_config,
+                       "stt": {"module": "neon-stt-plugin-nemo"},
+                       "VAD": {"module": "dummy"}}, f)
 
-        update_mycroft_config({"hotwords": cls.hotwords_config,
-                               "stt": {"module": "neon-stt-plugin-nemo"},
-                               "VAD": {"module": "dummy"}})
         import importlib
         import ovos_config.config
         importlib.reload(ovos_config.config)
@@ -244,7 +244,8 @@ class ServiceTests(unittest.TestCase):
 
         from neon_speech.service import NeonSpeechClient
         cls.service = NeonSpeechClient(bus=cls.bus, ready_hook=cls.on_ready)
-        # assert Configuration() == service.loop.config_core
+
+        assert cls.service.reload_configuration in Configuration._callbacks
 
         def _mocked_run():
             stopping_event = Event()
