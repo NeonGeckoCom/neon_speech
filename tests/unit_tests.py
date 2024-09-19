@@ -117,7 +117,7 @@ class UtilTests(unittest.TestCase):
         AUDIO_FILE_PATH = os.path.join(os.path.dirname(
             os.path.realpath(__file__)), "audio_files")
         TEST_CONFIG = use_neon_speech(Configuration)()
-        TEST_CONFIG["stt"]["module"] = "deepspeech_stream_local"
+        TEST_CONFIG["stt"]["module"] = "neon-stt-plugin-nemo"
         bus = FakeBus()
         bus.connected_event = Event()
         bus.connected_event.set()
