@@ -1,5 +1,5 @@
 ovos-stt-plugin-vosk~=0.1
-neon-stt-plugin-nemo~=0.0.2,>=0.0.5a4
+neon-stt-plugin-nemo~=0.0.2,>=0.0.5a5
 onnxruntime!=1.16.0  # TODO: Patching https://github.com/microsoft/onnxruntime/issues/17631
 
 # Load alternative WW plugins so they are available
