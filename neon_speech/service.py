@@ -220,6 +220,16 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         self.bus.on("neon.enable_wake_word", self.handle_enable_wake_word)
         self.bus.on("neon.disable_wake_word", self.handle_disable_wake_word)
 
+        # TODO: Patching config reload behavior
+        self.bus.on("configuration.patch", self._patch_handle_config_reload)
+
+    def _patch_handle_config_reload(self, _: Message):
+        # This patches observed behavior where the filewatcher fails to trigger.
+        # Configuration reload is idempotent, so calling it again will have
+        # minimal impact
+        self.config.reload()
+        self.reload_configuration()
+
     def _handle_get_languages_stt(self, message):
         if self.config.get('listener', {}).get('enable_voice_loop', True):
             return OVOSDinkumVoiceService._handle_get_languages_stt(self,
