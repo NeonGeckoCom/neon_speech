@@ -129,8 +129,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         self.lock = Lock()
         self._stop_service = Event()
         if self.config.get('listener', {}).get('enable_stt_api', True):
-            self.api_stt = STTFactory.create(config=self.config,
-                                             results_event=None)
+            self.api_stt = STTFactory.create(config=self.config)
         else:
             LOG.info("Skipping api_stt init")
             self.api_stt = None
