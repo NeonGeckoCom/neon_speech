@@ -133,7 +133,8 @@ class UtilTests(unittest.TestCase):
         self.assertIsInstance(audio, AudioData)
         self.assertIsInstance(context, dict)
         self.assertIsInstance(transcripts, list)
-        self.assertIn("stop", transcripts)
+        tr_str = [t[0] for t in transcripts]
+        self.assertIn("stop", tr_str)
 
         def threaded_get_stt():
             audio, context, transcripts = \
@@ -141,7 +142,8 @@ class UtilTests(unittest.TestCase):
             self.assertIsInstance(audio, AudioData)
             self.assertIsInstance(context, dict)
             self.assertIsInstance(transcripts, list)
-            self.assertIn("stop", transcripts)
+            tr_str = [t[0] for t in transcripts]
+            self.assertIn("stop", tr_str)
 
         threads = list()
         for i in range(0, 12):
