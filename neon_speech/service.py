@@ -48,9 +48,7 @@ from ovos_config.config import update_mycroft_config
 from ovos_dinkum_listener.service import OVOSDinkumVoiceService
 from ovos_dinkum_listener.voice_loop.voice_loop import ListeningMode
 
-from neon_speech.stt import STTFactory
-
-ovos_dinkum_listener.plugins.OVOSSTTFactory = STTFactory
+from ovos_plugin_manager.stt import OVOSSTTFactory as STTFactory
 
 _SERVICE_READY = Event()
 
