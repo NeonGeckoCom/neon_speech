@@ -230,8 +230,8 @@ class ServiceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         from ovos_config.config import update_mycroft_config
-        from neon_utils.configuration_utils import init_config_dir
-        init_config_dir()
+        # from neon_utils.configuration_utils import init_config_dir
+        # init_config_dir()
 
         update_mycroft_config({"hotwords": cls.hotwords_config,
                                "stt": {"module": "neon-stt-plugin-nemo"},
@@ -239,11 +239,9 @@ class ServiceTests(unittest.TestCase):
         import importlib
         import ovos_config.config
         importlib.reload(ovos_config.config)
-        # from ovos_config.config import Configuration
-        # assert Configuration.xdg_configs[0]['hotwords'] == hotwords_config
+        from ovos_config.config import Configuration
+        assert Configuration.xdg_configs[0]['hotwords'] == cls.hotwords_config
 
-        from neon_speech.utils import use_neon_speech
-        use_neon_speech(init_config_dir)()
         from neon_speech.service import NeonSpeechClient
         cls.service = NeonSpeechClient(bus=cls.bus, ready_hook=cls.on_ready)
         # assert Configuration() == service.loop.config_core
