@@ -30,15 +30,21 @@ from abc import ABC
 from inspect import signature
 from threading import Event
 
-from neon_utils import LOG
+from ovos_utils.log import LOG, log_deprecation
 from ovos_plugin_manager.stt import OVOSSTTFactory, get_stt_config
 from ovos_plugin_manager.templates.stt import StreamingSTT
 
 from ovos_config.config import Configuration
 
+log_deprecation("This module is deprecated. Import from `ovos_plugin_manager`",
+                "5.0.0")
+
 
 class WrappedSTT(StreamingSTT, ABC):
     def __new__(cls, base_engine, *args, **kwargs):
+        log_deprecation("This class is deprecated. Use "
+                        "`ovos_plugin_manager.templates.stt.StreamingSTT",
+                        "5.0.0")
         results_event = kwargs.get("results_event") or Event()
         # build STT
         for k in list(kwargs.keys()):
@@ -66,6 +72,10 @@ class WrappedSTT(StreamingSTT, ABC):
 
 
 class STTFactory(OVOSSTTFactory):
+    log_deprecation("This class is deprecated. Use "
+                    "`ovos_plugin_manager.stt.OVOSSTTFactory",
+                    "5.0.0")
+
     @staticmethod
     def create(config=None, results_event: Event = None):
         get_stt_config(config)

@@ -104,6 +104,7 @@ def init_stt_plugin(plugin: str):
         LOG.warning(f"Could not find plugin: {plugin}")
 
 
+@deprecated("Platform detection has been deprecated", "5.0.0")
 def use_neon_speech(func):
     """
     Wrapper to ensure call originates from neon_speech for stack checks.
