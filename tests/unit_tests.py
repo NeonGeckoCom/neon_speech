@@ -1,6 +1,6 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Framework
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2022 Neongecko.com Inc.
+# Copyright 2008-2025 Neongecko.com Inc.
 # Contributors: Daniel McKnight, Guy Daniels, Elon Gasper, Richard Leeds,
 # Regina Bloomstine, Casimiro Ferreira, Andrii Pernatii, Kirill Hrymailo
 # BSD-3 License
@@ -460,12 +460,10 @@ class ServiceTests(unittest.TestCase):
 class TestCLI(unittest.TestCase):
     runner = CliRunner()
 
-    @patch("neon_speech.cli.init_config_dir")
     @patch("neon_speech.__main__.main")
-    def test_run(self, main, init_config):
+    def test_run(self, main):
         from neon_speech.cli import run
         self.runner.invoke(run)
-        init_config.assert_called_once()
         main.assert_called_once()
 
 
