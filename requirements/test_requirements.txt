@@ -1,4 +1,4 @@
-neon-stt-plugin-nemo~=0.0,>=0.0.5a4
+neon-stt-plugin-nemo~=0.1
 ovos-stt-plugin-vosk~=0.1
 ovos-stt-plugin-server~=0.0.3
 pytest
