@@ -1,12 +1,84 @@
 # Changelog
 
-## [4.4.1a1](https://github.com/NeonGeckoCom/neon_speech/tree/4.4.1a1) (2024-04-25)
+## [4.4.2a9](https://github.com/NeonGeckoCom/neon_speech/tree/4.4.2a9) (2025-03-18)
 
-[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.4.0...4.4.1a1)
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.4.2a8...4.4.2a9)
 
 **Merged pull requests:**
 
-- Revert ovos-dinkum-listener dependency to previous validated version [\#197](https://github.com/NeonGeckoCom/neon_speech/pull/197) ([NeonDaniel](https://github.com/NeonDaniel))
+- Update unit test and add manual Docker update automation [\#208](https://github.com/NeonGeckoCom/neon_speech/pull/208) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [4.4.2a8](https://github.com/NeonGeckoCom/neon_speech/tree/4.4.2a8) (2025-03-18)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.4.2a7...4.4.2a8)
+
+**Merged pull requests:**
+
+- Update dependencies to stable versions [\#207](https://github.com/NeonGeckoCom/neon_speech/pull/207) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [4.4.2a7](https://github.com/NeonGeckoCom/neon_speech/tree/4.4.2a7) (2025-02-11)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.4.2a6...4.4.2a7)
+
+**Closed issues:**
+
+- Investigate Removing `PIDLock` and `reset_sigint_handler` [\#161](https://github.com/NeonGeckoCom/neon_speech/issues/161)
+
+**Merged pull requests:**
+
+- Deprecate `PIDLock` usage and update Dockerfile to resolve warnings [\#206](https://github.com/NeonGeckoCom/neon_speech/pull/206) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [4.4.2a6](https://github.com/NeonGeckoCom/neon_speech/tree/4.4.2a6) (2025-02-07)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.4.2a5...4.4.2a6)
+
+**Merged pull requests:**
+
+- Update CLI configuration handling and unit tests [\#205](https://github.com/NeonGeckoCom/neon_speech/pull/205) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [4.4.2a5](https://github.com/NeonGeckoCom/neon_speech/tree/4.4.2a5) (2024-09-20)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.4.2a4...4.4.2a5)
+
+**Closed issues:**
+
+- With VAD, Neon plugins should be updated to skip the `Event` handling. [\#168](https://github.com/NeonGeckoCom/neon_speech/issues/168)
+
+**Merged pull requests:**
+
+- Refactor to extend changes in OvosDinkumListener [\#203](https://github.com/NeonGeckoCom/neon_speech/pull/203) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [4.4.2a4](https://github.com/NeonGeckoCom/neon_speech/tree/4.4.2a4) (2024-09-13)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.4.2a3...4.4.2a4)
+
+**Merged pull requests:**
+
+- Update ovos-dinkum-listener depdendency [\#202](https://github.com/NeonGeckoCom/neon_speech/pull/202) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [4.4.2a3](https://github.com/NeonGeckoCom/neon_speech/tree/4.4.2a3) (2024-09-13)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.4.2a2...4.4.2a3)
+
+**Merged pull requests:**
+
+- Update dependencies to allow latest OVOS packages [\#201](https://github.com/NeonGeckoCom/neon_speech/pull/201) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [4.4.2a2](https://github.com/NeonGeckoCom/neon_speech/tree/4.4.2a2) (2024-06-18)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.4.2a1...4.4.2a2)
+
+**Merged pull requests:**
+
+- Remove quotes from API endpoint [\#200](https://github.com/NeonGeckoCom/neon_speech/pull/200) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [4.4.2a1](https://github.com/NeonGeckoCom/neon_speech/tree/4.4.2a1) (2024-05-14)
+
+[Full Changelog](https://github.com/NeonGeckoCom/neon_speech/compare/4.4.1...4.4.2a1)
+
+**Merged pull requests:**
+
+- Move STT timing to start at recording end [\#199](https://github.com/NeonGeckoCom/neon_speech/pull/199) ([NeonDaniel](https://github.com/NeonDaniel))
 
 
 
