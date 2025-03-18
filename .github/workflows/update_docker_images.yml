@@ -1,0 +1,15 @@
+name: Publish Updated Docker image
+on:
+  workflow_dispatch:
+
+jobs:
+
+  build_and_publish_docker:
+    uses: neongeckocom/.github/.github/workflows/publish_docker.yml@master
+    secrets: inherit
+    with:
+      include_semver: False
+      base_tag: base
+      extra_tag: default_model
+      runner: diana
+      platforms: linux/amd64,linux/arm64

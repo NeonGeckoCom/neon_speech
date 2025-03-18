@@ -1,6 +1,6 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Framework
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2022 Neongecko.com Inc.
+# Copyright 2008-2025 Neongecko.com Inc.
 # Contributors: Daniel McKnight, Guy Daniels, Elon Gasper, Richard Leeds,
 # Regina Bloomstine, Casimiro Ferreira, Andrii Pernatii, Kirill Hrymailo
 # BSD-3 License
@@ -65,9 +65,9 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         use_neon_speech(init_config_dir)()
 
         test_config = dict(Configuration())
-        test_config["stt"]["module"] = "deepspeech_stream_local"
+        test_config["stt"]["module"] = "neon-stt-plugin-nemo"
         test_config["listener"]["VAD"]["module"] = "dummy"
-        assert test_config["stt"]["module"] == "deepspeech_stream_local"
+        assert test_config["stt"]["module"] == "neon-stt-plugin-nemo"
 
         ready_event = Event()
 
@@ -77,7 +77,7 @@ class TestAPIMethodsStreaming(unittest.TestCase):
         cls.speech_service = NeonSpeechClient(speech_config=test_config,
                                               daemonic=False, bus=cls.bus,
                                               ready_hook=_ready)
-        assert cls.speech_service.config["stt"]["module"] == "deepspeech_stream_local"
+        assert cls.speech_service.config["stt"]["module"] == "neon-stt-plugin-nemo"
         cls.speech_service.start()
 
         if not ready_event.wait(120):

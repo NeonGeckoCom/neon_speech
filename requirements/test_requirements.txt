@@ -1,5 +1,4 @@
-neon-stt-plugin-deepspeech_stream_local~=2.0
-neon-stt-plugin-nemo~=0.0,>=0.0.2
+neon-stt-plugin-nemo~=0.1
 ovos-stt-plugin-vosk~=0.1
 ovos-stt-plugin-server~=0.0.3
 pytest

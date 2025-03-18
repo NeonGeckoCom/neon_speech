@@ -11,7 +11,7 @@ jobs:
   py_build_tests:
     uses: neongeckocom/.github/.github/workflows/python_build_tests.yml@master
     with:
-      python_version: "3.8"
+      python_version: "3.10"
   docker_build_tests:
     uses: neongeckocom/.github/.github/workflows/docker_build_tests.yml@master
     with:
@@ -21,12 +21,12 @@ jobs:
     timeout-minutes: 15
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.9, '3.10', '3.11', '3.12']
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Set up python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -34,21 +34,21 @@ jobs:
           sudo apt update
           sudo apt install portaudio19-dev python3-pyaudio libpulse-dev ffmpeg
           python -m pip install --upgrade pip
-          pip install cython wheel
+          pip install cython wheel setuptools
           pip install . -r requirements/test_requirements.txt
       - name: Unit Tests
         run: |
           pytest tests/unit_tests.py --doctest-modules --junitxml=tests/unit-test-results.xml
       - name: Upload Unit test results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: unit-test-results
+          name: unit-test-results-${{ matrix.python-version }}
           path: tests/unit-test-results.xml
       - name: Test API Methods
         run: |
           pytest tests/api_method_tests.py --doctest-modules --junitxml=tests/api-method-test-results.xml
       - name: Upload API Method test results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: api-method-test-results
+          name: api-method-test-results-${{ matrix.python-version }}
           path: tests/api-method-test-results.xml

@@ -1,6 +1,6 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Framework
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2022 Neongecko.com Inc.
+# Copyright 2008-2025 Neongecko.com Inc.
 # Contributors: Daniel McKnight, Guy Daniels, Elon Gasper, Richard Leeds,
 # Regina Bloomstine, Casimiro Ferreira, Andrii Pernatii, Kirill Hrymailo
 # BSD-3 License
@@ -27,28 +27,28 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import os
-from typing import Dict
+from typing import Dict, List, Tuple
 
 import ovos_dinkum_listener.plugins
 
 from tempfile import mkstemp
 from threading import Lock, Event
 from time import time
+
 from pydub import AudioSegment
 from speech_recognition import AudioData
 from neon_utils.file_utils import decode_base64_string_to_file
 from ovos_utils.log import LOG, log_deprecation
 from neon_utils.configuration_utils import get_neon_user_config
 from neon_utils.metrics_utils import Stopwatch
+from neon_utils.parse_utils import clean_quotes
 from neon_utils.user_utils import apply_local_user_profile_updates
 from ovos_bus_client import Message
 from ovos_config.config import update_mycroft_config
 from ovos_dinkum_listener.service import OVOSDinkumVoiceService
 from ovos_dinkum_listener.voice_loop.voice_loop import ListeningMode
 
-from neon_speech.stt import STTFactory
-
-ovos_dinkum_listener.plugins.OVOSSTTFactory = STTFactory
+from ovos_plugin_manager.stt import OVOSSTTFactory as STTFactory
 
 _SERVICE_READY = Event()
 
@@ -129,15 +129,14 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         self.lock = Lock()
         self._stop_service = Event()
         if self.config.get('listener', {}).get('enable_stt_api', True):
-            self.api_stt = STTFactory.create(config=self.config,
-                                             results_event=None)
+            self.api_stt = STTFactory.create(config=self.config)
         else:
             LOG.info("Skipping api_stt init")
             self.api_stt = None
 
-    def _record_begin(self):
+    def _record_end_signal(self):
         self._stt_stopwatch.start()
-        OVOSDinkumVoiceService._record_begin(self)
+        OVOSDinkumVoiceService._record_end_signal(self)
 
     def _stt_text(self, text: str, stt_context: dict):
         self._stt_stopwatch.stop()
@@ -220,6 +219,16 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         self.bus.on("neon.get_wake_words", self.handle_get_wake_words)
         self.bus.on("neon.enable_wake_word", self.handle_enable_wake_word)
         self.bus.on("neon.disable_wake_word", self.handle_disable_wake_word)
+
+        # TODO: Patching config reload behavior
+        self.bus.on("configuration.patch", self._patch_handle_config_reload)
+
+    def _patch_handle_config_reload(self, _: Message):
+        # This patches observed behavior where the filewatcher fails to trigger.
+        # Configuration reload is idempotent, so calling it again will have
+        # minimal impact
+        self.config.reload()
+        self.reload_configuration()
 
     def _handle_get_languages_stt(self, message):
         if self.config.get('listener', {}).get('enable_voice_loop', True):
@@ -412,9 +421,11 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                 message.context['timing']['client_to_core'] = \
                     received_time - sent_time
             message.context['timing']['response_sent'] = time()
+            transcribed_str = [t[0] for t in transcriptions]
             self.bus.emit(message.reply(ident,
                                         data={"parser_data": parser_data,
-                                              "transcripts": transcriptions}))
+                                              "transcripts": transcribed_str,
+                                              "transcripts_with_conf": transcriptions}))
         except Exception as e:
             LOG.error(e)
             message.context['timing']['response_sent'] = time()
@@ -465,8 +476,9 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             message.context.setdefault('timing', dict())
             message.context['timing'] = {**timing, **message.context['timing']}
             context = build_context(message)
+            transribed_str = [t[0] for t in transcriptions]
             data = {
-                "utterances": transcriptions,
+                "utterances": transribed_str,
                 "lang": message.data.get("lang", "en-us")
             }
             # Send a new message to the skills module with proper routing ctx
@@ -476,7 +488,8 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             # Reply to original message with transcription/audio parser data
             self.bus.emit(message.reply(ident,
                                         data={"parser_data": parser_data,
-                                              "transcripts": transcriptions,
+                                              "transcripts": transribed_str,
+                                              "transcripts_with_conf": transcriptions,
                                               "skills_recv": handled}))
         except Exception as e:
             LOG.error(e)
@@ -526,7 +539,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         return wav_file_path
 
     def _get_stt_from_file(self, wav_file: str,
-                           lang: str = None) -> (AudioData, dict, list):
+                           lang: str = None) -> (AudioData, dict, List[Tuple[str, float]]):
         """
         Performs STT and audio processing on the specified wav_file
         :param wav_file: wav audio file to process
@@ -560,16 +573,18 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                             self.api_stt.stream_data(data)
                         except EOFError:
                             break
-                    transcriptions = self.api_stt.stream_stop()
+                    transcriptions = self.api_stt.transcribe(None, None)
                     self.lock.release()
                 else:
                     LOG.error(f"Timed out acquiring lock, not processing: {wav_file}")
                     transcriptions = []
             else:
-                transcriptions = self.api_stt.execute(audio_data, lang)
+                transcriptions = self.api_stt.transcribe(audio_data, lang)
             if isinstance(transcriptions, str):
-                LOG.warning("Transcriptions is a str, no alternatives provided")
+                LOG.error("Transcriptions is a str, no alternatives provided")
                 transcriptions = [transcriptions]
+
+            transcriptions = [(clean_quotes(t[0]), t[1]) for t in transcriptions]
 
         get_stt = float(_stopwatch.time)
         with _stopwatch:

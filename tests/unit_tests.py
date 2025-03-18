@@ -1,6 +1,6 @@
 # NEON AI (TM) SOFTWARE, Software Development Kit & Application Framework
 # All trademark and other rights reserved by their respective owners
-# Copyright 2008-2022 Neongecko.com Inc.
+# Copyright 2008-2025 Neongecko.com Inc.
 # Contributors: Daniel McKnight, Guy Daniels, Elon Gasper, Richard Leeds,
 # Regina Bloomstine, Casimiro Ferreira, Andrii Pernatii, Kirill Hrymailo
 # BSD-3 License
@@ -31,10 +31,12 @@ import os
 import shutil
 import sys
 import unittest
+import yaml
 
 from os.path import dirname, join
 from threading import Thread, Event
-from unittest.mock import Mock, patch
+from unittest import skip
+from unittest.mock import patch
 from click.testing import CliRunner
 
 from ovos_bus_client import Message
@@ -44,7 +46,8 @@ from speech_recognition import AudioData
 
 CONFIG_PATH = os.path.join(dirname(__file__), "config")
 os.environ["XDG_CONFIG_HOME"] = CONFIG_PATH
-
+os.environ["OVOS_CONFIG_BASE_FOLDER"] = "neon"
+os.environ["OVOS_CONFIG_FILENAME"] = "neon.yaml"
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
@@ -80,12 +83,13 @@ class UtilTests(unittest.TestCase):
             "ovos-stt-plugin-vosk"))
         import ovos_stt_plugin_vosk
 
+    @skip("Configuration patching is deprecated")
     def test_patch_config(self):
         from neon_speech.utils import use_neon_speech
         from neon_utils.configuration_utils import init_config_dir
         test_config_dir = os.path.join(os.path.dirname(__file__), "config")
         os.makedirs(test_config_dir, exist_ok=True)
-        os.environ["XDG_CONFIG_HOME"] = test_config_dir
+
         use_neon_speech(init_config_dir)()
 
         with open(join(test_config_dir, "OpenVoiceOS", 'ovos.conf')) as f:
@@ -117,7 +121,7 @@ class UtilTests(unittest.TestCase):
         AUDIO_FILE_PATH = os.path.join(os.path.dirname(
             os.path.realpath(__file__)), "audio_files")
         TEST_CONFIG = use_neon_speech(Configuration)()
-        TEST_CONFIG["stt"]["module"] = "deepspeech_stream_local"
+        TEST_CONFIG["stt"]["module"] = "neon-stt-plugin-nemo"
         bus = FakeBus()
         bus.connected_event = Event()
         bus.connected_event.set()
@@ -129,7 +133,8 @@ class UtilTests(unittest.TestCase):
         self.assertIsInstance(audio, AudioData)
         self.assertIsInstance(context, dict)
         self.assertIsInstance(transcripts, list)
-        self.assertIn("stop", transcripts)
+        tr_str = [t[0] for t in transcripts]
+        self.assertIn("stop", tr_str)
 
         def threaded_get_stt():
             audio, context, transcripts = \
@@ -137,7 +142,8 @@ class UtilTests(unittest.TestCase):
             self.assertIsInstance(audio, AudioData)
             self.assertIsInstance(context, dict)
             self.assertIsInstance(transcripts, list)
-            self.assertIn("stop", transcripts)
+            tr_str = [t[0] for t in transcripts]
+            self.assertIn("stop", tr_str)
 
         threads = list()
         for i in range(0, 12):
@@ -156,7 +162,7 @@ class UtilTests(unittest.TestCase):
         ovos_vosk_streaming = STTFactory().create(
             {'module': 'ovos-stt-plugin-vosk-streaming',
              'lang': 'en-us'})
-        self.assertIsInstance(ovos_vosk_streaming.results_event, Event)
+        # self.assertIsInstance(ovos_vosk_streaming.results_event, Event)
         test_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                  "audio_files", "stop.wav")
         from neon_utils.file_utils import get_audio_file_stream
@@ -176,7 +182,7 @@ class UtilTests(unittest.TestCase):
              "ovos-stt-plugin-server": {"url": "https://0.0.0.0:8080/stt"}}
         )
         self.assertIsInstance(non_streaming, STT)
-        self.assertEqual(non_streaming.url, "https://0.0.0.0:8080/stt")
+        self.assertEqual(non_streaming.config['url'], "https://0.0.0.0:8080/stt")
 
 
 class ServiceTests(unittest.TestCase):
@@ -225,24 +231,23 @@ class ServiceTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        from ovos_config.config import update_mycroft_config
-        from neon_utils.configuration_utils import init_config_dir
-        init_config_dir()
+        os.makedirs(join(CONFIG_PATH, "neon"), exist_ok=True)
+        test_config = join(CONFIG_PATH, "neon", "neon.yaml")
+        with open(test_config, 'w+') as f:
+            yaml.dump({"hotwords": cls.hotwords_config,
+                       "stt": {"module": "neon-stt-plugin-nemo"},
+                       "VAD": {"module": "dummy"}}, f)
 
-        update_mycroft_config({"hotwords": cls.hotwords_config,
-                               "stt": {"module": "neon-stt-plugin-nemo"},
-                               "VAD": {"module": "dummy"}})
         import importlib
         import ovos_config.config
         importlib.reload(ovos_config.config)
-        # from ovos_config.config import Configuration
-        # assert Configuration.xdg_configs[0]['hotwords'] == hotwords_config
+        from ovos_config.config import Configuration
+        assert Configuration.xdg_configs[0]['hotwords'] == cls.hotwords_config
 
-        from neon_speech.utils import use_neon_speech
-        use_neon_speech(init_config_dir)()
         from neon_speech.service import NeonSpeechClient
         cls.service = NeonSpeechClient(bus=cls.bus, ready_hook=cls.on_ready)
-        # assert Configuration() == service.loop.config_core
+
+        assert cls.service.reload_configuration in Configuration._callbacks
 
         def _mocked_run():
             stopping_event = Event()
@@ -455,12 +460,10 @@ class ServiceTests(unittest.TestCase):
 class TestCLI(unittest.TestCase):
     runner = CliRunner()
 
-    @patch("neon_speech.cli.init_config_dir")
     @patch("neon_speech.__main__.main")
-    def test_run(self, main, init_config):
+    def test_run(self, main):
         from neon_speech.cli import run
         self.runner.invoke(run)
-        init_config.assert_called_once()
         main.assert_called_once()
 
 
