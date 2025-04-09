@@ -7,6 +7,6 @@ on:
       - master
 jobs:
   license_tests:
-    uses: neongeckocom/.github/.github/workflows/license_tests.yml@master
+    uses: neongeckocom/.github/.github/workflows/license_tests.yml@FEAT_UpdateLicenseTestWhitelist
     # with:
     #   packages-exclude: '^(precise-runner|fann2|tqdm|bs4|ovos-phal-plugin|ovos-skill|neon-core|nvidia|neon-phal-plugin|bitstruct|audioread|RapidFuzz).*'
