@@ -415,8 +415,8 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                 self._get_stt_from_file(wav_file_path, lang)
             timing = parser_data.pop('timing')
             message.context["timing"] = {**message.context["timing"], **timing}
-            sent_time = message.context["timing"].get("client_sent",
-                                                      received_time)
+            sent_time = message.context["timing"].get("client_sent") or \
+                received_time
             if received_time != sent_time:
                 message.context['timing']['client_to_core'] = \
                     received_time - sent_time
