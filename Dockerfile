@@ -9,6 +9,8 @@ ENV XDG_CONFIG_HOME=/config
 
 RUN apt-get update && \
   apt-get install -y \
+    curl \
+    jq \
     alsa-utils \
     libasound2-plugins \
     libpulse-dev \
@@ -23,12 +25,12 @@ RUN apt-get update && \
     unzip \
     git
 
-ADD . /neon_speech
+COPY . /neon_speech
 WORKDIR /neon_speech
 
 # cython included for Nemo package build
-RUN pip install wheel cython && \
-    pip install .[docker] --extra-index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache wheel cython && \
+    pip install --no-cache .[docker] --extra-index-url https://download.pytorch.org/whl/cpu
 
 # Get vosk model for WW detection
 RUN mkdir -p /root/.local/share/neon && \
@@ -42,10 +44,9 @@ RUN mkdir -p /root/.local/share/neon && \
 COPY docker_overlay/ /
 RUN chmod ugo+x /root/run.sh
 
-RUN pip list
-
 RUN neon-speech install-dependencies
 
+HEALTHCHECK CMD "/opt/neon/healthcheck.sh"
 CMD ["/root/run.sh"]
 
 FROM base AS default_model

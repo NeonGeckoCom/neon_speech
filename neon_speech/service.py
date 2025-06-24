@@ -27,18 +27,16 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import os
+
 from typing import Dict, List, Tuple
-
-import ovos_dinkum_listener.plugins
-
 from tempfile import mkstemp
 from threading import Lock, Event
 from time import time
-
 from pydub import AudioSegment
 from speech_recognition import AudioData
 from neon_utils.file_utils import decode_base64_string_to_file
 from ovos_utils.log import LOG, log_deprecation
+from ovos_utils.process_utils import ProcessState
 from neon_utils.configuration_utils import get_neon_user_config
 from neon_utils.metrics_utils import Stopwatch
 from neon_utils.parse_utils import clean_quotes
@@ -60,7 +58,7 @@ def on_ready():
 def wrapped_ready_hook(ready_hook: callable):
     def wrapper():
         _SERVICE_READY.set()
-        LOG.info(f"Set Ready event")
+        LOG.info("Set Ready event")
         ready_hook()
     return wrapper
 
@@ -114,6 +112,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         self.config.bus = self.bus
         self._stt_stopwatch = Stopwatch("get_stt", allow_reporting=True,
                                         bus=self.bus)
+        self._status_from_bus_connection = False
         from neon_utils.signal_utils import init_signal_handlers, \
             init_signal_bus
         init_signal_bus(self.bus)
@@ -174,11 +173,34 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         return OVOSDinkumVoiceService._validate_message_context(self, message,
                                                                 native_sources)
 
+    def check_health(self):
+        """
+        Check the health of the PHAL service and set an error state if the
+        service is unhealthy.
+        """
+        if self.status.state not in (ProcessState.READY, ProcessState.ERROR):
+            # Service is starting or stopping; skip health check
+            LOG.debug(f"Skipping health check during startup or shutdown. status={self.status.state}")
+            return
+        try:
+            self.bus.client.send(
+                    Message("neon.speech.health_check",
+                            context={"session": {"session_id": "default"}})
+                    .serialize())
+            if self._status_from_bus_connection:
+                self.status.set_ready()
+                self._status_from_bus_connection = False
+        except Exception as e:
+            LOG.error(f"Health check failed: {e}")
+            # Log without setting an error state as the bus should reconnect
+            self.status.set_error(f"Health check failed: {e}")
+            self._status_from_bus_connection = True
+
     def run(self):
         if self.config.get('listener', {}).get('enable_voice_loop', True):
             OVOSDinkumVoiceService.run(self)
         else:
-            LOG.info(f"Running without voice_loop")
+            LOG.info("Running without voice_loop")
             self.register_event_handlers()
             self.status.set_ready()
             try:
@@ -401,7 +423,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         if not wav_file_path:
             message.context['timing']['response_sent'] = time()
             self.bus.emit(message.reply(
-                ident, data={"error": f"audio_file not specified!"}))
+                ident, data={"error": "audio_file not specified!"}))
             return
 
         if not os.path.isfile(wav_file_path):
@@ -506,7 +528,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             LOG.info("Reloading STT module")
             self.voice_loop.stt = STTFactory.create()
         elif hasattr(self.voice_loop.stt, "results_event"):
-            LOG.info(f"Internet Connected, Resetting STT Stream")
+            LOG.info("Internet Connected, Resetting STT Stream")
             self.voice_loop.stt.results_event.set()
 
     def handle_offline(self, _):
@@ -519,7 +541,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
             config['stt']['module'] = config['stt'].get('offline_module')
             self.voice_loop.stt = STTFactory.create(config)
         else:
-            LOG.info(f"Offline Mode, Resetting STT Stream")
+            LOG.info("Offline Mode, Resetting STT Stream")
             self.voice_loop.stt.results_event.set()
 
     def handle_ready(self, message):
