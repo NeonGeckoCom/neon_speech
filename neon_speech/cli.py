@@ -29,7 +29,7 @@
 import click
 import sys
 
-from typing import List
+from typing import List, Optional
 from os import environ
 from click_default_group import DefaultGroup
 from neon_utils.packaging_utils import get_package_version_spec
@@ -40,28 +40,55 @@ environ.setdefault("OVOS_CONFIG_BASE_FOLDER", "neon")
 environ.setdefault("OVOS_CONFIG_FILENAME", "neon.yaml")
 
 
-@click.group("neon-speech", cls=DefaultGroup,
-             no_args_is_help=True, invoke_without_command=True,
-             help="Neon Core Commands\n\n"
-                  "See also: neon COMMAND --help")
-@click.option("--version", "-v", is_flag=True, required=False,
-              help="Print the current version")
+@click.group(
+    "neon-speech",
+    cls=DefaultGroup,
+    no_args_is_help=True,
+    invoke_without_command=True,
+    help="Neon Core Commands\n\nSee also: neon COMMAND --help",
+)
+@click.option(
+    "--version",
+    "-v",
+    is_flag=True,
+    required=False,
+    help="Print the current version",
+)
 def neon_speech_cli(version: bool = False):
     if version:
-        click.echo(f"neon_speech version "
-                   f"{get_package_version_spec('neon_speech')}")
+        click.echo(
+            f"neon_speech version {get_package_version_spec('neon_speech')}"
+        )
 
 
 @neon_speech_cli.command(help="Start Neon Speech module")
-@click.option("--module", "-m", default=None,
-              help="STT Plugin to configure")
-@click.option("--package", "-p", default=None,
-              help="STT package spec to install")
-@click.option("--force-install", "-f", default=False, is_flag=True,
-              help="Force pip installation of configured module")
-def run(module, package, force_install):
+@click.option("--module", "-m", default=None, help="STT Plugin to configure")
+@click.option(
+    "--package", "-p", default=None, help="STT package spec to install"
+)
+@click.option(
+    "--force-install",
+    "-f",
+    default=False,
+    is_flag=True,
+    help="Force pip installation of configured module",
+)
+@click.option(
+    "--health-check-server-port",
+    "-hp",
+    type=int,
+    default=None,
+    help="Port for health check server to listen on",
+)
+def run(
+    module,
+    package,
+    force_install,
+    health_check_server_port: Optional[int] = None,
+):
     from neon_speech.__main__ import main
     from ovos_config.config import Configuration
+
     speech_config = Configuration()
     if force_install or module or package:
         install_plugin(module, package, force_install)
@@ -70,27 +97,39 @@ def run(module, package, force_install):
         package = package or speech_config["stt"].get("package_spec")
         speech_config["stt"]["module"] = module
         speech_config["stt"]["package_spec"] = package
-        click.echo(f'Loading STT Module: {speech_config["stt"]["module"]}')
-        click.echo(f'Speech Config={speech_config}')
+        click.echo(f"Loading STT Module: {speech_config['stt']['module']}")
+        click.echo(f"Speech Config={speech_config}")
         click.echo("Starting Speech Client")
-        main(speech_config=speech_config, daemonic=True)
+        main(
+            speech_config=speech_config,
+            daemonic=True,
+            health_check_server_port=health_check_server_port,
+        )
     else:
         click.echo("Starting Speech Client")
-        main(daemonic=True)
+        main(daemonic=True, health_check_server_port=health_check_server_port)
     click.echo("Speech Client Shutdown")
 
 
 @neon_speech_cli.command(help="Install an STT Plugin")
-@click.option("--module", "-m", default=None,
-              help="STT Plugin to configure")
-@click.option("--package", "-p", default=None,
-              help="STT package spec to install")
-@click.option("--force-install", "-f", default=False, is_flag=True,
-              help="Force pip installation of configured module")
+@click.option("--module", "-m", default=None, help="STT Plugin to configure")
+@click.option(
+    "--package", "-p", default=None, help="STT package spec to install"
+)
+@click.option(
+    "--force-install",
+    "-f",
+    default=False,
+    is_flag=True,
+    help="Force pip installation of configured module",
+)
 def install_plugin(module, package, force_install):
-    log_deprecation("`install-plugin` replaced by `install-dependencies`", "5.0.0")
+    log_deprecation(
+        "`install-plugin` replaced by `install-dependencies`", "5.0.0"
+    )
     from neon_speech.utils import install_stt_plugin
     from ovos_config.config import Configuration
+
     speech_config = Configuration()
 
     if force_install and not (package or module):
@@ -104,12 +143,20 @@ def install_plugin(module, package, force_install):
             click.echo("Plugin specified without module")
 
 
-@neon_speech_cli.command(help="Install neon-speech module dependencies from config & cli")
-@click.option("--package", "-p", default=[], multiple=True,
-              help="Additional package to install (can be repeated)")
+@neon_speech_cli.command(
+    help="Install neon-speech module dependencies from config & cli"
+)
+@click.option(
+    "--package",
+    "-p",
+    default=[],
+    multiple=True,
+    help="Additional package to install (can be repeated)",
+)
 def install_dependencies(package: List[str]):
     from neon_utils.packaging_utils import install_packages_from_pip
     from neon_speech.utils import build_extra_dependency_list
+
     config = Configuration()
     dependencies = build_extra_dependency_list(config, list(package))
     result = install_packages_from_pip("neon-speech", dependencies)
@@ -118,10 +165,10 @@ def install_dependencies(package: List[str]):
 
 
 @neon_speech_cli.command(help="Install a STT Plugin")
-@click.option("--plugin", "-p", default=None,
-              help="STT module to init")
+@click.option("--plugin", "-p", default=None, help="STT module to init")
 def init_plugin(plugin):
     from neon_speech.utils import init_stt_plugin
     from ovos_config.config import Configuration
+
     plugin = plugin or Configuration().get("stt", {}).get("module")
     init_stt_plugin(plugin)

@@ -28,7 +28,11 @@
 
 from ovos_utils import wait_for_exit_signal
 from neon_utils.log_utils import init_log
-from neon_utils.process_utils import start_malloc, snapshot_malloc, print_malloc
+from neon_utils.process_utils import (
+    start_malloc,
+    snapshot_malloc,
+    print_malloc,
+)
 from ovos_utils.log import LOG
 from ovos_utils.process_utils import reset_sigint_handler
 from neon_speech.service import NeonSpeechClient
@@ -43,7 +47,14 @@ def main(*args, **kwargs):
 
     reset_sigint_handler()
     malloc_running = start_malloc(stack_depth=4)
+    health_check_server_port = kwargs.pop("health_check_server_port", None)
     service = NeonSpeechClient(*args, **kwargs)
+    if health_check_server_port is not None:
+        from neon_utils.process_utils import start_health_check_server
+
+        start_health_check_server(
+            service.status, health_check_server_port, service.check_health
+        )
     service.start()
     wait_for_exit_signal()
     if malloc_running:
@@ -56,8 +67,10 @@ def main(*args, **kwargs):
 
 def deprecated_entrypoint():
     from ovos_utils.log import log_deprecation
-    log_deprecation("Use `neon-speech run` in place of `neon_speech_client`",
-                    "2.0.0")
+
+    log_deprecation(
+        "Use `neon-speech run` in place of `neon_speech_client`", "2.0.0"
+    )
     main()
 
 
