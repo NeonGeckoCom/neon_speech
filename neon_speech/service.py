@@ -175,7 +175,7 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
 
     def check_health(self):
         """
-        Check the health of the PHAL service and set an error state if the
+        Check the health of the speech service and set an error state if the
         service is unhealthy.
         """
         if self.status.state not in (ProcessState.READY, ProcessState.ERROR):

@@ -4,8 +4,7 @@ ovos-utils~=0.0,>=0.0.30
 ovos-plugin-manager~=0.1
 click~=8.0
 click-default-group~=1.2
-#neon-utils[network,audio,signal]~=1.12,>=1.12.1
-neon-utils[network,audio,signal] @ git+https://github.com/neongeckocom/neon-utils@FEAT_HttpStatusServer#egg=neon-utils
+neon-utils[network,audio,signal]~=1.12,>=1.12.2a2
 ovos-config~=0.0,>=0.0.7
 
 ovos-vad-plugin-webrtcvad~=0.0.1
