@@ -17,6 +17,7 @@ jobs:
     with:
       runner: self-hosted
       platforms: linux/amd64,linux/arm64    
+      build_timeout: 120
   unit_tests:
     timeout-minutes: 15
     strategy:
