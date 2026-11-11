@@ -40,6 +40,7 @@ from ovos_utils.process_utils import ProcessState
 from neon_utils.configuration_utils import get_neon_user_config
 from neon_utils.metrics_utils import Stopwatch
 from neon_utils.parse_utils import clean_quotes
+from neon_speech.utils import api_audio_file
 from neon_utils.user_utils import apply_local_user_profile_updates
 from ovos_bus_client import Message
 from ovos_config.config import update_mycroft_config
@@ -410,48 +411,45 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
         :param message: Message associated with request
         """
         received_time = time()
-        if message.data.get("audio_data"):
-            wav_file_path = self._write_encoded_file(
-                message.data.pop("audio_data"))
-        else:
-            wav_file_path = message.data.get("audio_file")
-        lang = message.data.get("lang")
-        ident = message.context.get("ident") or "neon.get_stt.response"
+        with api_audio_file(message.data,
+                            self._write_encoded_file) as wav_file_path:
+            lang = message.data.get("lang")
+            ident = message.context.get("ident") or "neon.get_stt.response"
 
-        message.context.setdefault("timing", dict())
-        LOG.info(f"Handling STT request: {ident}")
-        if not wav_file_path:
-            message.context['timing']['response_sent'] = time()
-            self.bus.emit(message.reply(
-                ident, data={"error": "audio_file not specified!"}))
-            return
+            message.context.setdefault("timing", dict())
+            LOG.info(f"Handling STT request: {ident}")
+            if not wav_file_path:
+                message.context['timing']['response_sent'] = time()
+                self.bus.emit(message.reply(
+                    ident, data={"error": "audio_file not specified!"}))
+                return
 
-        if not os.path.isfile(wav_file_path):
-            message.context['timing']['response_sent'] = time()
-            self.bus.emit(message.reply(
-                ident, data={"error": f"{wav_file_path} Not found!"}))
+            if not os.path.isfile(wav_file_path):
+                message.context['timing']['response_sent'] = time()
+                self.bus.emit(message.reply(
+                    ident, data={"error": f"{wav_file_path} Not found!"}))
 
-        try:
+            try:
 
-            _, parser_data, transcriptions = \
-                self._get_stt_from_file(wav_file_path, lang)
-            timing = parser_data.pop('timing')
-            message.context["timing"] = {**message.context["timing"], **timing}
-            sent_time = message.context["timing"].get("client_sent") or \
-                received_time
-            if received_time != sent_time:
-                message.context['timing']['client_to_core'] = \
-                    received_time - sent_time
-            message.context['timing']['response_sent'] = time()
-            transcribed_str = [t[0] for t in transcriptions]
-            self.bus.emit(message.reply(ident,
-                                        data={"parser_data": parser_data,
-                                              "transcripts": transcribed_str,
-                                              "transcripts_with_conf": transcriptions}))
-        except Exception as e:
-            LOG.error(e)
-            message.context['timing']['response_sent'] = time()
-            self.bus.emit(message.reply(ident, data={"error": repr(e)}))
+                _, parser_data, transcriptions = \
+                    self._get_stt_from_file(wav_file_path, lang)
+                timing = parser_data.pop('timing')
+                message.context["timing"] = {**message.context["timing"], **timing}
+                sent_time = message.context["timing"].get("client_sent") or \
+                    received_time
+                if received_time != sent_time:
+                    message.context['timing']['client_to_core'] = \
+                        received_time - sent_time
+                message.context['timing']['response_sent'] = time()
+                transcribed_str = [t[0] for t in transcriptions]
+                self.bus.emit(message.reply(ident,
+                                            data={"parser_data": parser_data,
+                                                  "transcripts": transcribed_str,
+                                                  "transcripts_with_conf": transcriptions}))
+            except Exception as e:
+                LOG.error(e)
+                message.context['timing']['response_sent'] = time()
+                self.bus.emit(message.reply(ident, data={"error": repr(e)}))
 
     def handle_audio_input(self, message):
         """
@@ -483,39 +481,36 @@ class NeonSpeechClient(OVOSDinkumVoiceService):
                 received_time - sent_time
         ident = message.context.get("ident") or "neon.audio_input.response"
         LOG.info(f"Handling audio input: {ident}")
-        if message.data.get("audio_data"):
-            wav_file_path = self._write_encoded_file(
-                message.data.pop("audio_data"))
-        else:
-            wav_file_path = message.data.get("audio_file")
-        lang = message.data.get("lang")
-        try:
-            # _=transformed audio_data
-            _, parser_data, transcriptions = \
-                self._get_stt_from_file(wav_file_path, lang)
-            timing = parser_data.pop('timing')
-            message.context["audio_parser_data"] = parser_data
-            message.context.setdefault('timing', dict())
-            message.context['timing'] = {**timing, **message.context['timing']}
-            context = build_context(message)
-            transribed_str = [t[0] for t in transcriptions]
-            data = {
-                "utterances": transribed_str,
-                "lang": message.data.get("lang", "en-us")
-            }
-            # Send a new message to the skills module with proper routing ctx
-            handled = self._emit_utterance_to_skills(Message(
-                'recognizer_loop:utterance', data, context))
+        with api_audio_file(message.data,
+                            self._write_encoded_file) as wav_file_path:
+            lang = message.data.get("lang")
+            try:
+                # _=transformed audio_data
+                _, parser_data, transcriptions = \
+                    self._get_stt_from_file(wav_file_path, lang)
+                timing = parser_data.pop('timing')
+                message.context["audio_parser_data"] = parser_data
+                message.context.setdefault('timing', dict())
+                message.context['timing'] = {**timing, **message.context['timing']}
+                context = build_context(message)
+                transribed_str = [t[0] for t in transcriptions]
+                data = {
+                    "utterances": transribed_str,
+                    "lang": message.data.get("lang", "en-us")
+                }
+                # Send a new message to the skills module with proper routing ctx
+                handled = self._emit_utterance_to_skills(Message(
+                    'recognizer_loop:utterance', data, context))
 
-            # Reply to original message with transcription/audio parser data
-            self.bus.emit(message.reply(ident,
-                                        data={"parser_data": parser_data,
-                                              "transcripts": transribed_str,
-                                              "transcripts_with_conf": transcriptions,
-                                              "skills_recv": handled}))
-        except Exception as e:
-            LOG.error(e)
-            self.bus.emit(message.reply(ident, data={"error": repr(e)}))
+                # Reply to original message with transcription/audio parser data
+                self.bus.emit(message.reply(ident,
+                                            data={"parser_data": parser_data,
+                                                  "transcripts": transribed_str,
+                                                  "transcripts_with_conf": transcriptions,
+                                                  "skills_recv": handled}))
+            except Exception as e:
+                LOG.error(e)
+                self.bus.emit(message.reply(ident, data={"error": repr(e)}))
 
     def handle_internet_connected(self, _):
         """

@@ -26,11 +26,39 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import os
+
+from contextlib import contextmanager
 from tempfile import mkstemp
 from ovos_utils.log import LOG, deprecated
 from neon_utils.packaging_utils import get_package_dependencies
 from ovos_config.config import Configuration
-from typing import List, Union
+from typing import Callable, Iterator, List, Optional, Union
+
+
+@contextmanager
+def api_audio_file(data: dict,
+                   write_encoded_file: Callable[[str], str]
+                   ) -> Iterator[Optional[str]]:
+    """
+    Yield the path to the audio for an API STT request.
+    Inline `audio_data` (base64) is written to a temporary file that is
+    deleted on exit, so audio sent over the API is not left on disk.
+    A caller-supplied `audio_file` belongs to the caller and is not deleted.
+    :param data: request Message data; `audio_data` is popped if present
+    :param write_encoded_file: writes base64 audio to a file, returns its path
+    """
+    if not data.get("audio_data"):
+        yield data.get("audio_file")
+        return
+    path = write_encoded_file(data.pop("audio_data"))
+    try:
+        yield path
+    finally:
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
 
 
 def patch_config(config: dict = None):
