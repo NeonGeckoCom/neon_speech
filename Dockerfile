@@ -1,4 +1,4 @@
-FROM python:3.10-slim AS base
+FROM python:3.12-slim-bookworm AS base
 
 LABEL vendor=neon.ai \
     ai.neon.name="neon-speech"
@@ -32,14 +32,13 @@ WORKDIR /neon_speech
 RUN pip install --no-cache-dir wheel cython && \
     pip install --no-cache-dir .[docker] --extra-index-url https://download.pytorch.org/whl/cpu
 
-# Get vosk model for WW detection
-RUN mkdir -p /root/.local/share/neon && \
-    cd /root/.local/share/neon && \
+# Shared by the Vosk wake-word plugin and the STT fallback
+RUN mkdir -p /opt/vosk && \
+    cd /opt/vosk && \
     wget -q -O vosk-model-small-en-us-0.15.zip https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip && \
     unzip vosk-model-small-en-us-0.15.zip && \
-    rm vosk-model-small-en-us-0.15.zip
-
-
+    rm vosk-model-small-en-us-0.15.zip && \
+    chmod -R a+rX /opt/vosk
 
 COPY docker_overlay/ /
 RUN chmod ugo+x /root/run.sh
