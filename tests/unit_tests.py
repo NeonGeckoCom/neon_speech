@@ -62,6 +62,36 @@ class UtilTests(unittest.TestCase):
         if os.path.exists(CONFIG_PATH):
             shutil.rmtree(CONFIG_PATH)
 
+    def test_api_audio_file(self):
+        from tempfile import mkstemp
+        from neon_speech.utils import api_audio_file
+
+        def _write(encoded: str) -> str:
+            _, path = mkstemp()
+            with open(path, "w") as f:
+                f.write(encoded)
+            return path
+
+        # Inline audio is written to a temp file, then deleted
+        data = {"audio_data": "UklGRg=="}
+        with api_audio_file(data, _write) as path:
+            self.assertTrue(os.path.isfile(path))
+        self.assertFalse(os.path.exists(path))
+        self.assertNotIn("audio_data", data)
+
+        # Deleted even when STT raises
+        with self.assertRaises(RuntimeError):
+            with api_audio_file({"audio_data": "UklGRg=="}, _write) as path:
+                raise RuntimeError("stt failed")
+        self.assertFalse(os.path.exists(path))
+
+        # A caller-supplied file is never deleted
+        _, caller_file = mkstemp()
+        with api_audio_file({"audio_file": caller_file}, _write) as path:
+            self.assertEqual(path, caller_file)
+        self.assertTrue(os.path.isfile(caller_file))
+        os.remove(caller_file)
+
     def test_use_neon_speech(self):
         from neon_speech.utils import use_neon_speech
         test_args = ("one", 1, True)
