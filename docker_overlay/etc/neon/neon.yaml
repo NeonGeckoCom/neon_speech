@@ -4,6 +4,8 @@ audio_parsers:
 stt:
   module: neon-stt-plugin-nemo
   fallback_module: ovos-stt-plugin-vosk
+  ovos-stt-plugin-vosk:
+    model_folder: /opt/vosk/vosk-model-small-en-us-0.15
   ovos-stt-plugin-server:
     url: https://stt.openvoiceos.com/stt
 play_wav_cmdline: "play %1"
@@ -50,7 +52,7 @@ hotwords:
     sound: snd/start_listening.wav
     debug: false
     rule: fuzzy
-    model_folder: /root/.local/share/neon/vosk-model-small-en-us-0.15
+    model: /opt/vosk/vosk-model-small-en-us-0.15
     samples:
       - hey neon
 sounds:
