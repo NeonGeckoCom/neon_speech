@@ -11,7 +11,7 @@ jobs:
   py_build_tests:
     uses: neongeckocom/.github/.github/workflows/python_build_tests.yml@master
     with:
-      python_version: "3.12"
+      python_version: "3.11"
   docker_build_tests:
     uses: neongeckocom/.github/.github/workflows/docker_build_tests.yml@master
     with:
